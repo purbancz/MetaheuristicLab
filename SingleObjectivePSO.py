@@ -1,4 +1,4 @@
-from typing import TypeVar
+from typing import TypeVar, List
 import numpy as np
 
 from jmetal.core.algorithm import Algorithm
@@ -28,7 +28,6 @@ class SingleObjectivePSO(Algorithm[S, R]):
         self.c1 = c1
         self.c2 = c2
         self.w = w
-        self.swarm = []
         self.best_global = None
         self.velocity = []
         self.termination_criterion = termination_criterion
@@ -36,30 +35,30 @@ class SingleObjectivePSO(Algorithm[S, R]):
         self.swarm_generator = swarm_generator
         self.solution_comparator = solution_comparator
         self.observable.register(termination_criterion)
-        self.start_computing_time = 0
 
     def create_initial_solutions(self):
-        self.swarm = [self.swarm_generator.new(self.problem) for _ in range(self.swarm_size)]
-        for solution in self.swarm:
+        self.solutions = [self.swarm_generator.new(self.problem) for _ in range(self.swarm_size)]
+        for solution in self.solutions:
             self.problem.evaluate(solution)
             solution.attributes['best_position'] = solution.variables[:]
             solution.attributes['best_objective'] = solution.objectives[0]
-
-        # Log after initialization
-        # print("Initial swarm state:")
-        # for solution in self.swarm:
-        #     print(f"Variables: {solution.variables}, Objective: {solution.objectives}")
-
-        self.best_global = deepcopy(min(self.swarm, key=lambda sol: sol.objectives[0]))
+        self.best_global = deepcopy(min(self.solutions, key=lambda sol: sol.objectives[0]))
         self.velocity = [np.random.uniform(-1, 1, self.problem.number_of_variables()) for _ in range(self.swarm_size)]
-        return self.swarm
+        return self.solutions
+
+    def set_solutions(self, solutions: List[S]):
+        self.solutions = deepcopy(solutions)
+        # Recalculate velocities or initialize them anew
+        for i in range(len(self.solutions)):
+            # Initialize velocities as needed; here just an example
+            self.velocity[i] = np.random.uniform(-1, 1, self.problem.number_of_variables())
+        self.best_global = deepcopy(min(self.solutions, key=lambda sol: sol.objectives[0]))
 
     def evaluate(self, solution_list):
-        self.particle_evaluator.evaluate(solution_list, self.problem)
+        return self.particle_evaluator.evaluate(solution_list, self.problem)
 
     def init_progress(self):
         self.evaluations = self.swarm_size
-        self.start_computing_time = time.time()
 
         observable_data = self.observable_data()
         self.observable.notify_all(**observable_data)
@@ -69,7 +68,7 @@ class SingleObjectivePSO(Algorithm[S, R]):
 
     def step(self):
         for i in range(self.swarm_size):
-            particle = self.swarm[i]
+            particle = self.solutions[i]
             personal_best = particle.attributes['best_position']
             global_best = self.best_global.variables
 
