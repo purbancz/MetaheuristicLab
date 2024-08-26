@@ -1,8 +1,8 @@
+from typing import TypeVar
 import numpy as np
 
 from jmetal.core.algorithm import Algorithm
 from jmetal.core.problem import FloatProblem
-from jmetal.core.solution import FloatSolution
 from jmetal.config import store
 from jmetal.util.termination_criterion import TerminationCriterion
 from jmetal.util.evaluator import Evaluator
@@ -12,8 +12,11 @@ import random
 import time
 from copy import deepcopy
 
+S = TypeVar("S")
+R = TypeVar("R")
 
-class SingleObjectivePSO(Algorithm[FloatSolution, FloatSolution]):
+
+class SingleObjectivePSO(Algorithm[S, R]):
     def __init__(self, problem: FloatProblem, swarm_size: int, c1: float, c2: float, w: float,
                  termination_criterion: TerminationCriterion = store.default_termination_criteria,
                  particle_evaluator: Evaluator = store.default_evaluator,
@@ -42,8 +45,8 @@ class SingleObjectivePSO(Algorithm[FloatSolution, FloatSolution]):
             solution.attributes['best_position'] = solution.variables[:]
             solution.attributes['best_objective'] = solution.objectives[0]
 
-        # Log initialized particles
-        # print("Initial swarm states:")
+        # Log after initialization
+        # print("Initial swarm state:")
         # for solution in self.swarm:
         #     print(f"Variables: {solution.variables}, Objective: {solution.objectives}")
 
@@ -116,7 +119,7 @@ class SingleObjectivePSO(Algorithm[FloatSolution, FloatSolution]):
             "COMPUTING_TIME": time.time() - self.start_computing_time,
         }
 
-    def result(self) -> FloatSolution:
+    def result(self) -> R:
         return self.best_global
 
     def get_name(self) -> str:
