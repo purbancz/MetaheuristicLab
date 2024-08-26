@@ -7,10 +7,10 @@ from jmetal.core.operator import Crossover, Mutation, Selection
 from jmetal.core.problem import FloatProblem
 from jmetal.operator import BinaryTournamentSelection
 from jmetal.util.termination_criterion import TerminationCriterion
-from custom_genetic_algorithm import GeneticAlgorithm
 from jmetal.util.comparator import ObjectiveComparator
 from jmetal.util.evaluator import Evaluator
-from SingleObjectivePSO import SingleObjectivePSO
+from algorithm.custom_GA import GeneticAlgorithm
+from algorithm.single_objective_PSO import SingleObjectivePSO
 
 S = TypeVar("S")
 R = TypeVar("R")
@@ -20,7 +20,7 @@ class PGSHEA(Algorithm[S, R]):
     def __init__(self, problem: FloatProblem, solutions_size: int,
                  c1: float, c2: float, w: float,
                  crossover: Crossover, mutation: Mutation,
-                 swap_limit: int,
+                 swap_interval: int,
                  starting_algorithm: str,
                  selection: Selection = BinaryTournamentSelection(ObjectiveComparator(0)),
                  solution_evaluator: Evaluator = store.default_evaluator,
@@ -34,7 +34,7 @@ class PGSHEA(Algorithm[S, R]):
         self.c1 = c1
         self.c2 = c2
         self.w = w
-        self.swap_limit = swap_limit * solutions_size
+        self.swap_limit = swap_interval * solutions_size
         self.crossover = crossover
         self.mutation = mutation
         self.selection = selection
@@ -132,4 +132,4 @@ class PGSHEA(Algorithm[S, R]):
         }
 
     def get_name(self) -> str:
-        return "PGPHEA - Parallel Hybrid Evolutionary Algorithm"
+        return "PGSHEA - Series Hybrid Evolutionary Algorithm"

@@ -1,7 +1,7 @@
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
 
-from SingleObjectivePSO import SingleObjectivePSO
+from algorithm.single_objective_PSO import SingleObjectivePSO
 
 if __name__ == "__main__":
     problem = Rastrigin(100)
