@@ -46,12 +46,20 @@ class SingleObjectivePSO(Algorithm[S, R]):
         self.velocity = [np.random.uniform(-1, 1, self.problem.number_of_variables()) for _ in range(self.swarm_size)]
         return self.solutions
 
-    def set_solutions(self, solutions: List[S]):
+    def set_solutions(self, solutions: List[S], existing_velocities=None):
         self.solutions = deepcopy(solutions)
-        # Recalculate velocities or initialize them anew
-        for i in range(len(self.solutions)):
-            # Initialize velocities as needed; here just an example
-            self.velocity[i] = np.random.uniform(-1, 1, self.problem.number_of_variables())
+        if existing_velocities is not None and len(existing_velocities) == len(solutions):
+            self.velocity = existing_velocities
+        else:
+            self.velocity = [np.random.uniform(-1, 1, self.problem.number_of_variables()) for _ in
+                             range(len(solutions))]
+
+        for idx, solution in enumerate(self.solutions):
+            if ('best_position' not in solution.attributes or solution.objectives[0] <
+                    solution.attributes['best_objective']):
+                solution.attributes['best_position'] = deepcopy(solution.variables)
+                solution.attributes['best_objective'] = solution.objectives[0]
+
         self.best_global = deepcopy(min(self.solutions, key=lambda sol: sol.objectives[0]))
 
     def evaluate(self, solution_list):

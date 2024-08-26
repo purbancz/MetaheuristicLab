@@ -9,9 +9,9 @@ if __name__ == "__main__":
     algorithm = SingleObjectivePSO(
         problem=problem,
         swarm_size=100,
-        c1=1.7,
-        c2=0.7,
-        w=0.7,
+        c1=2.5,
+        c2=0.3,
+        w=0.17,
         termination_criterion=StoppingByEvaluations(max_evaluations=25000),
     )
 

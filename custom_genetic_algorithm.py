@@ -62,7 +62,7 @@ class GeneticAlgorithm(EvolutionaryAlgorithm[S, R]):
             self.mating_pool_size = self.crossover_operator.get_number_of_children()
 
     def create_initial_solutions(self) -> List[S]:
-        return [self.population_generator.new(self.problem) for _ in range(self.population_size)]
+        return self.evaluate([self.population_generator.new(self.problem) for _ in range(self.population_size)])
 
     def set_solutions(self, solutions: List[S]):
         self.solutions = deepcopy(solutions)

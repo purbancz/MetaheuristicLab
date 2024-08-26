@@ -9,6 +9,7 @@ from jmetal.operator import BinaryTournamentSelection
 from jmetal.util.termination_criterion import TerminationCriterion
 from custom_genetic_algorithm import GeneticAlgorithm
 from jmetal.util.comparator import ObjectiveComparator
+from jmetal.util.evaluator import Evaluator
 from SingleObjectivePSO import SingleObjectivePSO
 
 S = TypeVar("S")
@@ -20,11 +21,14 @@ class PGSHEA(Algorithm[S, R]):
                  c1: float, c2: float, w: float,
                  crossover: Crossover, mutation: Mutation,
                  swap_limit: int,
+                 starting_algorithm: str,
                  selection: Selection = BinaryTournamentSelection(ObjectiveComparator(0)),
+                 solution_evaluator: Evaluator = store.default_evaluator,
                  termination_criterion: TerminationCriterion = store.default_termination_criteria):
         super().__init__()
         self.termination_criterion = termination_criterion
         self.observable.register(termination_criterion)
+        self.solution_evaluator = solution_evaluator
         self.problem = problem
         self.solutions_size = solutions_size
         self.c1 = c1
@@ -35,26 +39,33 @@ class PGSHEA(Algorithm[S, R]):
         self.mutation = mutation
         self.selection = selection
         self.start_computing_time = time.time()
-        self.current_algorithm = 'PSO'
+        self.current_algorithm = starting_algorithm
+        self.best_global = None
 
         self.pso = SingleObjectivePSO(
             problem=problem, swarm_size=solutions_size, c1=c1, c2=c2, w=w,
             termination_criterion=termination_criterion
         )
         self.ga = GeneticAlgorithm(
-            problem=problem, population_size=solutions_size, offspring_population_size=solutions_size,
+            problem=problem, population_size=solutions_size, offspring_population_size=100,
             crossover=crossover, mutation=mutation, selection=selection,
             termination_criterion=termination_criterion
         )
 
     def create_initial_solutions(self) -> List[S]:
+        solutions = None
         if self.current_algorithm == 'PSO':
             solutions = self.pso.create_initial_solutions()
-            best_solutions = sorted(self.pso.solutions, key=lambda x: x.objectives)[:self.solutions_size]
-            self.ga.set_solutions(best_solutions)
+            self.best_global = min(solutions, key=lambda s: s.objectives[0])
+            print(f"Initial best from PSO: {self.best_global.objectives[0]}")
         else:
             solutions = self.ga.create_initial_solutions()
-            self.pso.set_solutions(solutions)
+            self.best_global = min(solutions, key=lambda s: s.objectives[0])
+            print(f"Initial best from GA: {self.best_global.objectives[0]}")
+
+        self.ga.set_solutions(solutions)
+        self.pso.set_solutions(solutions)
+
         return solutions
 
     def update_progress(self) -> None:
@@ -64,7 +75,7 @@ class PGSHEA(Algorithm[S, R]):
         self.observable.notify_all(**observable_data)
 
     def evaluate(self, solution_list: List[S]):
-        self.pso.evaluate(solution_list)
+        return self.solution_evaluator.evaluate(solution_list, self.problem)
 
     def init_progress(self):
         self.evaluations = self.solutions_size
@@ -78,10 +89,14 @@ class PGSHEA(Algorithm[S, R]):
     def step(self):
         if self.current_algorithm == 'GA':
             self.ga.step()
+            if self.best_global is None or self.ga.solutions[0].objectives[0] < self.best_global.objectives[0]:
+                self.best_global = self.ga.solutions[0]
+                # print(f"Updated step global best by GA: {self.best_global.objectives[0]}")
         else:
             self.pso.step()
-
-        self.update_progress()
+            if self.best_global is None or self.pso.best_global.objectives[0] < self.best_global.objectives[0]:
+                self.best_global = self.pso.best_global
+                # print(f"Updated step global best by PSO: {self.best_global.objectives[0]}")
 
         if self.evaluations % self.swap_limit == 0:
             if self.current_algorithm == 'GA':
@@ -90,25 +105,23 @@ class PGSHEA(Algorithm[S, R]):
                 self.switch_to_ga()
 
     def switch_to_pso(self):
-        best_solutions = sorted(self.ga.solutions, key=lambda x: x.objectives)[:self.solutions_size]
-        self.pso.set_solutions(best_solutions)
+        best_solutions = sorted(self.ga.solutions, key=lambda x: x.objectives[:self.solutions_size - 1])
+        if self.best_global not in best_solutions:
+            best_solutions[-1] = self.best_global
+        self.pso.set_solutions(best_solutions, self.pso.velocity)
         self.current_algorithm = 'PSO'
-        print(f"Switched to PSO with {len(best_solutions)} solutions")
+        # print(f"Switched to PSO with best solution: {self.best_global.objectives[0]} at {self.observable_data()['EVALUATIONS']}")
 
     def switch_to_ga(self):
-        best_solutions = sorted(self.pso.solutions, key=lambda x: x.objectives)[:self.solutions_size]
-        self.ga.set_solutions(best_solutions)  # Assuming set_solutions properly initializes GA state
+        best_solutions = sorted(self.pso.solutions, key=lambda x: x.objectives[:self.solutions_size - 1])
+        if self.best_global not in best_solutions:
+            best_solutions[-1] = self.best_global
+        self.ga.set_solutions(best_solutions)
         self.current_algorithm = 'GA'
-        print(f"Switched to GA with {len(best_solutions)} solutions")
+        # print(f"Switched to GA with best solution: {self.best_global.objectives[0]} at {self.observable_data()['EVALUATIONS']}")
 
     def result(self) -> R:
-        pso_best = self.pso.result() if self.pso.solutions else None
-        print(f"Pso best {pso_best}, fitness {pso_best.objectives[0]}")
-        ga_best = self.ga.result() if self.ga.solutions else None
-        print(f"Ga best {ga_best}, fitness {ga_best.objectives[0]}")
-        if pso_best and ga_best:
-            return min(pso_best, ga_best, key=lambda sol: sol.objectives[0])
-        return pso_best or ga_best
+        return self.best_global
 
     def observable_data(self) -> dict:
         return {

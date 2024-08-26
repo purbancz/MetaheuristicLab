@@ -5,18 +5,19 @@ from jmetal.util.termination_criterion import StoppingByEvaluations
 from PGSHEA import PGSHEA
 
 if __name__ == "__main__":
-    problem = Rastrigin(1)
+    problem = Rastrigin(100)
 
     algorithm = PGSHEA(
         termination_criterion=StoppingByEvaluations(max_evaluations=25000),
         problem=problem,
         solutions_size=100,
         mutation=PolynomialMutation(1.0 / problem.number_of_variables(), 20.0),
-        crossover=SBXCrossover(0.9, 5.0),
-        swap_limit=50,
-        c1=1.7,
-        c2=0.7,
-        w=0.7
+        crossover=SBXCrossover(1, 5.0),
+        swap_limit=66,
+        c1=2.66,
+        c2=0.34,
+        w=0.2,
+        starting_algorithm='PSO',
     )
 
     algorithm.run()
