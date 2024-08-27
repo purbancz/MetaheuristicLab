@@ -1,38 +1,30 @@
 import os
 import time
-
 from skopt.space import Real, Integer
-# Categorical
-from skopt.utils import use_named_args, dump
-from skopt import gp_minimize, load
+from skopt.utils import use_named_args, dump, load
+from skopt import gp_minimize
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
 from jmetal.operator import PolynomialMutation, SBXCrossover
-from tqdm import tqdm
-
 from algorithm.PGSHEA import PGSHEA
 
-# Define the space of parameters to search
 space = [
     Real(1e-3, 5, name='c1'),
     Real(1e-3, 5, name='c2'),
     Real(1e-5, 5, name='w'),
     Real(1e-3, 5, "log-uniform", name='mutation_factor'),
-    # Real(0.5, 1.0, name='crossover_rate'),
-    Integer(1, 250, name='exchange_interval'),
-    # Categorical(['PSO', 'GA'], name='starting_algorithm'),
+    Integer(1, 250, name='exchange_interval')
 ]
 
-run_count = 0
 start = time.time()
-
+run_count = 0
 n_calls = 10
+results_gp = None
 
 
 @use_named_args(space)
 def objective(c1, c2, w, mutation_factor, exchange_interval):
     global run_count
-
     problem = Rastrigin(100)
     mutation = PolynomialMutation(mutation_factor / problem.number_of_variables(), 20.0)
     crossover = SBXCrossover(1.0, 5.0)
@@ -52,7 +44,6 @@ def objective(c1, c2, w, mutation_factor, exchange_interval):
             starting_algorithm='PSO',
             termination_criterion=StoppingByEvaluations(max_evaluations=25000)
         )
-
         algorithm.run()
         result = algorithm.result()
         results.append(result.objectives[0])
@@ -69,15 +60,21 @@ def objective(c1, c2, w, mutation_factor, exchange_interval):
     return average_result
 
 
-def run_optimization():
-    if os.path.exists('previous_results.pkl'):
-        results_gp = load('previous_results.pkl')
-        additional_calls = n_calls  # Additional iterations you want to run
-        x0, y0 = results_gp.x_iters, results_gp.func_vals
-    else:
-        additional_calls, x0, y0 = n_calls, None, None
+if os.path.exists('previous_results.pkl'):
+    results_gp = load('previous_results.pkl')
 
-    results_gp = gp_minimize(
+
+def run_optimization():
+    global results_gp
+    x0, y0 = None, None
+    additional_calls = n_calls
+
+    if results_gp:
+        # Load previous x and y values if results_gp already exists
+        x0 = results_gp.x_iters
+        y0 = list(results_gp.func_vals)
+
+    new_results_gp = gp_minimize(
         objective,
         space,
         n_calls=additional_calls,
@@ -86,12 +83,18 @@ def run_optimization():
         random_state=0
     )
 
+    # Manually combine the results if previous results exist
+    if results_gp:
+        new_x_iters = results_gp.x_iters + new_results_gp.x_iters
+        new_func_vals = list(results_gp.func_vals) + list(new_results_gp.func_vals)
+        new_results_gp.x_iters = new_x_iters
+        new_results_gp.func_vals = new_func_vals
+
     # Save the updated results
-    dump(results_gp, 'previous_results.pkl', store_objective=False)
-    return results_gp
+    dump(new_results_gp, 'previous_results.pkl', store_objective=False)
+    return new_results_gp
 
 
 res_gp = run_optimization()
 print("Best parameters:", res_gp.x)
 print("Best objective:", res_gp.fun)
-
