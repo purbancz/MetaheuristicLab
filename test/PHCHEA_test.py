@@ -2,22 +2,21 @@ from jmetal.operator import PolynomialMutation, SBXCrossover
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
 
-from algorithm.PGPHEA import PGPHEA
+from algorithm.PGCHEA import PGCHEA
 
 if __name__ == "__main__":
     problem = Rastrigin(100)
 
-    algorithm = PGPHEA(
+    algorithm = PGCHEA(
         termination_criterion=StoppingByEvaluations(max_evaluations=25000),
         problem=problem,
         solutions_size=100,
-        mutation=PolynomialMutation(0.6 / problem.number_of_variables(), 20.0),
+        mutation=PolynomialMutation(1.0 / problem.number_of_variables(), 20.0),
         crossover=SBXCrossover(1, 5.0),
-        exchange_interval=51,
-        exchange_number=28,
-        c1=0.1,
-        c2=1.9,
-        w=2,
+        c1=2.66,
+        c2=0.34,
+        w=0.2,
+        starting_algorithm='PSO',
     )
 
     algorithm.run()

@@ -39,7 +39,7 @@ class PGPHEA(Algorithm[S, R]):
         self.crossover = crossover
         self.mutation = mutation
         self.selection = selection
-        self.start_computing_time = time.time()
+        # self.start_computing_time = time.time()
 
         self.pso = SingleObjectivePSO(
             problem=problem, swarm_size=solutions_size, c1=c1, c2=c2, w=w,

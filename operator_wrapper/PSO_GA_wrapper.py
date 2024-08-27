@@ -1,0 +1,44 @@
+from typing import List
+
+from jmetal.core.operator import Mutation, Crossover
+from jmetal.core.solution import FloatSolution
+
+
+class MutationWithPsoAttributes(Mutation):
+    def __init__(self, mutation_operator, probability: float):
+        super().__init__(probability)
+        self.mutation_operator = mutation_operator
+
+    def execute(self, solution: FloatSolution) -> FloatSolution:
+        original_attributes = solution.attributes.copy()
+        mutated_solution = self.mutation_operator.execute(solution)
+        mutated_solution.attributes.update(original_attributes)
+        return mutated_solution
+
+    def get_name(self):
+        return f"{self.mutation_operator.get_name()} with PSO attributes"
+
+
+class CrossoverWithPsoAttributes(Crossover):
+    def __init__(self, crossover_operator, probability: float):
+        super().__init__(probability)
+        self.crossover_operator = crossover_operator
+
+    def execute(self, parents: List[FloatSolution]) -> List[FloatSolution]:
+        offspring = self.crossover_operator.execute(parents)
+        better_parent = min(parents, key=lambda p: p.attributes.get('best_objective', float('inf')))
+
+        for child in offspring:
+            child.attributes['best_position'] = better_parent.attributes.get('best_position', child.variables[:])
+            child.attributes['best_objective'] = better_parent.attributes.get('best_objective', child.objectives[0])
+
+        return offspring
+
+    def get_number_of_parents(self) -> int:
+        return self.crossover_operator.get_number_of_parents()
+
+    def get_number_of_children(self) -> int:
+        return self.crossover_operator.get_number_of_children()
+
+    def get_name(self):
+        return f"{self.crossover_operator.get_name()} with PSO attributes"
