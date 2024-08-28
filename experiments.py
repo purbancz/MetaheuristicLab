@@ -8,10 +8,26 @@ from jmetal.operator import PolynomialMutation, SBXCrossover
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
 
+from algorithm.PGPHEA import PGPHEA
+from algorithm.PGSHEA import PGSHEA
 from algorithm.single_objective_PSO import SingleObjectivePSO
 from observer.fitness_observer import FitnessObserver
+from problem.fixed_varaibles.branin import BraninRCOC
 from problem.fixed_varaibles.de_joung import DeJoung
+from problem.fixed_varaibles.easom import Easom
+from problem.fixed_varaibles.goldstein_price import GoldsteinPrice
+from problem.fixed_varaibles.hartmann import Hartmann
+from problem.fixed_varaibles.schaffer import SchafferN2
+from problem.fixed_varaibles.shekel import Shekel
+from problem.fixed_varaibles.shubert import Shubert
 from problem.n_variables.ackley import Ackley
+from problem.n_variables.griewank import Griewank
+from problem.n_variables.levy import Levy
+from problem.n_variables.michalewicz import Michalewicz
+from problem.n_variables.rosenbrock import Rosenbrock
+from problem.n_variables.schwefel import Schwefel
+from problem.n_variables.weierstrass import ShiftedRotatedWeierstrass
+from problem.n_variables.zakharov import Zakharov
 
 
 # Function to run the experiment
@@ -41,7 +57,6 @@ def run_experiment(algorithm, runs, interval):
 
 
 # Function to plot results
-# Function to plot results
 def plot_results(data_dict, problem):
     plt.figure(figsize=(12, 6))
     for label, fitness_data in data_dict.items():
@@ -68,10 +83,10 @@ def plot_results(data_dict, problem):
     plt.show()
 
 
-no_of_runs = 3
-number_of_variables = 10
-solutions_size = 10
-max_evaluations = 2500
+no_of_runs = 10
+number_of_variables = 60
+solutions_size = 100
+max_evaluations = 10000
 frequency = solutions_size  # Snapshot each generation
 
 results_dir = 'experiment_results'
@@ -80,13 +95,37 @@ if not os.path.exists(results_dir):
 
 csv_filename = f'{results_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_results.csv'
 
-with open(csv_filename, mode='w', newline='') as file:
+with (open(csv_filename, mode='w', newline='') as file):
     writer = csv.writer(file)
     writer.writerow(['Algorithm', 'Problem', 'Variables', 'Runs', 'Average Final Fitness',
                      'Average Computing Time (s)'])
 
-    problems = [Rastrigin(number_of_variables),
-                DeJoung()]
+    n_variables_problems = [
+        # Zakharov(number_of_variables),
+        ###
+        Rastrigin(number_of_variables),
+        Ackley(number_of_variables),
+        Griewank(number_of_variables),
+        Levy(number_of_variables),
+        Michalewicz(number_of_variables),
+        Rosenbrock(number_of_variables),
+        Schwefel(number_of_variables),
+        # ShiftedRotatedWeierstrass(number_of_variables),
+
+    ]
+
+    fixed_variables_problems = [
+        # BraninRCOC(),
+        # DeJoung(),
+        # GoldsteinPrice(),
+        # Hartmann(),
+        # Shubert()
+        ###
+        SchafferN2(),
+        Shekel(),
+        Easom(),
+    ]
+    problems = n_variables_problems + fixed_variables_problems
 
     for problem in problems:
         algorithms = {
@@ -95,7 +134,7 @@ with open(csv_filename, mode='w', newline='') as file:
                 population_size=solutions_size,
                 offspring_population_size=solutions_size,
                 mutation=PolynomialMutation(1.0 / problem.number_of_variables(), 20.0),
-                crossover=SBXCrossover(0.9, 5.0),
+                crossover=SBXCrossover(0.75, 5.0),
                 termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations),
             ),
             'PSO': SingleObjectivePSO(
@@ -104,6 +143,54 @@ with open(csv_filename, mode='w', newline='') as file:
                 c1=1.97,
                 c2=0.94,
                 w=0.56,
+                termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+            ),
+            'PGSHEA': PGSHEA(
+                problem=problem,
+                solutions_size=solutions_size,
+                mutation=PolynomialMutation(0.38 / problem.number_of_variables(), 20.0),
+                crossover=SBXCrossover(1, 5.0),
+                swap_interval=13,
+                c1=2.63,
+                c2=0.21,
+                w=0.01,
+                starting_algorithm='PSO',
+                termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+            ),
+            'PGSHEA-halved': PGSHEA(
+                problem=problem,
+                solutions_size=solutions_size,
+                mutation=PolynomialMutation(0.38 / problem.number_of_variables(), 20.0),
+                crossover=SBXCrossover(1, 5.0),
+                swap_interval=int(max_evaluations/(2 * solutions_size)),
+                c1=2.63,
+                c2=0.21,
+                w=0.01,
+                starting_algorithm='PSO',
+                termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+            ),
+            'PGPHEA-7': PGPHEA(
+                problem=problem,
+                solutions_size=solutions_size,
+                mutation=PolynomialMutation(0.37 / problem.number_of_variables(), 20.0),
+                crossover=SBXCrossover(1, 5.0),
+                exchange_interval=13,
+                exchange_number=7,
+                c1=0.00001,
+                c2=0.26,
+                w=0.17,
+                termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+            ),
+            'PGPHEA-11': PGPHEA(
+                problem=problem,
+                solutions_size=solutions_size,
+                mutation=PolynomialMutation(0.37 / problem.number_of_variables(), 20.0),
+                crossover=SBXCrossover(1, 5.0),
+                exchange_interval=13,
+                exchange_number=11,
+                c1=0.00001,
+                c2=0.26,
+                w=0.17,
                 termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
             )
         }

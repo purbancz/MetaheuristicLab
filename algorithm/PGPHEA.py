@@ -41,22 +41,28 @@ class PGPHEA(Algorithm[S, R]):
         self.selection = selection
         # self.start_computing_time = time.time()
 
-        self.pso = SingleObjectivePSO(
-            problem=problem, swarm_size=solutions_size, c1=c1, c2=c2, w=w,
-            termination_criterion=termination_criterion
-        )
-        self.ga = GeneticAlgorithm(
-            problem=problem, population_size=solutions_size,
-            offspring_population_size=solutions_size,
-            crossover=crossover, mutation=mutation, selection=selection,
-            termination_criterion=termination_criterion
-        )
+        self.pso = None
+        self.ga = None
 
     def create_initial_solutions(self) -> List[S]:
+        half_solutions = int(self.solutions_size / 2)
+        self.pso = SingleObjectivePSO(
+            problem=self.problem, swarm_size=self.solutions_size - half_solutions, c1=self.c1, c2=self.c2, w=self.w,
+            termination_criterion=self.termination_criterion
+        )
+        self.ga = GeneticAlgorithm(
+            problem=self.problem, population_size=half_solutions,
+            offspring_population_size=self.solutions_size,
+            crossover=self.crossover, mutation=self.mutation, selection=self.selection,
+            termination_criterion=self.termination_criterion
+        )
+
         pso_solutions = self.pso.create_initial_solutions()
         ga_solutions = self.ga.create_initial_solutions()
-        print(f"PSO Solutions Count: {len(pso_solutions)}, GA Solutions Count: {len(ga_solutions)}")
+
+        # print(f"PSO Solutions Count: {len(pso_solutions)}, GA Solutions Count: {len(ga_solutions)}")
         self.synchronize_best_global()
+        # print(f'PSO Global Solutions Count: {self.best_global.objectives[0]}')
         self.ga.set_solutions(ga_solutions)
         self.pso.set_solutions(pso_solutions)
         return pso_solutions + ga_solutions
@@ -83,10 +89,10 @@ class PGPHEA(Algorithm[S, R]):
         self.ga.set_solutions(self.ga.solutions)
         self.pso.set_solutions(self.pso.solutions)
 
-        print(f"Exchanged {self.exchange_number} solutions at evaluation {self.evaluations}")
+        # print(f"Exchanged {self.exchange_number} solutions at evaluation {self.evaluations}")
 
     def update_progress(self) -> None:
-        self.evaluations += self.solutions_size * 2
+        self.evaluations += self.solutions_size
 
         observable_data = self.observable_data()
         self.observable.notify_all(**observable_data)
@@ -95,7 +101,7 @@ class PGPHEA(Algorithm[S, R]):
         return self.solution_evaluator.evaluate(solution_list, self.problem)
 
     def init_progress(self):
-        self.evaluations = self.solutions_size * 2
+        self.evaluations = self.solutions_size
 
         observable_data = self.observable_data()
         self.observable.notify_all(**observable_data)
