@@ -16,6 +16,7 @@ if __name__ == "__main__":
         c1=2.66,
         c2=0.34,
         w=0.2,
+        inherit_best=False,
         starting_algorithm='PSO',
     )
 

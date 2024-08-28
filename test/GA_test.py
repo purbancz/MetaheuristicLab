@@ -1,10 +1,11 @@
 from jmetal.algorithm.singleobjective.genetic_algorithm import GeneticAlgorithm
 from jmetal.operator import PolynomialMutation, SBXCrossover
-from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
 
+from problem.n_variables.levy import Levy
+
 if __name__ == "__main__":
-    problem = Rastrigin(100)
+    problem = Levy(100)
 
     algorithm = GeneticAlgorithm(
         problem=problem,

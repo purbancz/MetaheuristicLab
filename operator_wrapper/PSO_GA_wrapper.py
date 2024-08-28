@@ -1,3 +1,4 @@
+import random
 from typing import List
 
 from jmetal.core.operator import Mutation, Crossover
@@ -20,13 +21,17 @@ class MutationWithPsoAttributes(Mutation):
 
 
 class CrossoverWithPsoAttributes(Crossover):
-    def __init__(self, crossover_operator, probability: float):
+    def __init__(self, crossover_operator, probability: float, inherit_best: bool = True):
         super().__init__(probability)
         self.crossover_operator = crossover_operator
+        self.inherit_best = inherit_best
 
     def execute(self, parents: List[FloatSolution]) -> List[FloatSolution]:
         offspring = self.crossover_operator.execute(parents)
-        better_parent = min(parents, key=lambda p: p.attributes.get('best_objective', float('inf')))
+        if self.inherit_best:
+            better_parent = min(parents, key=lambda p: p.attributes.get('best_objective', float('inf')))
+        else:
+            better_parent = random.choice(parents)
 
         for child in offspring:
             child.attributes['best_position'] = better_parent.attributes.get('best_position', child.variables[:])
@@ -41,4 +46,5 @@ class CrossoverWithPsoAttributes(Crossover):
         return self.crossover_operator.get_number_of_children()
 
     def get_name(self):
-        return f"{self.crossover_operator.get_name()} with PSO attributes"
+        mode = "better" if self.inherit_best else "random"
+        return f"{self.crossover_operator.get_name()} with PSO attributes (inherit mode: {mode})"

@@ -1,5 +1,7 @@
 import os
 import time
+import humanize
+
 from skopt.space import Real, Integer
 from skopt.utils import use_named_args, dump, load
 from skopt import gp_minimize
@@ -9,24 +11,24 @@ from jmetal.operator import PolynomialMutation, SBXCrossover
 from algorithm.PGSHEA import PGSHEA
 
 space = [
-    Real(1e-3, 5, name='c1'),
-    Real(1e-3, 5, name='c2'),
-    Real(1e-5, 5, name='w'),
-    Real(1e-3, 5, "log-uniform", name='mutation_factor'),
-    Integer(1, 250, name='exchange_interval')
+    # Real(2.3, 2.8, name='c1'),
+    # Real(0.2, .22, name='c2'),
+    Real(1e-7, 1e-4, name='w'),
+    # Real(0.4, 0.44, "log-uniform", name='mutation_factor'),
+    # Integer(20, 132, name='exchange_interval')
 ]
 
 start = time.time()
 run_count = 0
-n_calls = 10
+n_calls = 100
 results_gp = None
 
 
 @use_named_args(space)
-def objective(c1, c2, w, mutation_factor, exchange_interval):
+def objective(w):
     global run_count
     problem = Rastrigin(100)
-    mutation = PolynomialMutation(mutation_factor / problem.number_of_variables(), 20.0)
+    mutation = PolynomialMutation(0.377 / problem.number_of_variables(), 20.0)
     crossover = SBXCrossover(1.0, 5.0)
     num_runs = 5
     results = []
@@ -35,12 +37,12 @@ def objective(c1, c2, w, mutation_factor, exchange_interval):
         algorithm = PGSHEA(
             problem=problem,
             solutions_size=100,
-            c1=c1,
-            c2=c2,
+            c1=2.63,
+            c2=0.21,
             w=w,
             mutation=mutation,
             crossover=crossover,
-            swap_interval=exchange_interval,
+            swap_interval=125,
             starting_algorithm='PSO',
             termination_criterion=StoppingByEvaluations(max_evaluations=25000)
         )
@@ -49,15 +51,32 @@ def objective(c1, c2, w, mutation_factor, exchange_interval):
         results.append(result.objectives[0])
 
         run_count += 1
+        elapsed_time = time.time() - start
+        estimated_total_time = (elapsed_time / run_count) * (num_runs * n_calls)
+        remaining_time = estimated_total_time - elapsed_time
+
         print(f'\033[93mRun {run_count}/{num_runs * n_calls}\033[0m')
-        print(f'\033[93mTime: {time.time() - start}\033[0m')
+        print(f'\033[92mElapsed time: {format_time(elapsed_time)}\033[0m')
+        print(f'\033[92mEstimated time left: {format_time(remaining_time)}\033[0m')
 
     average_result = sum(results) / len(results)
-    print(f'\033[93mc1: {c1}, c2: {c2}, w: {w}, mutation_factor: {mutation_factor},\033[0m'
-          f'\033[93m exchange_interval {exchange_interval},\033[0m'
-          )
+    # print(f'\033[93mc1: {c1}, c2: {c2}, w: {w}, mutation_factor: {mutation_factor},\033[0m'
+    #       f'\033[93m exchange_interval {exchange_interval},\033[0m'
+    #       )
     print(f'\033[93m Average result: {average_result}\033[0m')
     return average_result
+
+
+def format_time(seconds):
+    hours, remainder = divmod(seconds, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    time_str = ""
+    if hours > 0:
+        time_str += f"{int(hours)}h "
+    if minutes > 0 or hours > 0:
+        time_str += f"{int(minutes)}min "
+    time_str += f"{int(seconds)}sec"
+    return time_str.strip()
 
 
 if os.path.exists('previous_results.pkl'):

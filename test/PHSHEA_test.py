@@ -11,12 +11,12 @@ if __name__ == "__main__":
         termination_criterion=StoppingByEvaluations(max_evaluations=25000),
         problem=problem,
         solutions_size=100,
-        mutation=PolynomialMutation(0.2 / problem.number_of_variables(), 20.0),
+        mutation=PolynomialMutation(0.38 / problem.number_of_variables(), 20.0),
         crossover=SBXCrossover(1, 5.0),
         swap_interval=125,
-        c1=2,
-        c2=0.2,
-        w=0.1,
+        c1=2.63,
+        c2=0.21,
+        w=0.01,
         starting_algorithm='PSO',
     )
 

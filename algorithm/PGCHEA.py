@@ -23,6 +23,7 @@ class PGCHEA(Algorithm[S, R]):
                  c1: float, c2: float, w: float,
                  crossover: Crossover, mutation: Mutation,
                  starting_algorithm: str,
+                 inherit_best: bool = True,
                  selection: Selection = BinaryTournamentSelection(ObjectiveComparator(0)),
                  solution_evaluator: Evaluator = store.default_evaluator,
                  termination_criterion: TerminationCriterion = store.default_termination_criteria):
@@ -36,7 +37,8 @@ class PGCHEA(Algorithm[S, R]):
         self.c1 = c1
         self.c2 = c2
         self.w = w
-        self.crossover = CrossoverWithPsoAttributes(crossover, probability=crossover.probability)
+        self.crossover = CrossoverWithPsoAttributes(crossover, probability=crossover.probability,
+                                                    inherit_best=inherit_best)
         self.mutation = MutationWithPsoAttributes(mutation, probability=mutation.probability)
         self.selection = selection
         self.start_computing_time = time.time()
@@ -125,4 +127,4 @@ class PGCHEA(Algorithm[S, R]):
         }
 
     def get_name(self):
-        return "PGCHEA - PSO-GA Consecutive Hybrid Evolutionary Algorithm"
+        return "PGCHEA: PSO-GA Consecutive Hybrid Evolutionary Algorithm"
