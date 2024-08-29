@@ -3,11 +3,13 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import os
 import csv
+import pickle
 from jmetal.algorithm.singleobjective import GeneticAlgorithm
 from jmetal.operator import PolynomialMutation, SBXCrossover
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
 
+from algorithm.PGCHEA import PGCHEA
 from algorithm.PGPHEA import PGPHEA
 from algorithm.PGSHEA import PGSHEA
 from algorithm.single_objective_PSO import SingleObjectivePSO
@@ -51,9 +53,10 @@ def run_experiment(algorithm, runs, interval):
         total_times.append(total_time)
 
     average_final_fitness = np.mean([data[-1] for data in all_fitness_data])
+    standard_deviation = np.std([data[-1] for data in all_fitness_data])
     average_time = np.mean(total_times)
 
-    return np.array(all_fitness_data), average_final_fitness, average_time
+    return np.array(all_fitness_data), average_final_fitness, standard_deviation, average_time
 
 
 # Function to plot results
@@ -63,31 +66,131 @@ def plot_results(data_dict, problem):
         average_fitness = np.mean(fitness_data['data'], axis=0)
         plt.plot(average_fitness, label=label)
 
-    plt.title(f'{problem.name()} ({problem.number_of_variables()} variables)')
+    plt.title(f'{problem.name()} ({problem.number_of_variables()} dimenisons)')
     plt.xlabel(f'Evaluations ({max_evaluations})')
     plt.ylabel(f'Average Best Fitness over {no_of_runs} runs')
-
-    # Add legend with proper background
     plt.legend(frameon=True, facecolor='white', framealpha=1)
-
-    # Add grid
     plt.grid()
-
-    # Save the plot to a file
     plt.savefig(f'{results_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{problem.name()}.png')
-
-    # Adjust layout to make sure everything fits correctly
     plt.tight_layout()
-
-    # Show the plot
     plt.show()
 
 
-no_of_runs = 10
-number_of_variables = 60
+def plot_results_with_std(data_dict, problem):
+    plt.figure(figsize=(12, 6))
+    for label, fitness_data in data_dict.items():
+        average_fitness = np.mean(fitness_data['data'], axis=0)
+        std_dev_fitness = np.std(fitness_data['data'], axis=0)
+        plt.plot(average_fitness, label=label)
+        plt.fill_between(range(len(average_fitness)), average_fitness - std_dev_fitness, average_fitness + std_dev_fitness, alpha=0.2)
+
+    plt.title(f'{problem.name()} ({problem.number_of_variables()} dimensions)')
+    plt.xlabel(f'Evaluations ({max_evaluations})')
+    plt.ylabel(f'Average Best Fitness over {no_of_runs} runs')
+    plt.legend(frameon=True, facecolor='white', framealpha=1)
+    plt.grid()
+    plt.savefig(f'{results_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{problem.name()}_with_stddev.png')
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_box_at_intervals(data_dict, problem, interval=10, algorithms_to_compare=None):
+    if algorithms_to_compare is None:
+        algorithms_to_compare = data_dict.keys()
+
+    plt.figure(figsize=(12, 6))
+
+    # Fixed colors for each algorithm
+    colors = {
+        'GA': 'blue',
+        'PSO': 'orange',
+        'PGPHEA': 'purple',
+        'PGSHEA': 'green',
+        'PGCHEA': 'red'
+    }
+
+    # Prepare legend entries
+    legend_handles = []
+
+    for label, fitness_data in data_dict.items():
+        if label not in algorithms_to_compare:
+            continue
+
+        box_data = []
+        for i in range(0, len(fitness_data['data'][0]), interval):
+            box_data.append([run_data[i] for run_data in fitness_data['data']])
+
+        # Assign color and plot the boxplot
+        color = colors.get(label, 'black')  # Default to black if not specified
+        bp = plt.boxplot(box_data,
+                         positions=np.arange(0, len(fitness_data['data'][0]), interval),
+                         widths=5,
+                         patch_artist=True,
+                         boxprops=dict(facecolor=color, color=color),
+                         whiskerprops=dict(color=color),
+                         capprops=dict(color=color),
+                         medianprops=dict(color='yellow'),
+                         flierprops=dict(marker='o', color=color, markersize=5, alpha=0.5))
+
+        # Append to legend handles
+        legend_handles.append(plt.Line2D([0], [0], color=color, lw=2, label=label))
+
+    # Add legend manually
+    plt.legend(handles=legend_handles, frameon=True, facecolor='white', framealpha=1)
+
+    plt.title(f'{problem.name()} ({problem.number_of_variables()} dimensions)')
+    plt.xlabel(f'Evaluations ({max_evaluations})')
+    plt.ylabel('Fitness Distribution')
+    plt.grid()
+    plt.tight_layout()
+    plt.savefig(f'{results_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{problem.name()}_box_intervals.png')
+    plt.show()
+
+
+def plot_comparison_box(data_dict, problem, interval=10):
+    plt.figure(figsize=(12, 6))
+    algorithms_to_compare = [
+        # 'PGSHEA'
+        'PGPHEA'
+        # 'PGCHEA',
+        'GA', 'PSO']
+    for label in algorithms_to_compare:
+        if label in data_dict:
+            box_data = []
+            for i in range(0, len(data_dict[label]['data'][0]), interval):
+                box_data.append([run_data[i] for run_data in data_dict[label]['data']])
+            plt.boxplot(box_data, positions=np.arange(0, len(data_dict[label]['data'][0]), interval), widths=5, patch_artist=True, label=label)
+
+    plt.title(f'Comparison Box Plots for {problem.name()}')
+    plt.xlabel('Evaluations')
+    plt.ylabel('Fitness Distribution')
+    plt.legend(frameon=True, facecolor='white', framealpha=1)
+    # plt.grid()
+    plt.savefig(f'{results_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{problem.name()}_comparison_box.png')
+    # plt.tight_layout()
+    plt.show()
+
+
+def plot_final_box(data_dict, problem):
+    plt.figure(figsize=(12, 6))
+    box_data = [fitness_data['data'][:, -1] for fitness_data in data_dict.values()]
+    labels = data_dict.keys()
+    plt.boxplot(box_data, labels=labels, patch_artist=True)
+    plt.title(f'Final Step Comparison for {problem.name()}')
+    plt.xlabel('Algorithms')
+    plt.ylabel('Final Fitness Distribution')
+    plt.grid()
+    plt.savefig(f'{results_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{problem.name()}_final_comparison_box.png')
+    plt.tight_layout()
+    plt.show()
+
+
+no_of_runs = 5
+number_of_variables = 50
 solutions_size = 100
-max_evaluations = 10000
+max_evaluations = 25000
 frequency = solutions_size  # Snapshot each generation
+all_data = []
 
 results_dir = 'experiment_results'
 if not os.path.exists(results_dir):
@@ -97,21 +200,20 @@ csv_filename = f'{results_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_result
 
 with (open(csv_filename, mode='w', newline='') as file):
     writer = csv.writer(file)
-    writer.writerow(['Algorithm', 'Problem', 'Variables', 'Runs', 'Average Final Fitness',
+    writer.writerow(['Algorithm', 'Problem', 'Variables', 'Runs', 'Average Final Fitness', 'Standard deviation'
                      'Average Computing Time (s)'])
 
     n_variables_problems = [
         # Zakharov(number_of_variables),
+        # Rosenbrock(number_of_variables),
         ###
         Rastrigin(number_of_variables),
         Ackley(number_of_variables),
-        Griewank(number_of_variables),
-        Levy(number_of_variables),
-        Michalewicz(number_of_variables),
-        Rosenbrock(number_of_variables),
-        Schwefel(number_of_variables),
+        # Griewank(number_of_variables),
+        # Levy(number_of_variables),
+        # Michalewicz(number_of_variables),
+        # Schwefel(number_of_variables),
         # ShiftedRotatedWeierstrass(number_of_variables),
-
     ]
 
     fixed_variables_problems = [
@@ -121,13 +223,14 @@ with (open(csv_filename, mode='w', newline='') as file):
         # Hartmann(),
         # Shubert()
         ###
-        SchafferN2(),
-        Shekel(),
-        Easom(),
+        # SchafferN2(),
+        # Shekel(),
+        # Easom(),
     ]
     problems = n_variables_problems + fixed_variables_problems
 
     for problem in problems:
+        problem_data = {'problem': problem.name(), 'n_vars': problem.number_of_variables(), 'results': {}}
         algorithms = {
             'GA': GeneticAlgorithm(
                 problem=problem,
@@ -145,66 +248,65 @@ with (open(csv_filename, mode='w', newline='') as file):
                 w=0.56,
                 termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
             ),
-            'PGSHEA': PGSHEA(
-                problem=problem,
-                solutions_size=solutions_size,
-                mutation=PolynomialMutation(0.38 / problem.number_of_variables(), 20.0),
-                crossover=SBXCrossover(1, 5.0),
-                swap_interval=13,
-                c1=2.63,
-                c2=0.21,
-                w=0.01,
-                starting_algorithm='PSO',
-                termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-            ),
-            'PGSHEA-halved': PGSHEA(
-                problem=problem,
-                solutions_size=solutions_size,
-                mutation=PolynomialMutation(0.38 / problem.number_of_variables(), 20.0),
-                crossover=SBXCrossover(1, 5.0),
-                swap_interval=int(max_evaluations/(2 * solutions_size)),
-                c1=2.63,
-                c2=0.21,
-                w=0.01,
-                starting_algorithm='PSO',
-                termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-            ),
-            'PGPHEA-7': PGPHEA(
+            # 'PGSHEA': PGSHEA(
+            #     problem=problem,
+            #     solutions_size=solutions_size,
+            #     mutation=PolynomialMutation(0.38 / problem.number_of_variables(), 20.0),
+            #     crossover=SBXCrossover(1, 5.0),
+            #     swap_interval=13, #int(max_evaluations/(2 * solutions_size))
+            #     c1=2.63,
+            #     c2=0.21,
+            #     w=0.01,
+            #     starting_algorithm='PSO',
+            #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+            # ),
+            'PGPHEA': PGPHEA(
                 problem=problem,
                 solutions_size=solutions_size,
                 mutation=PolynomialMutation(0.37 / problem.number_of_variables(), 20.0),
                 crossover=SBXCrossover(1, 5.0),
                 exchange_interval=13,
-                exchange_number=7,
+                exchange_number=7, #11
                 c1=0.00001,
                 c2=0.26,
                 w=0.17,
                 termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
             ),
-            'PGPHEA-11': PGPHEA(
+            'PGCHEA': PGCHEA(
                 problem=problem,
                 solutions_size=solutions_size,
-                mutation=PolynomialMutation(0.37 / problem.number_of_variables(), 20.0),
+                mutation=PolynomialMutation(0.17 / problem.number_of_variables(), 20.0),
                 crossover=SBXCrossover(1, 5.0),
-                exchange_interval=13,
-                exchange_number=11,
-                c1=0.00001,
-                c2=0.26,
-                w=0.17,
+                c1=0.28,
+                c2=1.56,
+                w=0.96,
+                starting_algorithm='PSO',
                 termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-            )
+            ),
         }
 
         results = {}
         for name, algorithm in algorithms.items():
-            fitness_data, average_final_fitness, average_time = run_experiment(algorithm, no_of_runs, frequency)
-            results[name] = {'data': fitness_data, 'avg_fitness': average_final_fitness, 'avg_time': average_time}
+            fitness_data, avg_fitness, std_dev, avg_time = run_experiment(algorithm, no_of_runs, frequency)
+            problem_data['results'][name] = {'data': fitness_data, 'avg_fitness': avg_fitness, 'std_dev': std_dev,
+                                             'avg_time': avg_time}
 
             # Print data for debugging
-            print(f"Algorithm: {name}, Problem: {problem.name()}, Variables: {problem.number_of_variables()},"
-                  f"Runs: {no_of_runs}, Average Final Fitness: {average_final_fitness}, Average Time: {average_time}")
+            print(f"Algorithm: {name}, Problem: {problem.name()}, Variables: {problem.number_of_variables()}, "
+                  f"Runs: {no_of_runs}, Average Final Fitness: {avg_fitness},"
+                  f"Standard deviation: {std_dev}, Average Time: {avg_time}"
+                  )
 
-            writer.writerow([name, problem.name(), problem.number_of_variables(), no_of_runs, average_final_fitness,
-                             average_time])
+            writer.writerow([name, problem.name(), problem.number_of_variables(), no_of_runs, avg_fitness,
+                             std_dev, avg_time])
 
-        plot_results(results, problem)
+        all_data.append(problem_data)
+
+        plot_results(problem_data['results'], problem)
+        plot_results_with_std(problem_data['results'], problem)
+        plot_box_at_intervals(problem_data['results'], problem)
+        plot_final_box(problem_data['results'], problem)
+
+with open(f'{results_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_experiment_data.pkl', 'wb') as f:
+    pickle.dump(all_data, f)
+
