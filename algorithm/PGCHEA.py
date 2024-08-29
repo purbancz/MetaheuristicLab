@@ -57,11 +57,11 @@ class PGCHEA(Algorithm[S, R]):
         if self.current_algorithm == 'PSO':
             solutions = self.pso.create_initial_solutions()
             self.best_global = min(solutions, key=lambda s: s.objectives[0])
-            print(f"Initial best from PSO: {self.best_global.objectives[0]}")
+            # print(f"Initial best from PSO: {self.best_global.objectives[0]}")
         else:
             solutions = self.ga.create_initial_solutions()
             self.best_global = min(solutions, key=lambda s: s.objectives[0])
-            print(f"Initial best from GA: {self.best_global.objectives[0]}")
+            # print(f"Initial best from GA: {self.best_global.objectives[0]}")
 
         self.ga.set_solutions(solutions)
         self.pso.set_solutions(solutions)
