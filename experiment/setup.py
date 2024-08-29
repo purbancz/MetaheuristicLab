@@ -29,8 +29,8 @@ from problem.n_variables.zakharov import Zakharov
 
 
 def setup_experiment():
-    no_of_runs = 30
-    number_of_variables = 300
+    no_of_runs = 7
+    number_of_variables = 30
     solutions_size = 100
     max_evaluations = 25000
     frequency = solutions_size  # Snapshot each generation
@@ -51,13 +51,13 @@ def setup_experiment():
         # Zakharov(number_of_variables),
         # Rosenbrock(number_of_variables),
         # ##
-        Rastrigin(number_of_variables),
+        # Rastrigin(number_of_variables),
         Ackley(number_of_variables),
-        Griewank(number_of_variables),
-        Levy(number_of_variables),
+        # Griewank(number_of_variables),
+        # Levy(number_of_variables),
         Michalewicz(number_of_variables),
-        Schwefel(number_of_variables),
-        ShiftedRotatedWeierstrass(number_of_variables),
+        # Schwefel(number_of_variables),
+        # ShiftedRotatedWeierstrass(number_of_variables),
     ]
 
     fixed_variables_problems = [
