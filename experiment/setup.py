@@ -29,8 +29,8 @@ from problem.n_variables.zakharov import Zakharov
 
 
 def setup_experiment():
-    no_of_runs = 10
-    number_of_variables = 100
+    no_of_runs = 30
+    number_of_variables = 300
     solutions_size = 100
     max_evaluations = 25000
     frequency = solutions_size  # Snapshot each generation
@@ -44,8 +44,7 @@ def setup_experiment():
     }
 
     results_dir = 'experiment_results'
-    if not os.path.exists(results_dir):
-        os.makedirs(results_dir)
+    make_dir(results_dir)
 
     # Define problems
     n_variables_problems = [
@@ -54,11 +53,11 @@ def setup_experiment():
         # ##
         Rastrigin(number_of_variables),
         Ackley(number_of_variables),
-        # Griewank(number_of_variables),
-        # Levy(number_of_variables),
-        # Michalewicz(number_of_variables),
-        # Schwefel(number_of_variables),
-        # ShiftedRotatedWeierstrass(number_of_variables),
+        Griewank(number_of_variables),
+        Levy(number_of_variables),
+        Michalewicz(number_of_variables),
+        Schwefel(number_of_variables),
+        ShiftedRotatedWeierstrass(number_of_variables),
     ]
 
     fixed_variables_problems = [
@@ -136,3 +135,8 @@ def setup_experiment():
 
 def initialize_algorithms(algorithms, problem):
     return {name: algo(problem) for name, algo in algorithms.items()}
+
+
+def make_dir(results_dir):
+    if not os.path.exists(results_dir):
+        os.makedirs(results_dir)

@@ -5,7 +5,7 @@ from datetime import datetime
 import numpy as np
 
 from experiment.plotting_utilities import plot_results, plot_results_with_std, plot_box_at_intervals, plot_final_box
-from experiment.setup import setup_experiment, initialize_algorithms
+from experiment.setup import setup_experiment, initialize_algorithms, make_dir
 from observer.fitness_observer import FitnessObserver
 
 # Configuration
@@ -14,7 +14,9 @@ from observer.fitness_observer import FitnessObserver
 
 
 def run_all_experiments():
-    csv_filename = f'{results_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_results.csv'
+    dimensions_dir = results_dir + f'/dim{number_of_variables}_runs{no_of_runs}'
+    make_dir(dimensions_dir)
+    csv_filename = f'{dimensions_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_results.csv'
     with (open(csv_filename, mode='w', newline='') as file):
         writer = csv.writer(file)
         writer.writerow(['Algorithm', 'Problem', 'Variables', 'Runs', 'Average Final Fitness',
@@ -39,28 +41,28 @@ def run_all_experiments():
             all_data.append(problem_data)
 
             # plot results
-            plot_results(problem_data['results'], problem, results_dir, max_evaluations, no_of_runs,
+            plot_results(problem_data['results'], problem, dimensions_dir, max_evaluations, no_of_runs,
                          algorithm_colors)
-            plot_results_with_std(problem_data['results'], problem, results_dir, max_evaluations,
+            plot_results_with_std(problem_data['results'], problem, dimensions_dir, max_evaluations,
                                   no_of_runs, algorithm_colors)
             plot_box_at_intervals(problem_data['results'], problem, max_evaluations=max_evaluations,
                                   no_of_runs=no_of_runs, algorithms_to_compare=algorithms.keys(),
-                                  results_dir=results_dir,
+                                  results_dir=dimensions_dir,
                                   algorithm_colors=algorithm_colors)
 
             for algorithm in algorithms.keys():
                 plot_box_at_intervals(problem_data['results'], problem, max_evaluations=max_evaluations,
                                       no_of_runs=no_of_runs, algorithms_to_compare=[algorithm],
-                                      results_dir=results_dir,
+                                      results_dir=dimensions_dir,
                                       algorithm_colors=algorithm_colors)
             for algorithm in ['PGSHEA', 'PGPHEA', 'PGCHEA']:
                 plot_box_at_intervals(problem_data['results'], problem, max_evaluations=max_evaluations,
                                       no_of_runs=no_of_runs, algorithms_to_compare=[algorithm] + ['GA', 'PSO'],
-                                      results_dir=results_dir,
+                                      results_dir=dimensions_dir,
                                       algorithm_colors=algorithm_colors)
-            plot_final_box(problem_data['results'], problem, results_dir, algorithm_colors)
+            plot_final_box(problem_data['results'], problem, dimensions_dir, algorithm_colors)
 
-    with open(f'{results_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_experiment_data.pkl', 'wb') as f:
+    with open(f'{dimensions_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_experiment_data.pkl', 'wb') as f:
         pickle.dump(all_data, f)
 
 
