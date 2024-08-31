@@ -36,6 +36,7 @@ class CrossoverWithPsoAttributes(Crossover):
         for child in offspring:
             child.attributes['best_position'] = better_parent.attributes.get('best_position', child.variables[:])
             child.attributes['best_objective'] = better_parent.attributes.get('best_objective', child.objectives[0])
+            child.attributes['velocity'] = better_parent.attributes.get('velocity')
 
         return offspring
 

@@ -1,6 +1,5 @@
 from typing import TypeVar, List
 import numpy as np
-
 from jmetal.core.algorithm import Algorithm
 from jmetal.core.problem import FloatProblem
 from jmetal.config import store
@@ -29,7 +28,6 @@ class SingleObjectivePSO(Algorithm[S, R]):
         self.c2 = c2
         self.w = w
         self.best_global = None
-        self.velocity = []
         self.termination_criterion = termination_criterion
         self.particle_evaluator = particle_evaluator
         self.swarm_generator = swarm_generator
@@ -42,19 +40,15 @@ class SingleObjectivePSO(Algorithm[S, R]):
             self.problem.evaluate(solution)
             solution.attributes['best_position'] = solution.variables[:]
             solution.attributes['best_objective'] = solution.objectives[0]
+            solution.attributes['velocity'] = np.random.uniform(-1, 1, self.problem.number_of_variables())
         self.best_global = deepcopy(min(self.solutions, key=lambda sol: sol.objectives[0]))
-        self.velocity = [np.random.uniform(-1, 1, self.problem.number_of_variables()) for _ in range(self.swarm_size)]
         return self.solutions
 
-    def set_solutions(self, solutions: List[S], existing_velocities=None):
+    def set_solutions(self, solutions: List[S]):
         self.solutions = deepcopy(solutions)
-        if existing_velocities is not None and len(existing_velocities) == len(solutions):
-            self.velocity = existing_velocities
-        else:
-            self.velocity = [np.random.uniform(-1, 1, self.problem.number_of_variables()) for _ in
-                             range(len(solutions))]
-
-        for idx, solution in enumerate(self.solutions):
+        for solution in self.solutions:
+            if 'velocity' not in solution.attributes:
+                solution.attributes['velocity'] = np.random.uniform(-1, 1, self.problem.number_of_variables())
             if ('best_position' not in solution.attributes or solution.objectives[0] <
                     solution.attributes['best_objective']):
                 solution.attributes['best_position'] = deepcopy(solution.variables)
@@ -67,7 +61,6 @@ class SingleObjectivePSO(Algorithm[S, R]):
 
     def init_progress(self):
         self.evaluations = self.swarm_size
-
         observable_data = self.observable_data()
         self.observable.notify_all(**observable_data)
 
@@ -79,27 +72,21 @@ class SingleObjectivePSO(Algorithm[S, R]):
             particle = self.solutions[i]
             personal_best = particle.attributes['best_position']
             global_best = self.best_global.variables
-
-            # Log before update
-            # print(f"Before update - Particle: {particle.variables}, Velocity: {self.velocity[i]}, "
-            #       f"Global best: {global_best}, Global best objective: {self.best_global.objectives[0]}")
+            velocity = particle.attributes['velocity']
 
             for j in range(self.problem.number_of_variables()):
                 r1 = random.random()
                 r2 = random.random()
-                self.velocity[i][j] = (self.w * self.velocity[i][j] +
-                                       self.c1 * r1 * (personal_best[j] - particle.variables[j]) +
-                                       self.c2 * r2 * (global_best[j] - particle.variables[j]))
-                particle.variables[j] += self.velocity[i][j]  # Position update
+                velocity[j] = (self.w * velocity[j] +
+                               self.c1 * r1 * (personal_best[j] - particle.variables[j]) +
+                               self.c2 * r2 * (global_best[j] - particle.variables[j]))
+                particle.variables[j] += velocity[j]
 
                 # Boundary check
                 if particle.variables[j] < self.problem.lower_bound[j]:
                     particle.variables[j] = self.problem.lower_bound[j]
                 elif particle.variables[j] > self.problem.upper_bound[j]:
                     particle.variables[j] = self.problem.upper_bound[j]
-
-            # Log after update
-            # print(f"After update - Particle: {particle.variables}, Velocity: {self.velocity[i]}")
 
             self.problem.evaluate(particle)
             self.update_best(particle)
@@ -114,7 +101,6 @@ class SingleObjectivePSO(Algorithm[S, R]):
 
     def update_progress(self):
         self.evaluations += self.swarm_size
-
         observable_data = self.observable_data()
         self.observable.notify_all(**observable_data)
 

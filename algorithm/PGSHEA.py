@@ -1,6 +1,5 @@
 import time
 from typing import TypeVar, List
-
 from jmetal.config import store
 from jmetal.core.algorithm import Algorithm
 from jmetal.core.operator import Crossover, Mutation, Selection
@@ -56,11 +55,9 @@ class PGSHEA(Algorithm[S, R]):
         if self.current_algorithm == 'PSO':
             solutions = self.pso.create_initial_solutions()
             self.best_global = min(solutions, key=lambda s: s.objectives[0])
-            # print(f"Initial best from PSO: {self.best_global.objectives[0]}")
         else:
             solutions = self.ga.create_initial_solutions()
             self.best_global = min(solutions, key=lambda s: s.objectives[0])
-            # print(f"Initial best from GA: {self.best_global.objectives[0]}")
 
         self.ga.set_solutions(solutions)
         self.pso.set_solutions(solutions)
@@ -69,7 +66,6 @@ class PGSHEA(Algorithm[S, R]):
 
     def update_progress(self) -> None:
         self.evaluations += self.solutions_size
-
         observable_data = self.observable_data()
         self.observable.notify_all(**observable_data)
 
@@ -78,7 +74,6 @@ class PGSHEA(Algorithm[S, R]):
 
     def init_progress(self):
         self.evaluations = self.solutions_size
-
         observable_data = self.observable_data()
         self.observable.notify_all(**observable_data)
 
@@ -90,12 +85,10 @@ class PGSHEA(Algorithm[S, R]):
             self.ga.step()
             if self.best_global is None or self.ga.solutions[0].objectives[0] < self.best_global.objectives[0]:
                 self.best_global = self.ga.solutions[0]
-                # print(f"Updated step global best by GA: {self.best_global.objectives[0]}")
         else:
             self.pso.step()
             if self.best_global is None or self.pso.best_global.objectives[0] < self.best_global.objectives[0]:
                 self.best_global = self.pso.best_global
-                # print(f"Updated step global best by PSO: {self.best_global.objectives[0]}")
 
         if self.evaluations % self.swap_limit == 0:
             if self.current_algorithm == 'GA':
@@ -107,9 +100,8 @@ class PGSHEA(Algorithm[S, R]):
         best_solutions = sorted(self.ga.solutions, key=lambda x: x.objectives[:self.solutions_size - 1])
         if self.best_global not in best_solutions:
             best_solutions[-1] = self.best_global
-        self.pso.set_solutions(best_solutions, self.pso.velocity)
+        self.pso.set_solutions(best_solutions)
         self.current_algorithm = 'PSO'
-        # print(f"Switched to PSO with best solution: {self.best_global.objectives[0]} at {self.observable_data()['EVALUATIONS']}")
 
     def switch_to_ga(self):
         best_solutions = sorted(self.pso.solutions, key=lambda x: x.objectives[:self.solutions_size - 1])
@@ -117,7 +109,6 @@ class PGSHEA(Algorithm[S, R]):
             best_solutions[-1] = self.best_global
         self.ga.set_solutions(best_solutions)
         self.current_algorithm = 'GA'
-        # print(f"Switched to GA with best solution: {self.best_global.objectives[0]} at {self.observable_data()['EVALUATIONS']}")
 
     def result(self) -> R:
         return self.best_global

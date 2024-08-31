@@ -74,12 +74,10 @@ def run_experiment(algorithm, runs, interval):
         observer = FitnessObserver(interval=interval)
         algorithm.observable.register(observer)
 
-        start_time = datetime.now()
         algorithm.run()
-        end_time = datetime.now()
-        total_time = (end_time - start_time).total_seconds()
 
-        last_fitness = observer.best_fitness_history[-1] if observer.best_fitness_history else float('nan')
+        total_time = algorithm.observable_data()['COMPUTING_TIME']
+        last_fitness = algorithm.result().objectives[0]
         filled_fitness = (observer.best_fitness_history +
                           [last_fitness] * (max_evaluations // interval - len(observer.best_fitness_history)))
         all_fitness_data.append(filled_fitness)
