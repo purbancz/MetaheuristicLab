@@ -8,7 +8,7 @@ from jmetal.util.termination_criterion import StoppingByEvaluations
 from algorithm.PGCHEA import PGCHEA
 from algorithm.PGPHEA import PGPHEA
 from algorithm.PGSHEA import PGSHEA
-from algorithm.single_objective_PSO import SingleObjectivePSO
+from algorithm.single_objective_PSO import SingleObjectivePSO, RebelPSO, EscapistPSO, EscapistRebelPSO
 
 from problem.fixed_varaibles.branin import BraninRCOC
 from problem.fixed_varaibles.de_joung import DeJoung
@@ -40,7 +40,10 @@ def setup_experiment():
         'PSO': 'orange',
         'PGPHEA': 'purple',
         'PGSHEA': 'green',
-        'PGCHEA': 'red'
+        'PGCHEA': 'red',
+        'RebelPSO': 'cyan',
+        'EscapistPSO': 'magenta',
+        'EscapistRebelPSO': 'brown'
     }
 
     results_dir = 'experiment_results'
@@ -54,10 +57,10 @@ def setup_experiment():
         Rastrigin(number_of_variables),
         Ackley(number_of_variables),
         Griewank(number_of_variables),
-        Levy(number_of_variables),
-        Michalewicz(number_of_variables),
-        Schwefel(number_of_variables),
-        ShiftedRotatedWeierstrass(number_of_variables),
+        # Levy(number_of_variables),
+        # Michalewicz(number_of_variables),
+        # Schwefel(number_of_variables),
+        # ShiftedRotatedWeierstrass(number_of_variables),
     ]
 
     fixed_variables_problems = [
@@ -76,14 +79,14 @@ def setup_experiment():
 
     # Initialize the algorithms
     algorithms = {
-        'GA': lambda p: GeneticAlgorithm(
-            problem=p,
-            population_size=solutions_size,
-            offspring_population_size=solutions_size,
-            mutation=PolynomialMutation(1.0 / p.number_of_variables(), 20.0),
-            crossover=SBXCrossover(0.75, 5.0),
-            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations),
-        ),
+        # 'GA': lambda p: GeneticAlgorithm(
+        #     problem=p,
+        #     population_size=solutions_size,
+        #     offspring_population_size=solutions_size,
+        #     mutation=PolynomialMutation(1.0 / p.number_of_variables(), 20.0),
+        #     crossover=SBXCrossover(0.75, 5.0),
+        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations),
+        # ),
         'PSO': lambda p: SingleObjectivePSO(
             problem=p,
             swarm_size=solutions_size,
@@ -92,41 +95,70 @@ def setup_experiment():
             w=0.56,
             termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
         ),
-        'PGSHEA': lambda p: PGSHEA(
+        # 'PGSHEA': lambda p: PGSHEA(
+        #     problem=p,
+        #     solutions_size=solutions_size,
+        #     mutation=PolynomialMutation(0.38 / p.number_of_variables(), 20.0),
+        #     crossover=SBXCrossover(1, 5.0),
+        #     swap_interval=13,  # int(max_evaluations/(2 * solutions_size))
+        #     c1=2.63,
+        #     c2=0.21,
+        #     w=0.01,
+        #     starting_algorithm='PSO',
+        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        # ),
+        # 'PGPHEA': lambda p: PGPHEA(
+        #     problem=p,
+        #     solutions_size=solutions_size,
+        #     mutation=PolynomialMutation(0.37 / p.number_of_variables(), 20.0),
+        #     crossover=SBXCrossover(1, 5.0),
+        #     exchange_interval=13,
+        #     exchange_number=7,  # 11
+        #     c1=0.00001,
+        #     c2=0.26,
+        #     w=0.17,
+        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        # ),
+        # 'PGCHEA': lambda p: PGCHEA(
+        #     problem=p,
+        #     solutions_size=solutions_size,
+        #     mutation=PolynomialMutation(0.61 / p.number_of_variables(), 20.0),
+        #     crossover=SBXCrossover(1, 5.0),
+        #     c1=1.85,
+        #     c2=0.5,
+        #     w=1.53,
+        #     starting_algorithm='PSO',
+        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        # ),
+        # New PSO variants
+        'RebelPSO': lambda p: RebelPSO(
             problem=p,
-            solutions_size=solutions_size,
-            mutation=PolynomialMutation(0.38 / p.number_of_variables(), 20.0),
-            crossover=SBXCrossover(1, 5.0),
-            swap_interval=13,  # int(max_evaluations/(2 * solutions_size))
-            c1=2.63,
-            c2=0.21,
-            w=0.01,
-            starting_algorithm='PSO',
-            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+            swarm_size=solutions_size,
+            c1=1.97,
+            c2=0.94,
+            w=0.56,
+            rebel_fraction=0.1,
+            termination_criterion=StoppingByEvaluations(max_evaluations)
         ),
-        'PGPHEA': lambda p: PGPHEA(
+        'EscapistPSO': lambda p: EscapistPSO(
             problem=p,
-            solutions_size=solutions_size,
-            mutation=PolynomialMutation(0.37 / p.number_of_variables(), 20.0),
-            crossover=SBXCrossover(1, 5.0),
-            exchange_interval=13,
-            exchange_number=7,  # 11
-            c1=0.00001,
-            c2=0.26,
-            w=0.17,
-            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+            swarm_size=solutions_size,
+            c1=1.97,
+            c2=0.94,
+            w=0.56,
+            escapist_fraction=0.1,
+            termination_criterion=StoppingByEvaluations(max_evaluations)
         ),
-        'PGCHEA': lambda p: PGCHEA(
+        'EscapistRebelPSO': lambda p: EscapistRebelPSO(
             problem=p,
-            solutions_size=solutions_size,
-            mutation=PolynomialMutation(0.61 / p.number_of_variables(), 20.0),
-            crossover=SBXCrossover(1, 5.0),
-            c1=1.85,
-            c2=0.5,
-            w=1.53,
-            starting_algorithm='PSO',
-            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        ),
+            swarm_size=solutions_size,
+            c1=1.97,
+            c2=0.94,
+            w=0.56,
+            rebel_fraction=0.1,
+            escapist_fraction=0.1,
+            termination_criterion=StoppingByEvaluations(max_evaluations)
+        )
     }
 
     return (algorithms, problems, no_of_runs, number_of_variables, solutions_size,

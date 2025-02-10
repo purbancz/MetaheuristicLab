@@ -1,119 +1,179 @@
-from typing import TypeVar, List
-import numpy as np
-from jmetal.core.algorithm import Algorithm
-from jmetal.core.problem import FloatProblem
-from jmetal.config import store
-from jmetal.util.termination_criterion import TerminationCriterion
-from jmetal.util.evaluator import Evaluator
-from jmetal.util.generator import Generator
-from jmetal.util.comparator import ObjectiveComparator, Comparator
+from typing import List, TypeVar
 import random
-import time
-from copy import deepcopy
+import numpy as np
+from jmetal.core.algorithm import ParticleSwarmOptimization
+from jmetal.core.problem import FloatProblem
+from jmetal.core.solution import FloatSolution
+from jmetal.util.termination_criterion import TerminationCriterion
 
-S = TypeVar("S")
-R = TypeVar("R")
+S = TypeVar('S')
+R = List[FloatSolution]
 
 
-class SingleObjectivePSO(Algorithm[S, R]):
-    def __init__(self, problem: FloatProblem, swarm_size: int, c1: float, c2: float, w: float,
-                 termination_criterion: TerminationCriterion = store.default_termination_criteria,
-                 particle_evaluator: Evaluator = store.default_evaluator,
-                 swarm_generator: Generator = store.default_generator,
-                 solution_comparator: Comparator = ObjectiveComparator(0)):
-        super().__init__()
-        self.problem = problem
-        self.swarm_size = swarm_size
+class SingleObjectivePSO(ParticleSwarmOptimization):
+    def __init__(self,
+                 problem: FloatProblem,
+                 swarm_size: int,
+                 c1: float,
+                 c2: float,
+                 w: float,
+                 termination_criterion: TerminationCriterion):
+        super().__init__(problem, swarm_size)
         self.c1 = c1
         self.c2 = c2
         self.w = w
-        self.best_global = None
         self.termination_criterion = termination_criterion
-        self.particle_evaluator = particle_evaluator
-        self.swarm_generator = swarm_generator
-        self.solution_comparator = solution_comparator
         self.observable.register(termination_criterion)
+        self.global_best = None
 
-    def create_initial_solutions(self):
-        self.solutions = [self.swarm_generator.new(self.problem) for _ in range(self.swarm_size)]
-        for solution in self.solutions:
-            self.problem.evaluate(solution)
-            solution.attributes['best_position'] = solution.variables[:]
-            solution.attributes['best_objective'] = solution.objectives[0]
-            solution.attributes['velocity'] = np.random.uniform(-1, 1, self.problem.number_of_variables())
-        self.best_global = deepcopy(min(self.solutions, key=lambda sol: sol.objectives[0]))
+    def create_initial_solutions(self) -> List[FloatSolution]:
+        self.solutions = [self.problem.create_solution() for _ in range(self.swarm_size)]
         return self.solutions
 
-    def set_solutions(self, solutions: List[S]):
-        self.solutions = deepcopy(solutions)
-        for solution in self.solutions:
-            if 'velocity' not in solution.attributes:
-                solution.attributes['velocity'] = np.random.uniform(-1, 1, self.problem.number_of_variables())
-            if ('best_position' not in solution.attributes or solution.objectives[0] <
-                    solution.attributes['best_objective']):
-                solution.attributes['best_position'] = deepcopy(solution.variables)
-                solution.attributes['best_objective'] = solution.objectives[0]
-
-        self.best_global = deepcopy(min(self.solutions, key=lambda sol: sol.objectives[0]))
-
-    def evaluate(self, solution_list):
-        return self.particle_evaluator.evaluate(solution_list, self.problem)
-
-    def init_progress(self):
-        self.evaluations = self.swarm_size
-        observable_data = self.observable_data()
-        self.observable.notify_all(**observable_data)
+    def evaluate(self, solution_list: List[FloatSolution]) -> List[FloatSolution]:
+        return [self.problem.evaluate(sol) for sol in solution_list]
 
     def stopping_condition_is_met(self) -> bool:
         return self.termination_criterion.is_met
 
-    def step(self):
-        for i in range(self.swarm_size):
-            particle = self.solutions[i]
-            personal_best = particle.attributes['best_position']
-            global_best = self.best_global.variables
-            velocity = particle.attributes['velocity']
+    def initialize_velocity(self, swarm: List[FloatSolution]) -> None:
+        for particle in swarm:
+            particle.attributes['velocity'] = np.random.uniform(-1, 1, self.problem.number_of_variables())
 
-            for j in range(self.problem.number_of_variables()):
-                r1 = random.random()
-                r2 = random.random()
-                velocity[j] = (self.w * velocity[j] +
-                               self.c1 * r1 * (personal_best[j] - particle.variables[j]) +
-                               self.c2 * r2 * (global_best[j] - particle.variables[j]))
-                particle.variables[j] += velocity[j]
-
-                # Boundary check
-                if particle.variables[j] < self.problem.lower_bound[j]:
-                    particle.variables[j] = self.problem.lower_bound[j]
-                elif particle.variables[j] > self.problem.upper_bound[j]:
-                    particle.variables[j] = self.problem.upper_bound[j]
-
-            self.problem.evaluate(particle)
-            self.update_best(particle)
-
-    def update_best(self, particle):
-        if particle.objectives[0] < particle.attributes['best_objective']:
-            particle.attributes['best_position'] = particle.variables[:]
+    def initialize_particle_best(self, swarm: List[FloatSolution]) -> None:
+        for particle in swarm:
+            particle.attributes['best_position'] = np.array(particle.variables.copy())
             particle.attributes['best_objective'] = particle.objectives[0]
 
-        if particle.objectives[0] < self.best_global.attributes['best_objective']:
-            self.best_global = deepcopy(particle)
+    def initialize_global_best(self, swarm: List[FloatSolution]) -> None:
+        self.global_best = min(swarm, key=lambda x: x.objectives[0])
 
-    def update_progress(self):
-        self.evaluations += self.swarm_size
-        observable_data = self.observable_data()
-        self.observable.notify_all(**observable_data)
+    def update_velocity(self, swarm: List[FloatSolution]) -> None:
+        for particle in swarm:
+            r1 = random.random()
+            r2 = random.random()
+            velocity = np.array(particle.attributes['velocity'])
+            pbest = np.array(particle.attributes['best_position'])
+            gbest = np.array(self.global_best.variables)
 
-    def observable_data(self) -> dict:
-        return {
-            "PROBLEM": self.problem.name(),
-            "EVALUATIONS": self.evaluations,
-            "SOLUTIONS": self.result(),
-            "COMPUTING_TIME": time.time() - self.start_computing_time,
-        }
+            new_velocity = (self.w * velocity +
+                           self.c1 * r1 * (pbest - np.array(particle.variables)) +
+                           self.c2 * r2 * (gbest - np.array(particle.variables)))
 
-    def result(self) -> R:
-        return self.best_global
+            particle.attributes['velocity'] = new_velocity.tolist()
+
+    def update_position(self, swarm: List[FloatSolution]) -> None:
+        for particle in swarm:
+            # Convert to numpy array for vector operations
+            current_position = np.array(particle.variables)
+            new_position = current_position + np.array(particle.attributes['velocity'])
+
+            # Apply bounds and convert back to list
+            clipped_position = np.clip(new_position,
+                                       self.problem.lower_bound,
+                                       self.problem.upper_bound)
+            particle.variables = clipped_position.tolist()
+
+    def update_particle_best(self, swarm: List[FloatSolution]) -> None:
+        for particle in swarm:
+            if particle.objectives[0] < particle.attributes['best_objective']:
+                particle.attributes['best_position'] = particle.variables.copy()
+                particle.attributes['best_objective'] = particle.objectives[0]
+
+    def update_global_best(self, swarm: List[FloatSolution]) -> None:
+        current_best = min(swarm, key=lambda x: x.objectives[0])
+        if current_best.objectives[0] < self.global_best.objectives[0]:
+            self.global_best = current_best
+
+    def perturbation(self, swarm: List[FloatSolution]) -> None:
+        pass  # Optional implementation
+
+    def result(self) -> FloatSolution:
+        return self.global_best
 
     def get_name(self) -> str:
         return "SingleObjectivePSO"
+
+
+# Updated RebelPSO class
+class RebelPSO(SingleObjectivePSO):
+    def __init__(self,
+                 problem: FloatProblem,
+                 swarm_size: int,
+                 c1: float,
+                 c2: float,
+                 w: float,
+                 rebel_fraction: float,
+                 termination_criterion: TerminationCriterion):
+        super().__init__(problem, swarm_size, c1, c2, w, termination_criterion)
+        self.rebel_fraction = rebel_fraction
+
+    def create_initial_solutions(self) -> List[FloatSolution]:
+        solutions = super().create_initial_solutions()
+        self._mark_rebels(solutions)
+        return solutions
+
+    def _mark_rebels(self, swarm: List[FloatSolution]):
+        num_rebels = max(1, int(len(swarm) * self.rebel_fraction))
+        rebels = random.sample(swarm, num_rebels)
+        for particle in rebels:
+            particle.attributes['is_rebel'] = True
+
+
+# Similarly update EscapistPSO and EscapistRebelPSO
+class EscapistPSO(SingleObjectivePSO):
+    def __init__(self,
+                 problem: FloatProblem,
+                 swarm_size: int,
+                 c1: float,
+                 c2: float,
+                 w: float,
+                 escapist_fraction: float,
+                 termination_criterion: TerminationCriterion):
+        super().__init__(problem, swarm_size, c1, c2, w, termination_criterion)
+        self.escapist_fraction = escapist_fraction
+
+    def create_initial_solutions(self) -> List[FloatSolution]:
+        solutions = super().create_initial_solutions()
+        self._mark_escapists(solutions)
+        return solutions
+
+    def _mark_escapists(self, swarm: List[FloatSolution]):
+        num_escapists = max(1, int(len(swarm) * self.escapist_fraction))
+        escapists = random.sample(swarm, num_escapists)
+        for particle in escapists:
+            particle.attributes['is_escapist'] = True
+
+
+class EscapistRebelPSO(SingleObjectivePSO):
+    def __init__(self,
+                 problem: FloatProblem,
+                 swarm_size: int,
+                 c1: float,
+                 c2: float,
+                 w: float,
+                 rebel_fraction: float,
+                 escapist_fraction: float,
+                 termination_criterion: TerminationCriterion):
+        super().__init__(problem, swarm_size, c1, c2, w, termination_criterion)
+        self.rebel_fraction = rebel_fraction
+        self.escapist_fraction = escapist_fraction
+
+    def create_initial_solutions(self) -> List[FloatSolution]:
+        solutions = super().create_initial_solutions()
+        self._mark_special_particles(solutions)
+        return solutions
+
+    def _mark_special_particles(self, swarm: List[FloatSolution]):
+        # Mark rebels
+        num_rebels = max(1, int(len(swarm) * self.rebel_fraction))
+        rebels = random.sample(swarm, num_rebels)
+        for particle in rebels:
+            particle.attributes['is_rebel'] = True
+
+        # Mark escapists from remaining particles
+        remaining = [p for p in swarm if 'is_rebel' not in p.attributes]
+        num_escapists = max(1, int(len(remaining) * self.escapist_fraction))
+        escapists = random.sample(remaining, num_escapists)
+        for particle in escapists:
+            particle.attributes['is_escapist'] = True
