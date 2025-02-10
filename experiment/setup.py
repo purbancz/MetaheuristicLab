@@ -53,11 +53,11 @@ def setup_experiment():
         # ##
         Rastrigin(number_of_variables),
         Ackley(number_of_variables),
-        # Griewank(number_of_variables),
-        # Levy(number_of_variables),
-        # Michalewicz(number_of_variables),
-        # Schwefel(number_of_variables),
-        # ShiftedRotatedWeierstrass(number_of_variables),
+        Griewank(number_of_variables),
+        Levy(number_of_variables),
+        Michalewicz(number_of_variables),
+        Schwefel(number_of_variables),
+        ShiftedRotatedWeierstrass(number_of_variables),
     ]
 
     fixed_variables_problems = [
