@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import List, TypeVar
 import random
 import numpy as np
@@ -24,7 +25,7 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
         self.w = w
         self.termination_criterion = termination_criterion
         self.observable.register(termination_criterion)
-        self.global_best = None
+        self.best_global = None
 
     def create_initial_solutions(self) -> List[FloatSolution]:
         self.solutions = [self.problem.create_solution() for _ in range(self.swarm_size)]
@@ -46,7 +47,7 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
             particle.attributes['best_objective'] = particle.objectives[0]
 
     def initialize_global_best(self, swarm: List[FloatSolution]) -> None:
-        self.global_best = min(swarm, key=lambda x: x.objectives[0])
+        self.best_global = min(swarm, key=lambda x: x.objectives[0])
 
     def update_velocity(self, swarm: List[FloatSolution]) -> None:
         for particle in swarm:
@@ -54,7 +55,7 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
             r2 = random.random()
             velocity = np.array(particle.attributes['velocity'])
             pbest = np.array(particle.attributes['best_position'])
-            gbest = np.array(self.global_best.variables)
+            gbest = np.array(self.best_global.variables)
 
             new_velocity = (self.w * velocity +
                            self.c1 * r1 * (pbest - np.array(particle.variables)) +
@@ -82,14 +83,27 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
 
     def update_global_best(self, swarm: List[FloatSolution]) -> None:
         current_best = min(swarm, key=lambda x: x.objectives[0])
-        if current_best.objectives[0] < self.global_best.objectives[0]:
-            self.global_best = current_best
+        if current_best.objectives[0] < self.best_global.objectives[0]:
+            self.best_global = current_best
+
+    def set_solutions(self, solutions: List[S]):
+        self.solutions = deepcopy(solutions)
+        for solution in self.solutions:
+            if 'velocity' not in solution.attributes:
+                solution.attributes['velocity'] = np.random.uniform(-1, 1, self.problem.number_of_variables())
+            if ('best_position' not in solution.attributes or solution.objectives[0] <
+                    solution.attributes['best_objective']):
+                solution.attributes['best_position'] = deepcopy(solution.variables)
+                solution.attributes['best_objective'] = solution.objectives[0]
+
+        self.best_global = deepcopy(min(self.solutions, key=lambda sol: sol.objectives[0]))
+
 
     def perturbation(self, swarm: List[FloatSolution]) -> None:
         pass  # Optional implementation
 
     def result(self) -> FloatSolution:
-        return self.global_best
+        return self.best_global
 
     def get_name(self) -> str:
         return "SingleObjectivePSO"
@@ -120,7 +134,6 @@ class RebelPSO(SingleObjectivePSO):
             particle.attributes['is_rebel'] = True
 
 
-# Similarly update EscapistPSO and EscapistRebelPSO
 class EscapistPSO(SingleObjectivePSO):
     def __init__(self,
                  problem: FloatProblem,
