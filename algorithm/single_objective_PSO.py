@@ -12,6 +12,8 @@ R = List[FloatSolution]
 
 
 class SingleObjectivePSO(ParticleSwarmOptimization):
+    """Original base class for single-objective PSO variants with common functionality"""
+
     def __init__(self,
                  problem: FloatProblem,
                  swarm_size: int,
@@ -109,8 +111,9 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
         return "SingleObjectivePSO"
 
 
-# Updated RebelPSO class
 class RebelPSO(SingleObjectivePSO):
+    """PSO with rebel particles opposing global best"""
+
     def __init__(self,
                  problem: FloatProblem,
                  swarm_size: int,
@@ -135,6 +138,8 @@ class RebelPSO(SingleObjectivePSO):
 
 
 class EscapistPSO(SingleObjectivePSO):
+    """PSO with escapist particles opposing personal best"""
+
     def __init__(self,
                  problem: FloatProblem,
                  swarm_size: int,
@@ -158,7 +163,9 @@ class EscapistPSO(SingleObjectivePSO):
             particle.attributes['is_escapist'] = True
 
 
-class EscapistRebelPSO(SingleObjectivePSO):
+class RebelEscapistPSO(SingleObjectivePSO):
+    """PSO with both rebel and escapist particles"""
+
     def __init__(self,
                  problem: FloatProblem,
                  swarm_size: int,
@@ -190,3 +197,137 @@ class EscapistRebelPSO(SingleObjectivePSO):
         escapists = random.sample(remaining, num_escapists)
         for particle in escapists:
             particle.attributes['is_escapist'] = True
+
+
+class REAPSO(SingleObjectivePSO):
+    """PSO with rebel and escapist particles and adaptive parameters"""
+
+    def __init__(self,
+                 problem: FloatProblem,
+                 swarm_size: int,
+                 base_inertia: float,
+                 min_inertia: float,
+                 max_inertia: float,
+                 rebel_ratio: float,
+                 escapist_ratio: float,
+                 termination_criterion: TerminationCriterion):
+
+        super().__init__(
+            problem=problem,
+            swarm_size=swarm_size,
+            c1=1.496,  # Cognitive coefficient
+            c2=1.496,  # Social coefficient
+            w=base_inertia,
+            termination_criterion=termination_criterion
+        )
+
+        # Dynamic parameters
+        self.base_inertia = base_inertia
+        self.min_inertia = min_inertia
+        self.max_inertia = max_inertia
+        self.rebel_ratio = rebel_ratio
+        self.escapist_ratio = escapist_ratio
+
+        # Adaptive state tracking
+        self.convergence_window = []
+        self.diversity_threshold = 0.1
+
+    def create_initial_solutions(self) -> List[FloatSolution]:
+        solutions = super().create_initial_solutions()
+        self._mark_special_particles(solutions)
+        return solutions
+
+    def _mark_special_particles(self, swarm: List[FloatSolution]):
+        # Ensure minimum 1 particle per type
+        num_rebels = max(1, int(len(swarm) * self.rebel_ratio))
+        num_escapists = max(1, int(len(swarm) * self.escapist_ratio))
+
+        # Select distinct particles for each role
+        all_indices = np.random.permutation(len(swarm))
+        rebels = all_indices[:num_rebels]
+        escapists = all_indices[num_rebels:num_rebels + num_escapists]
+
+        # Assign roles with potential overlap
+        for i, particle in enumerate(swarm):
+            particle.attributes['is_rebel'] = (i in rebels)
+            particle.attributes['is_escapist'] = (i in escapists)
+
+    def update_velocity(self, swarm: List[FloatSolution]) -> None:
+        diversity = self.calculate_swarm_diversity(swarm)
+        self.adapt_parameters(diversity)
+
+        for particle in swarm:
+            # Base components
+            cognitive = self.c1 * random.random()
+            social = self.c2 * random.random()
+
+            # Get reference points
+            pbest = np.array(particle.attributes['best_position'])
+            gbest = np.array(self.best_global.variables)
+            current = np.array(particle.variables)
+
+            # Rebel logic: Inverse social component
+            if particle.attributes['is_rebel']:
+                social_dir = current - gbest
+            else:
+                social_dir = gbest - current
+
+            # Escapist logic: Inverse cognitive component
+            if particle.attributes['is_escapist']:
+                cognitive_dir = current - pbest
+            else:
+                cognitive_dir = pbest - current
+
+            # Hybrid velocity update
+            velocity = (self.w * np.array(particle.attributes['velocity']) +
+                        cognitive * cognitive_dir +
+                        social * social_dir)
+
+            particle.attributes['velocity'] = velocity.tolist()
+
+    def adapt_parameters(self, diversity: float):
+        """Dynamic parameter adaptation based on swarm state"""
+        # Inertia adaptation
+        if diversity < self.diversity_threshold:
+            self.w = min(self.max_inertia, self.w * 1.05)  # Encourage exploration
+        else:
+            self.w = max(self.min_inertia, self.w * 0.95)  # Encourage exploitation
+
+        # Role adaptation
+        improvement_rate = self.calculate_improvement_rate()
+        if improvement_rate < 0.01:
+            self.rebel_ratio = min(0.3, self.rebel_ratio * 1.1)
+            self.escapist_ratio = min(0.3, self.escapist_ratio * 1.1)
+
+    def calculate_swarm_diversity(self, swarm) -> float:
+        """Measure population spread using mean pairwise distance"""
+        positions = np.array([p.variables for p in swarm])
+        centroid = np.mean(positions, axis=0)
+        return np.mean(np.linalg.norm(positions - centroid, axis=1))
+
+    def calculate_improvement_rate(self) -> float:
+        """Track fitness improvement over the last N iterations."""
+        window_size = 10
+        self.convergence_window.append(self.best_global.objectives[0])
+
+        # if len(self.convergence_window) < window_size:
+        #     return 1.0
+        #
+        # return (self.convergence_window[-window_size] -
+        #         self.convergence_window[-1]) / self.convergence_window[-window_size]
+
+        effective_window_size = min(len(self.convergence_window), window_size)
+        return (self.convergence_window[-effective_window_size] -
+                self.convergence_window[-1]) / self.convergence_window[-effective_window_size]
+
+    def perturbation(self, swarm: List[FloatSolution]) -> None:
+        """Chaotic perturbation for diversity maintenance"""
+        best = self.best_global.variables
+        for particle in swarm:
+            if random.random() < 0.1 * (1 - self.w):
+                noise = 0.1 * (self.max_inertia - self.w) * (np.random.rand() - 0.5)
+                particle.variables = [
+                    np.clip(x + noise * (x - best[i]),
+                            self.problem.lower_bound[i],
+                            self.problem.upper_bound[i]
+                            ) for i, x in enumerate(particle.variables)]
