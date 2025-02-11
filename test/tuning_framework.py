@@ -76,7 +76,7 @@ ALGO_SPACES = {
 
 
 class OptimizationRunner:
-    def __init__(self, algorithm_name: str, max_evals: int = 25000, n_runs: int = 1):
+    def __init__(self, algorithm_name: str, max_evals: int = 25000, n_runs: int = 5):
         """
         Initializes the optimization runner.
         :param algorithm_name: Name of the algorithm to optimize.
