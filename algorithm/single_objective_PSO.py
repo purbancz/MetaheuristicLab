@@ -31,7 +31,21 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
 
     def create_initial_solutions(self) -> List[FloatSolution]:
         self.solutions = [self.problem.create_solution() for _ in range(self.swarm_size)]
+
+        for solution in self.solutions:
+            self.problem.evaluate(solution)
+            solution.attributes['best_position'] = solution.variables.copy()
+            solution.attributes['best_objective'] = solution.objectives[0]
+            solution.attributes['velocity'] = np.random.uniform(
+                -1, 1, self.problem.number_of_variables()
+            ).tolist()
+
+        self.best_global = deepcopy(min(self.solutions, key=lambda sol: sol.objectives[0]))
         return self.solutions
+
+    def run(self):
+        super().run()
+        return self
 
     def evaluate(self, solution_list: List[FloatSolution]) -> List[FloatSolution]:
         return [self.problem.evaluate(sol) for sol in solution_list]
@@ -41,14 +55,20 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
 
     def initialize_velocity(self, swarm: List[FloatSolution]) -> None:
         for particle in swarm:
-            particle.attributes['velocity'] = np.random.uniform(-1, 1, self.problem.number_of_variables())
+            particle.attributes['velocity'] = np.random.uniform(
+                -1, 1, self.problem.number_of_variables()
+            ).tolist()
 
     def initialize_particle_best(self, swarm: List[FloatSolution]) -> None:
         for particle in swarm:
-            particle.attributes['best_position'] = np.array(particle.variables.copy())
-            particle.attributes['best_objective'] = particle.objectives[0]
+            if 'best_position' not in particle.attributes:
+                particle.attributes['best_position'] = particle.variables.copy()
+            if 'best_objective' not in particle.attributes:
+                particle.attributes['best_objective'] = particle.objectives[0]
 
     def initialize_global_best(self, swarm: List[FloatSolution]) -> None:
+        if not swarm:
+            raise RuntimeError("Swarm is empty during global best initialization!")
         self.best_global = min(swarm, key=lambda x: x.objectives[0])
 
     def update_velocity(self, swarm: List[FloatSolution]) -> None:
@@ -67,11 +87,8 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
 
     def update_position(self, swarm: List[FloatSolution]) -> None:
         for particle in swarm:
-            # Convert to numpy array for vector operations
             current_position = np.array(particle.variables)
             new_position = current_position + np.array(particle.attributes['velocity'])
-
-            # Apply bounds and convert back to list
             clipped_position = np.clip(new_position,
                                        self.problem.lower_bound,
                                        self.problem.upper_bound)
@@ -102,7 +119,8 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
 
 
     def perturbation(self, swarm: List[FloatSolution]) -> None:
-        pass  # Optional implementation
+        # Optional: Add any perturbation logic if needed.
+        pass
 
     def result(self) -> FloatSolution:
         return self.best_global
