@@ -1,0 +1,9 @@
+humanize
+jmetalpy
+matplotlib
+numpy
+pandas
+scikit_optimize
+scikit_posthocs
+scipy
+statsmodels
