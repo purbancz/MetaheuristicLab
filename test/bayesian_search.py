@@ -11,11 +11,11 @@ from jmetal.operator import PolynomialMutation, SBXCrossover
 from algorithm.PGSHEA import PGSHEA
 
 space = [
-    # Real(2.3, 2.8, name='c1'),
-    # Real(0.2, .22, name='c2'),
+    Real(2.3, 2.8, name='c1'),
+    Real(0.2, .22, name='c2'),
     Real(1e-7, 1e-4, name='w'),
-    # Real(0.4, 0.44, "log-uniform", name='mutation_factor'),
-    # Integer(20, 132, name='exchange_interval')
+    Real(0.4, 0.44, "log-uniform", name='mutation_factor'),
+    Integer(20, 132, name='exchange_interval')
 ]
 
 start = time.time()
@@ -25,10 +25,10 @@ results_gp = None
 
 
 @use_named_args(space)
-def objective(w):
+def objective(c1, c2, w, mutation_factor, exchange_interval):
     global run_count
     problem = Rastrigin(100)
-    mutation = PolynomialMutation(0.377 / problem.number_of_variables(), 20.0)
+    mutation = PolynomialMutation(mutation_factor / problem.number_of_variables(), 20.0)
     crossover = SBXCrossover(1.0, 5.0)
     num_runs = 5
     results = []
@@ -37,12 +37,12 @@ def objective(w):
         algorithm = PGSHEA(
             problem=problem,
             solutions_size=100,
-            c1=2.63,
-            c2=0.21,
+            c1=c1,
+            c2=c2,
             w=w,
             mutation=mutation,
             crossover=crossover,
-            swap_interval=125,
+            swap_interval=exchange_interval,
             starting_algorithm='PSO',
             termination_criterion=StoppingByEvaluations(max_evaluations=25000)
         )

@@ -8,7 +8,7 @@ from jmetal.util.termination_criterion import StoppingByEvaluations
 from algorithm.PGCHEA import PGCHEA
 from algorithm.PGPHEA import PGPHEA
 from algorithm.PGSHEA import PGSHEA
-from algorithm.single_objective_PSO import SingleObjectivePSO
+from algorithm.single_objective_PSO import SingleObjectivePSO, RebelPSO, EscapistPSO, RebelEscapistPSO, REAPSO
 
 from problem.fixed_varaibles.branin import BraninRCOC
 from problem.fixed_varaibles.de_joung import DeJoung
@@ -30,7 +30,7 @@ from problem.n_variables.zakharov import Zakharov
 
 def setup_experiment():
     no_of_runs = 10
-    number_of_variables = 10
+    number_of_variables = 100
     solutions_size = 100
     max_evaluations = 25000
     frequency = solutions_size  # Snapshot each generation
@@ -40,7 +40,11 @@ def setup_experiment():
         'PSO': 'orange',
         'PGPHEA': 'purple',
         'PGSHEA': 'green',
-        'PGCHEA': 'red'
+        'PGCHEA': 'red',
+        'RebelPSO': 'cyan',
+        'EscapistPSO': 'magenta',
+        'RebelEscapistPSO': 'brown',
+        "REAPSO": "pink"
     }
 
     results_dir = 'experiment_results'
@@ -51,13 +55,13 @@ def setup_experiment():
         # Zakharov(number_of_variables),
         # Rosenbrock(number_of_variables),
         # ##
-        Rastrigin(number_of_variables),
+        # Rastrigin(number_of_variables),
         Ackley(number_of_variables),
-        Griewank(number_of_variables),
-        Levy(number_of_variables),
-        Michalewicz(number_of_variables),
-        Schwefel(number_of_variables),
-        ShiftedRotatedWeierstrass(number_of_variables),
+        # Griewank(number_of_variables),
+        # Levy(number_of_variables),
+        # Michalewicz(number_of_variables),
+        # Schwefel(number_of_variables),
+        # ShiftedRotatedWeierstrass(number_of_variables),
     ]
 
     fixed_variables_problems = [
@@ -127,6 +131,45 @@ def setup_experiment():
             starting_algorithm='PSO',
             termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
         ),
+        # New PSO variants
+        'RebelPSO': lambda p: RebelPSO(
+            problem=p,
+            swarm_size=solutions_size,
+            c1=1.97,
+            c2=0.94,
+            w=0.56,
+            rebel_fraction=0.1,
+            termination_criterion=StoppingByEvaluations(max_evaluations)
+        ),
+        'EscapistPSO': lambda p: EscapistPSO(
+            problem=p,
+            swarm_size=solutions_size,
+            c1=1.97,
+            c2=0.94,
+            w=0.56,
+            escapist_fraction=0.1,
+            termination_criterion=StoppingByEvaluations(max_evaluations)
+        ),
+        'RebelEscapistPSO': lambda p: RebelEscapistPSO(
+            problem=p,
+            swarm_size=solutions_size,
+            c1=1.97,
+            c2=0.94,
+            w=0.56,
+            rebel_fraction=0.1,
+            escapist_fraction=0.1,
+            termination_criterion=StoppingByEvaluations(max_evaluations)
+        ),
+        'REAPSO': lambda p: REAPSO(
+            problem=p,
+            swarm_size=solutions_size,
+            rebel_ratio=0.1,
+            escapist_ratio=0.1,
+            base_inertia=0.9,
+            min_inertia=0.4,
+            max_inertia=1.2,
+            termination_criterion=StoppingByEvaluations(max_evaluations)
+        )
     }
 
     return (algorithms, problems, no_of_runs, number_of_variables, solutions_size,

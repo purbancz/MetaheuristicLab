@@ -46,7 +46,7 @@ class PGCHEA(Algorithm[S, R]):
         self.best_global = None
 
         self.pso = SingleObjectivePSO(
-            problem=problem, swarm_size=solutions_size, c1=c1, c2=c2, w=w
+            problem=problem, swarm_size=solutions_size, c1=c1, c2=c2, w=w, termination_criterion=termination_criterion
         )
         self.ga = GeneticAlgorithm(
             problem=problem, population_size=solutions_size, offspring_population_size=100,
