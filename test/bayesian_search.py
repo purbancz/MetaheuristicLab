@@ -1,120 +1,100 @@
 import os
 import time
-import humanize
-
-from skopt.space import Real, Integer
+import json
+from skopt.space import Real
 from skopt.utils import use_named_args, dump, load
 from skopt import gp_minimize
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
-from jmetal.operator import PolynomialMutation, SBXCrossover
-from algorithm.PGSHEA import PGSHEA
-from algorithm.single_objective_PSO import REAPSO
+from algorithm.single_objective_PSO import REAPSO, RebelPSO, EscapistPSO, RebelEscapistPSO
 
-space = [
-    Real(0.2, 2.5, name='c1'),
-    Real(0.2, 2.5, name='c2'),
-    Real(0.4, 1.4, name='base_inertia'),
-    Real(0.1, 0.6, name='min_inertia'),
-    Real(0.6, 2, name='max_inertia'),
-    Real(0.05, 0.6, name='rebel_ratio'),
-    Real(0.05, 0.6, name='escapist_ratio'),
-]
+n_calls = 10
 
-start = time.time()
-run_count = 0
-n_calls = 10 # 100
-results_gp = None
+ALGORITHMS = {
+    # 'REAPSO': [
+    #     Real(0.2, 2.5, name='c1'),
+    #     Real(0.2, 2.5, name='c2'),
+    #     Real(0.4, 1.4, name='base_inertia'),
+    #     Real(0.1, 0.6, name='min_inertia'),
+    #     Real(0.6, 2, name='max_inertia'),
+    #     Real(0.05, 0.6, name='rebel_ratio'),
+    #     Real(0.05, 0.6, name='escapist_ratio'),
+    # ],
+    # 'RebelPSO': [
+    #     Real(0.2, 2.5, name='c1'),
+    #     Real(0.2, 2.5, name='c2'),
+    #     Real(0.1, 1.4, name='w'),
+    #     Real(0.05, 0.6, name='rebel_fraction'),
+    # ],
+    'EscapistPSO': [
+        Real(0.2, 2.5, name='c1'),
+        Real(0.2, 2.5, name='c2'),
+        Real(0.1, 1.4, name='w'),
+        Real(0.05, 0.6, name='escapist_fraction'),
+    ],
+    'RebelEscapistPSO': [
+        Real(0.2, 2.5, name='c1'),
+        Real(0.2, 2.5, name='c2'),
+        Real(0.1, 1.4, name='w'),
+        Real(0.05, 0.6, name='rebel_fraction'),
+        Real(0.05, 0.6, name='escapist_fraction'),
+    ],
+}
 
 
-@use_named_args(space)
-def objective(c1, c2, base_inertia, min_inertia, max_inertia, rebel_ratio, escapist_ratio):
-    global run_count
-    problem = Rastrigin(100)
-    num_runs = 5
-    results = []
+def run_optimization(algorithm_name, space):
+    results_file = f'{algorithm_name}_results.json'
+    pickle_file = f'{algorithm_name}_results.pkl'
+    prev_results = load(pickle_file) if os.path.exists(pickle_file) else None
+    run_count = 0
 
-    for _ in range(num_runs):
-        algorithm = REAPSO(
-            problem=problem,
-            swarm_size=100,
-            c1=c1,
-            c2=c2,
-            rebel_ratio=rebel_ratio,
-            escapist_ratio=escapist_ratio,
-            base_inertia=base_inertia,
-            min_inertia=min_inertia,
-            max_inertia=max_inertia,
-            termination_criterion=StoppingByEvaluations(max_evaluations=25000)
-        )
-        algorithm.run()
-        result = algorithm.result()
-        results.append(result.objectives[0])
+    @use_named_args(space)
+    def objective(**params):
+        nonlocal run_count
+        problem = Rastrigin(100)
+        num_runs = 5
+        results = []
+
+        AlgorithmClass = globals()[algorithm_name]
+        for _ in range(num_runs):
+
+            algorithm = AlgorithmClass(
+                problem=problem,
+                swarm_size=100,
+                termination_criterion=StoppingByEvaluations(max_evaluations=25000),
+                **params
+            )
+            algorithm.run()
+            result = algorithm.result()
+            results.append(result.objectives[0])
 
         run_count += 1
-        elapsed_time = time.time() - start
-        estimated_total_time = (elapsed_time / run_count) * (num_runs * n_calls)
-        remaining_time = estimated_total_time - elapsed_time
+        avg_result = sum(results) / num_runs
 
-        print(f'\033[93mRun {run_count}/{num_runs * n_calls}\033[0m')
-        print(f'\033[92mElapsed time: {format_time(elapsed_time)}\033[0m')
-        print(f'\033[92mEstimated time left: {format_time(remaining_time)}\033[0m')
+        data = {
+            'run_number': run_count,
+            'params': params,
+            'average_result': avg_result
+        }
+        with open(results_file, 'a') as f:
+            f.write(json.dumps(data) + '\n')
+        return avg_result
 
-    average_result = sum(results) / len(results)
-    print(f'\033[93mc1: {c1}, c2: {c2}, base_inertia: {base_inertia}, min_inertia: {min_inertia},\033[0m'
-          f'\033[93m max_inertia {max_inertia}, rebel_ratio: {rebel_ratio}, escapist_ratio: {escapist_ratio}\033[0m'
-          )
-    print(f'\033[93m Average result: {average_result}\033[0m')
-    return average_result
+    x0, y0 = (prev_results.x_iters, list(prev_results.func_vals)) if prev_results else (None, None)
+    new_results = gp_minimize(objective, space, n_calls=n_calls, x0=x0, y0=y0, random_state=0)
+    dump(new_results, pickle_file, store_objective=False)
 
+    best_data = {
+        'run_number': 'best',
+        'best_params': new_results.x,
+        'best_objective': new_results.fun
+    }
+    with open(results_file, 'a') as f:
+        f.write(json.dumps(best_data) + '\n')
 
-def format_time(seconds):
-    hours, remainder = divmod(seconds, 3600)
-    minutes, seconds = divmod(remainder, 60)
-    time_str = ""
-    if hours > 0:
-        time_str += f"{int(hours)}h "
-    if minutes > 0 or hours > 0:
-        time_str += f"{int(minutes)}min "
-    time_str += f"{int(seconds)}sec"
-    return time_str.strip()
+    return new_results
 
-
-if os.path.exists('previous_results.pkl'):
-    results_gp = load('previous_results.pkl')
-
-
-def run_optimization():
-    global results_gp
-    x0, y0 = None, None
-    additional_calls = n_calls
-
-    if results_gp:
-        # Load previous x and y values if results_gp already exists
-        x0 = results_gp.x_iters
-        y0 = list(results_gp.func_vals)
-
-    new_results_gp = gp_minimize(
-        objective,
-        space,
-        n_calls=additional_calls,
-        x0=x0,
-        y0=y0,
-        random_state=0
-    )
-
-    # Manually combine the results if previous results exist
-    if results_gp:
-        new_x_iters = results_gp.x_iters + new_results_gp.x_iters
-        new_func_vals = list(results_gp.func_vals) + list(new_results_gp.func_vals)
-        new_results_gp.x_iters = new_x_iters
-        new_results_gp.func_vals = new_func_vals
-
-    # Save the updated results
-    dump(new_results_gp, 'previous_results.pkl', store_objective=False)
-    return new_results_gp
-
-
-res_gp = run_optimization()
-print("Best parameters:", res_gp.x)
-print("Best objective:", res_gp.fun)
+if __name__ == "__main__":
+    for algo_name, param_space in ALGORITHMS.items():
+        print(f"Running optimization for {algo_name}...")
+        run_optimization(algo_name, param_space)

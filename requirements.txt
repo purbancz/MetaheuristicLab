@@ -7,3 +7,6 @@ scikit_optimize
 scikit_posthocs
 scipy
 statsmodels
+scikit-optimize
+joblib
+mpi4py
