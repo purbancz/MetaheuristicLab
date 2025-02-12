@@ -2,8 +2,8 @@
 #SBATCH --job-name=pso_parameters_tuning
 #SBATCH --output=%x_%j.out
 #SBATCH --error=%x_%j.err
-#SBATCH --time=12:00:00
-#SBATCH --partition=plgrid-now
+#SBATCH --time=01:00:00
+#SBATCH --partition=plgrid
 #SBATCH --account=plglscclass24-cpu
 #SBATCH --nodes=2
 #SBATCH --ntasks=16
@@ -16,9 +16,18 @@ conda init
 eval "$(conda shell.bash hook)"
 conda activate jmetal
 
-echo "PYTHON SCRIPT IS BEING EXECUTED"
+# Log start time
+START_TIME=$(date +%s)
+echo "Job started at: $(date -d @$START_TIME)"
 
 # Run the Python script
+echo "PYTHON SCRIPT IS BEING EXECUTED"
+export PYTHONPATH="$HOME/GA-PSO_Hybrid:$PYTHONPATH"
 python $HOME/GA-PSO_Hybrid/test/tuning_framework.py
-
 echo "PSO tuning completed successfully."
+
+# Log end time
+END_TIME=$(date +%s)
+echo "Job finished at: $(date)"
+EXECUTION_TIME=$((END_TIME - START_TIME))
+echo "Total execution time: $(date -u -d @$EXECUTION_TIME +%H:%M:%S)"
