@@ -23,8 +23,8 @@ echo "Job started at: $(date -d @$START_TIME)"
 # Run the Python script
 echo "PYTHON SCRIPT IS BEING EXECUTED"
 export PYTHONPATH="$HOME/GA-PSO_Hybrid:$PYTHONPATH"
-python $HOME/GA-PSO_Hybrid/test/tuning_framework.py
-echo "PSO tuning completed successfully."
+python -u $HOME/GA-PSO_Hybrid/test/bayesian_search.py
+echo "Tuning completed successfully."
 
 # Log end time
 END_TIME=$(date +%s)

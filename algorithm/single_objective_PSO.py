@@ -223,6 +223,8 @@ class REAPSO(SingleObjectivePSO):
     def __init__(self,
                  problem: FloatProblem,
                  swarm_size: int,
+                 c1: float,
+                 c2: float,
                  base_inertia: float,
                  min_inertia: float,
                  max_inertia: float,
@@ -233,8 +235,8 @@ class REAPSO(SingleObjectivePSO):
         super().__init__(
             problem=problem,
             swarm_size=swarm_size,
-            c1=1.496,  # Cognitive coefficient
-            c2=1.496,  # Social coefficient
+            c1=c1,
+            c2=c2,
             w=base_inertia,
             termination_criterion=termination_criterion
         )

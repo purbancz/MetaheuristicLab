@@ -9,41 +9,42 @@ from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
 from jmetal.operator import PolynomialMutation, SBXCrossover
 from algorithm.PGSHEA import PGSHEA
+from algorithm.single_objective_PSO import REAPSO
 
 space = [
-    Real(2.3, 2.8, name='c1'),
-    Real(0.2, .22, name='c2'),
-    Real(1e-7, 1e-4, name='w'),
-    Real(0.4, 0.44, "log-uniform", name='mutation_factor'),
-    Integer(20, 132, name='exchange_interval')
+    Real(0.2, 2.5, name='c1'),
+    Real(0.2, 2.5, name='c2'),
+    Real(0.4, 1.4, name='base_inertia'),
+    Real(0.1, 0.6, name='min_inertia'),
+    Real(0.6, 2, name='max_inertia'),
+    Real(0.05, 0.6, name='rebel_ratio'),
+    Real(0.05, 0.6, name='escapist_ratio'),
 ]
 
 start = time.time()
 run_count = 0
-n_calls = 100
+n_calls = 10 # 100
 results_gp = None
 
 
 @use_named_args(space)
-def objective(c1, c2, w, mutation_factor, exchange_interval):
+def objective(c1, c2, base_inertia, min_inertia, max_inertia, rebel_ratio, escapist_ratio):
     global run_count
     problem = Rastrigin(100)
-    mutation = PolynomialMutation(mutation_factor / problem.number_of_variables(), 20.0)
-    crossover = SBXCrossover(1.0, 5.0)
     num_runs = 5
     results = []
 
     for _ in range(num_runs):
-        algorithm = PGSHEA(
+        algorithm = REAPSO(
             problem=problem,
-            solutions_size=100,
+            swarm_size=100,
             c1=c1,
             c2=c2,
-            w=w,
-            mutation=mutation,
-            crossover=crossover,
-            swap_interval=exchange_interval,
-            starting_algorithm='PSO',
+            rebel_ratio=rebel_ratio,
+            escapist_ratio=escapist_ratio,
+            base_inertia=base_inertia,
+            min_inertia=min_inertia,
+            max_inertia=max_inertia,
             termination_criterion=StoppingByEvaluations(max_evaluations=25000)
         )
         algorithm.run()
@@ -60,9 +61,9 @@ def objective(c1, c2, w, mutation_factor, exchange_interval):
         print(f'\033[92mEstimated time left: {format_time(remaining_time)}\033[0m')
 
     average_result = sum(results) / len(results)
-    # print(f'\033[93mc1: {c1}, c2: {c2}, w: {w}, mutation_factor: {mutation_factor},\033[0m'
-    #       f'\033[93m exchange_interval {exchange_interval},\033[0m'
-    #       )
+    print(f'\033[93mc1: {c1}, c2: {c2}, base_inertia: {base_inertia}, min_inertia: {min_inertia},\033[0m'
+          f'\033[93m max_inertia {max_inertia}, rebel_ratio: {rebel_ratio}, escapist_ratio: {escapist_ratio}\033[0m'
+          )
     print(f'\033[93m Average result: {average_result}\033[0m')
     return average_result
 
