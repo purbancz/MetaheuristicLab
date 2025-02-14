@@ -1,43 +1,87 @@
 import os
 import time
 import json
-from skopt.space import Real
+from skopt.space import Real, Integer
 from skopt.utils import use_named_args, dump, load
 from skopt import gp_minimize
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
-from algorithm.single_objective_PSO import REAPSO, RebelPSO, EscapistPSO, RebelEscapistPSO
+from algorithm.FAPSO import FAPSO
+from algorithm.NPSO import NPSO
+from algorithm.QTPSO import QTPSO
+from algorithm.SPPPSO import SPPPSO
+from algorithm.TDPSO import TDPSO
+from algorithm.single_objective_PSO import REAPSO, RebelPSO, EscapistPSO, RebelEscapistPSO, SingleObjectivePSO
 
-n_calls = 100
+
+n_calls = 300
 
 ALGORITHMS = {
+    'SingleObjectivePSO': [
+        Real(0.01, 10, name='c1'),
+        Real(0.01, 10, name='c2'),
+        Real(0.01, 10, name='w'),
+    ],
     'REAPSO': [
-        Real(0.2, 3, name='c1'),
-        Real(0.2, 3, name='c2'),
-        Real(0.4, 1.4, name='base_inertia'),
-        Real(0.1, 0.6, name='min_inertia'),
-        Real(0.6, 2, name='max_inertia'),
-        Real(0.05, 0.6, name='rebel_ratio'),
-        Real(0.05, 0.6, name='escapist_ratio'),
+        Real(0.01, 10, name='c1'),
+        Real(0.01, 10, name='c2'),
+        Real(0.01, 10, name='base_inertia'),
+        Real(0.01, 10, name='min_inertia'),
+        Real(0.01, 10, name='max_inertia'),
+        Real(0.05, 0.8, name='rebel_ratio'),
+        Real(0.05, 0.8, name='escapist_ratio'),
     ],
     'RebelPSO': [
-        Real(0.2, 3, name='c1'),
-        Real(0.2, 3, name='c2'),
-        Real(0.1, 1.4, name='w'),
-        Real(0.05, 0.6, name='rebel_fraction'),
+        Real(0.01, 10, name='c1'),
+        Real(0.01, 10, name='c2'),
+        Real(0.01, 10, name='w'),
+        Real(0.05, 0.8, name='rebel_fraction'),
     ],
     'EscapistPSO': [
-        Real(0.2, 3, name='c1'),
-        Real(0.2, 3, name='c2'),
-        Real(0.1, 1.4, name='w'),
-        Real(0.05, 0.6, name='escapist_fraction'),
+        Real(0.01, 10, name='c1'),
+        Real(0.01, 10, name='c2'),
+        Real(0.01, 10, name='w'),
+        Real(0.05, 0.8, name='escapist_fraction'),
     ],
     'RebelEscapistPSO': [
-        Real(0.2, 3, name='c1'),
-        Real(0.2, 3, name='c2'),
-        Real(0.1, 1.4, name='w'),
-        Real(0.05, 0.6, name='rebel_fraction'),
-        Real(0.05, 0.6, name='escapist_fraction'),
+        Real(0.01, 10, name='c1'),
+        Real(0.01, 10, name='c2'),
+        Real(0.01, 10, name='w'),
+        Real(0.05, 0.8, name='rebel_fraction'),
+        Real(0.05, 0.8, name='escapist_fraction'),
+    ],
+    'QTPSO': [
+        Real(0.01, 10, name='c1'),
+        Real(0.01, 10, name='c2'),
+        Real(0.01, 10, name='w'),
+        Real(0.01, 1.0, name='quantum_prob'),
+        Real(0.01, 1.0, name='chaos_strength'),
+    ],
+    'SPPPSO': [
+        Real(0.01, 10, name='c1'),
+        Real(0.01, 10, name='c2'),
+        Real(0.01, 10, name='w'),
+        Real(0.01, 0.5, name='predator_ratio'),
+        Real(0.01, 0.5, name='scavenger_ratio'),
+    ],
+    'TDPSO': [
+        Real(0.01, 10, name='c1'),
+        Real(0.01, 10, name='c2'),
+        Real(0.01, 10, name='w'),
+        Real(0.1, 5.0, name='temperature'),
+        Real(0.9, 1.0, name='cooling_rate'),
+    ],
+    'NPSO': [
+        Real(0.01, 10, name='c1'),
+        Real(0.01, 10, name='c2'),
+        Real(0.01, 10, name='w'),
+        Real(0.5, 1.0, name='spike_threshold'),
+    ],
+    'FAPSO': [
+        Real(0.01, 10, name='c1'),
+        Real(0.01, 10, name='c2'),
+        Real(0.01, 10, name='w'),
+        Integer(1, 5, name='fractal_depth'),
     ],
 }
 

@@ -8,7 +8,7 @@ from jmetal.core.solution import FloatSolution
 from jmetal.util.termination_criterion import TerminationCriterion
 
 S = TypeVar('S')
-R = List[FloatSolution]
+R = TypeVar('R')
 
 
 class SingleObjectivePSO(ParticleSwarmOptimization):
@@ -29,7 +29,7 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
         self.observable.register(termination_criterion)
         self.best_global = None
 
-    def create_initial_solutions(self) -> List[FloatSolution]:
+    def create_initial_solutions(self) -> List[S]:
         self.solutions = [self.problem.create_solution() for _ in range(self.swarm_size)]
 
         for solution in self.solutions:
@@ -47,31 +47,31 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
         super().run()
         return self
 
-    def evaluate(self, solution_list: List[FloatSolution]) -> List[FloatSolution]:
+    def evaluate(self, solution_list: List[S]) -> List[S]:
         return [self.problem.evaluate(sol) for sol in solution_list]
 
     def stopping_condition_is_met(self) -> bool:
         return self.termination_criterion.is_met
 
-    def initialize_velocity(self, swarm: List[FloatSolution]) -> None:
+    def initialize_velocity(self, swarm: List[S]) -> None:
         for particle in swarm:
             particle.attributes['velocity'] = np.random.uniform(
                 -1, 1, self.problem.number_of_variables()
             ).tolist()
 
-    def initialize_particle_best(self, swarm: List[FloatSolution]) -> None:
+    def initialize_particle_best(self, swarm: List[S]) -> None:
         for particle in swarm:
             if 'best_position' not in particle.attributes:
                 particle.attributes['best_position'] = particle.variables.copy()
             if 'best_objective' not in particle.attributes:
                 particle.attributes['best_objective'] = particle.objectives[0]
 
-    def initialize_global_best(self, swarm: List[FloatSolution]) -> None:
+    def initialize_global_best(self, swarm: List[S]) -> None:
         if not swarm:
             raise RuntimeError("Swarm is empty during global best initialization!")
         self.best_global = min(swarm, key=lambda x: x.objectives[0])
 
-    def update_velocity(self, swarm: List[FloatSolution]) -> None:
+    def update_velocity(self, swarm: List[S]) -> None:
         for particle in swarm:
             r1 = random.random()
             r2 = random.random()
@@ -85,7 +85,7 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
 
             particle.attributes['velocity'] = new_velocity.tolist()
 
-    def update_position(self, swarm: List[FloatSolution]) -> None:
+    def update_position(self, swarm: List[S]) -> None:
         for particle in swarm:
             current_position = np.array(particle.variables)
             new_position = current_position + np.array(particle.attributes['velocity'])
@@ -94,7 +94,7 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
                                        self.problem.upper_bound)
             particle.variables = clipped_position.tolist()
 
-    def update_particle_best(self, swarm: List[FloatSolution]) -> None:
+    def update_particle_best(self, swarm: List[S]) -> None:
         for particle in swarm:
             if particle.objectives[0] < particle.attributes['best_objective']:
                 particle.attributes['best_position'] = particle.variables.copy()
@@ -103,7 +103,7 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
     def update_global_best(self, swarm: List[FloatSolution]) -> None:
         current_best = min(swarm, key=lambda x: x.objectives[0])
         if current_best.objectives[0] < self.best_global.objectives[0]:
-            self.best_global = current_best
+            self.best_global = deepcopy(current_best)
 
     def set_solutions(self, solutions: List[S]):
         self.solutions = deepcopy(solutions)
@@ -118,11 +118,11 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
         self.best_global = deepcopy(min(self.solutions, key=lambda sol: sol.objectives[0]))
 
 
-    def perturbation(self, swarm: List[FloatSolution]) -> None:
+    def perturbation(self, swarm: List[S]) -> None:
         # Optional: Add any perturbation logic if needed.
         pass
 
-    def result(self) -> FloatSolution:
+    def result(self) -> R:
         return self.best_global
 
     def get_name(self) -> str:
@@ -169,12 +169,12 @@ class EscapistPSO(SingleObjectivePSO):
         super().__init__(problem, swarm_size, c1, c2, w, termination_criterion)
         self.escapist_fraction = escapist_fraction
 
-    def create_initial_solutions(self) -> List[FloatSolution]:
+    def create_initial_solutions(self) -> List[S]:
         solutions = super().create_initial_solutions()
         self._mark_escapists(solutions)
         return solutions
 
-    def _mark_escapists(self, swarm: List[FloatSolution]):
+    def _mark_escapists(self, swarm: List[S]):
         num_escapists = max(1, int(len(swarm) * self.escapist_fraction))
         escapists = random.sample(swarm, num_escapists)
         for particle in escapists:
@@ -197,12 +197,12 @@ class RebelEscapistPSO(SingleObjectivePSO):
         self.rebel_fraction = rebel_fraction
         self.escapist_fraction = escapist_fraction
 
-    def create_initial_solutions(self) -> List[FloatSolution]:
+    def create_initial_solutions(self) -> List[S]:
         solutions = super().create_initial_solutions()
         self._mark_special_particles(solutions)
         return solutions
 
-    def _mark_special_particles(self, swarm: List[FloatSolution]):
+    def _mark_special_particles(self, swarm: List[S]):
         # Mark rebels
         num_rebels = max(1, int(len(swarm) * self.rebel_fraction))
         rebels = random.sample(swarm, num_rebels)
@@ -252,12 +252,12 @@ class REAPSO(SingleObjectivePSO):
         self.convergence_window = []
         self.diversity_threshold = 0.1
 
-    def create_initial_solutions(self) -> List[FloatSolution]:
+    def create_initial_solutions(self) -> List[S]:
         solutions = super().create_initial_solutions()
         self._mark_special_particles(solutions)
         return solutions
 
-    def _mark_special_particles(self, swarm: List[FloatSolution]):
+    def _mark_special_particles(self, swarm: List[S]):
         # Ensure minimum 1 particle per type
         num_rebels = max(1, int(len(swarm) * self.rebel_ratio))
         num_escapists = max(1, int(len(swarm) * self.escapist_ratio))
@@ -340,7 +340,7 @@ class REAPSO(SingleObjectivePSO):
         return (self.convergence_window[-effective_window_size] -
                 self.convergence_window[-1]) / self.convergence_window[-effective_window_size]
 
-    def perturbation(self, swarm: List[FloatSolution]) -> None:
+    def perturbation(self, swarm: List[S]) -> None:
         """Chaotic perturbation for diversity maintenance"""
         best = self.best_global.variables
         for particle in swarm:

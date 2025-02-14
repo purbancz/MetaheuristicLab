@@ -2,13 +2,13 @@
 #SBATCH --job-name=pso_parameters_tuning
 #SBATCH --output=%x_%j.out
 #SBATCH --error=%x_%j.err
-#SBATCH --time=4:00:00
-#SBATCH --partition=plgrid-now
+#SBATCH --time=48:00:00
+#SBATCH --partition=plgrid
 #SBATCH --account=plglscclass24-cpu
 #SBATCH --nodes=1
-#SBATCH --ntasks=4
-#SBATCH --cpus-per-task=4
-#SBATCH --mem=16G
+#SBATCH --ntasks=8
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=32G
 
 
 # Load modules and activate the conda environment
@@ -24,7 +24,7 @@ echo "Job started at: $(date -d @$START_TIME)"
 # Run the Python script
 echo "PYTHON SCRIPT IS BEING EXECUTED"
 export PYTHONPATH="$HOME/GA-PSO_Hybrid:$PYTHONPATH"
-python -u $HOME/GA-PSO_Hybrid/test/ray_tune.py
+python -u $HOME/GA-PSO_Hybrid/test/bayesian_search.py
 echo "Tuning completed successfully."
 
 # Log end time

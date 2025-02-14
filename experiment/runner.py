@@ -1,3 +1,4 @@
+import copy
 import csv
 import pickle
 from datetime import datetime
@@ -24,6 +25,7 @@ def run_all_experiments():
 
         all_data = []
         for problem in problems:
+            problem = copy.deepcopy(problem)
             initialized_algorithms = initialize_algorithms(algorithms, problem)
             problem_data = {'problem': problem.name(), 'n_vars': problem.number_of_variables(), 'results': {}}
             for name, algorithm in initialized_algorithms.items():
@@ -55,11 +57,11 @@ def run_all_experiments():
                                       no_of_runs=no_of_runs, algorithms_to_compare=[algorithm],
                                       results_dir=dimensions_dir,
                                       algorithm_colors=algorithm_colors)
-            for algorithm in ['PGSHEA', 'PGPHEA', 'PGCHEA']:
-                plot_box_at_intervals(problem_data['results'], problem, max_evaluations=max_evaluations,
-                                      no_of_runs=no_of_runs, algorithms_to_compare=[algorithm] + ['GA', 'PSO'],
-                                      results_dir=dimensions_dir,
-                                      algorithm_colors=algorithm_colors)
+            # for algorithm in ['PGSHEA', 'PGPHEA', 'PGCHEA']:
+            #     plot_box_at_intervals(problem_data['results'], problem, max_evaluations=max_evaluations,
+            #                           no_of_runs=no_of_runs, algorithms_to_compare=[algorithm] + ['GA', 'PSO'],
+            #                           results_dir=dimensions_dir,
+            #                           algorithm_colors=algorithm_colors)
             plot_final_box(problem_data['results'], problem, dimensions_dir, algorithm_colors)
 
     with open(f'{dimensions_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_experiment_data.pkl', 'wb') as f:

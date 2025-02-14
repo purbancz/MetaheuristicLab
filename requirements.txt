@@ -3,9 +3,8 @@ jmetalpy
 matplotlib
 numpy
 pandas
-scikit_optimize
 scikit_posthocs
 scipy
 statsmodels
 scikit-optimize
-ray
+ray[tune]
