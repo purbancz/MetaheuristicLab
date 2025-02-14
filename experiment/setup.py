@@ -70,8 +70,8 @@ def setup_experiment():
         # Rosenbrock(number_of_variables),
         # ##
         Rastrigin(number_of_variables),
-        # Ackley(number_of_variables),
-        # Griewank(number_of_variables),
+        Ackley(number_of_variables),
+        Griewank(number_of_variables),
         # Levy(number_of_variables),
         # Michalewicz(number_of_variables),
         # Schwefel(number_of_variables),

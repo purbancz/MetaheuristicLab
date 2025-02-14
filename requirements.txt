@@ -8,3 +8,8 @@ scipy
 statsmodels
 scikit-optimize
 ray[tune]
+rpy2
+irace
+futures
+joblib
+mpi4py
