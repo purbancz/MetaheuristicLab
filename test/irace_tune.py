@@ -32,7 +32,7 @@ number_of_variables = 100
 solutions_size = 100
 max_evaluations = 25000
 num_runs = 5   # Number of independent runs per problem
-budget = 96    # Total number of configurations to try in irace
+budget = 1000    # Total number of configurations to try in irace
 
 # Define benchmark problems for tuning
 problems = [
@@ -147,12 +147,12 @@ if __name__ == "__main__":
         # Create a ParameterSpace instance from the list of parameters
         parameter_space = ParameterSpace(params=space_list)
         # Create a Scenario instance with the desired settings
-        scenario = Scenario(max_experiments=budget, seed=42, n_jobs=1)
+        scenario = Scenario(max_experiments=budget, seed=42, n_jobs=4)
         # Run irace using the target_runner, parameter_space, and scenario.
         result = irace(target_runner, parameter_space, scenario, return_df=True, remove_metadata=True)
         best_configurations[algo_name] = result
         print(f"Best configuration for {algo_name}: {result}")
 
     # Save the best configurations to a JSON file for later reference.
-    with open("best_configurations.json", "w") as f:
+    with open("irace_best_configurations.json", "w") as f:
         json.dump(best_configurations, f, indent=4)

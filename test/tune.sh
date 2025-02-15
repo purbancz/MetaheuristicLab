@@ -6,8 +6,8 @@
 #SBATCH --partition=plgrid
 #SBATCH --account=plglscclass24-cpu
 #SBATCH --nodes=1
-#SBATCH --ntasks=8
-#SBATCH --cpus-per-task=8
+#SBATCH --ntasks=4
+#SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
 
 
@@ -15,7 +15,7 @@
 module load miniconda3
 conda init
 eval "$(conda shell.bash hook)"
-conda activate jmetal
+conda activate jmetal12
 
 # Log start time
 START_TIME=$(date +%s)
@@ -24,7 +24,7 @@ echo "Job started at: $(date -d @$START_TIME)"
 # Run the Python script
 echo "PYTHON SCRIPT IS BEING EXECUTED"
 export PYTHONPATH="$HOME/GA-PSO_Hybrid:$PYTHONPATH"
-python -u $HOME/GA-PSO_Hybrid/test/bayesian_search.py
+python -u $HOME/GA-PSO_Hybrid/test/irace_tune.py
 echo "Tuning completed successfully."
 
 # Log end time
