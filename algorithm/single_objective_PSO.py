@@ -1,3 +1,4 @@
+from collections import deque
 from copy import deepcopy
 from typing import List, TypeVar
 import random
@@ -220,8 +221,14 @@ class RebelEscapistPSO(SingleObjectivePSO):
 class REAPSO(SingleObjectivePSO):
     """PSO with rebel and escapist particles and adaptive parameters"""
 
+    def create_initial_solutions(self) -> List[S]:
+        solutions = super().create_initial_solutions()
+        self._mark_special_particles(solutions)
+        return solutions
+
     def __init__(self,
                  problem: FloatProblem,
+                 termination_criterion: TerminationCriterion,
                  swarm_size: int,
                  c1: float,
                  c2: float,
@@ -230,8 +237,13 @@ class REAPSO(SingleObjectivePSO):
                  max_inertia: float,
                  rebel_ratio: float,
                  escapist_ratio: float,
-                 termination_criterion: TerminationCriterion):
-
+                 window_size: int = 10,
+                 perturbation_probability: float = 0.1,
+                 perturbation_scale: float = 0.1,
+                 max_rebel_ratio: float = 0.8,
+                 max_escapist_ratio: float = 0.8,
+                 diversity_threshold: float = 0.1,
+                 improvement_threshold: float = 0.01):
         super().__init__(
             problem=problem,
             swarm_size=swarm_size,
@@ -247,15 +259,18 @@ class REAPSO(SingleObjectivePSO):
         self.max_inertia = max_inertia
         self.rebel_ratio = rebel_ratio
         self.escapist_ratio = escapist_ratio
+        self.max_rebel_ratio = max_rebel_ratio
+        self.max_escapist_ratio = max_escapist_ratio
+        self.diversity_threshold = diversity_threshold
+        self.improvement_threshold = improvement_threshold
+
+        # Perturbation parameters
+        self.perturbation_probability = perturbation_probability
+        self.perturbation_scale = perturbation_scale
 
         # Adaptive state tracking
-        self.convergence_window = []
-        self.diversity_threshold = 0.1
-
-    def create_initial_solutions(self) -> List[S]:
-        solutions = super().create_initial_solutions()
-        self._mark_special_particles(solutions)
-        return solutions
+        self.window_size = window_size
+        self.convergence_window = deque(maxlen=self.window_size)
 
     def _mark_special_particles(self, swarm: List[S]):
         # Ensure minimum 1 particle per type
@@ -272,9 +287,58 @@ class REAPSO(SingleObjectivePSO):
             particle.attributes['is_rebel'] = (i in rebels)
             particle.attributes['is_escapist'] = (i in escapists)
 
+    def update_special_particles(self, swarm: List[S]) -> None:
+        """
+        Adjust the rebel and escapist properties for the swarm based on
+        self.rebel_ratio and self.escapist_ratio.
+        """
+        total_particles = len(swarm)
+
+        # Determine desired counts (ensuring at least one particle per type)
+        desired_num_rebels = max(1, int(total_particles * self.rebel_ratio))
+        desired_num_escapists = max(1, int(total_particles * self.escapist_ratio))
+
+        # Get current particles with these properties
+        current_rebels = [p for p in swarm if p.attributes.get('is_rebel', False)]
+        current_escapists = [p for p in swarm if p.attributes.get('is_escapist', False)]
+
+        # --- Adjust Rebel Particles ---
+        if len(current_rebels) < desired_num_rebels:
+            # Increase: Only assign to those that are not yet rebels.
+            non_rebels = [p for p in swarm if not p.attributes.get('is_rebel', False)]
+            num_to_assign = desired_num_rebels - len(current_rebels)
+            if non_rebels and num_to_assign > 0:
+                selected = random.sample(non_rebels, min(num_to_assign, len(non_rebels)))
+                for particle in selected:
+                    particle.attributes['is_rebel'] = True
+        elif len(current_rebels) > desired_num_rebels:
+            # Decrease: Remove rebel property randomly from those that currently are rebels.
+            num_to_remove = len(current_rebels) - desired_num_rebels
+            if current_rebels and num_to_remove > 0:
+                selected = random.sample(current_rebels, num_to_remove)
+                for particle in selected:
+                    particle.attributes['is_rebel'] = False
+
+        # --- Adjust Escapist Particles ---
+        if len(current_escapists) < desired_num_escapists:
+            # Increase: Only assign to those that are not yet escapists.
+            non_escapists = [p for p in swarm if not p.attributes.get('is_escapist', False)]
+            num_to_assign = desired_num_escapists - len(current_escapists)
+            if non_escapists and num_to_assign > 0:
+                selected = random.sample(non_escapists, min(num_to_assign, len(non_escapists)))
+                for particle in selected:
+                    particle.attributes['is_escapist'] = True
+        elif len(current_escapists) > desired_num_escapists:
+            # Decrease: Remove escapist property randomly.
+            num_to_remove = len(current_escapists) - desired_num_escapists
+            if current_escapists and num_to_remove > 0:
+                selected = random.sample(current_escapists, num_to_remove)
+                for particle in selected:
+                    particle.attributes['is_escapist'] = False
+
     def update_velocity(self, swarm: List[FloatSolution]) -> None:
         diversity = self.calculate_swarm_diversity(swarm)
-        self.adapt_parameters(diversity)
+        self.adapt_parameters(diversity, swarm)
 
         for particle in swarm:
             # Base components
@@ -305,19 +369,23 @@ class REAPSO(SingleObjectivePSO):
 
             particle.attributes['velocity'] = velocity.tolist()
 
-    def adapt_parameters(self, diversity: float):
-        """Dynamic parameter adaptation based on swarm state"""
-        # Inertia adaptation
+    def adapt_parameters(self, diversity: float, swarm: List[FloatSolution]) -> None:
+        # Inertia adaptation remains the same
         if diversity < self.diversity_threshold:
-            self.w = min(self.max_inertia, self.w * 1.05)  # Encourage exploration
+            self.w = min(self.max_inertia, self.w * 1.05)
         else:
-            self.w = max(self.min_inertia, self.w * 0.95)  # Encourage exploitation
+            self.w = max(self.min_inertia, self.w * 0.95)
 
-        # Role adaptation
+        # Role adaptation: update ratios based on improvement rate
         improvement_rate = self.calculate_improvement_rate()
-        if improvement_rate < 0.01:
-            self.rebel_ratio = min(0.3, self.rebel_ratio * 1.1)
-            self.escapist_ratio = min(0.3, self.escapist_ratio * 1.1)
+        if improvement_rate < self.improvement_threshold:
+            self.rebel_ratio = min(self.max_rebel_ratio, self.rebel_ratio * 1.1)
+            self.escapist_ratio = min(self.max_escapist_ratio, self.escapist_ratio * 1.1)
+        else:
+            self.rebel_ratio = max(self.rebel_ratio, self.rebel_ratio * 0.95)
+            self.escapist_ratio = max(self.escapist_ratio, self.escapist_ratio * 0.95)
+
+        self.update_special_particles(swarm)
 
     def calculate_swarm_diversity(self, swarm) -> float:
         """Measure population spread using mean pairwise distance"""
@@ -326,28 +394,34 @@ class REAPSO(SingleObjectivePSO):
         return np.mean(np.linalg.norm(positions - centroid, axis=1))
 
     def calculate_improvement_rate(self) -> float:
-        """Track fitness improvement over the last N iterations."""
-        window_size = 10
+        """Calculate relative fitness improvement over the last window_size iterations."""
         self.convergence_window.append(self.best_global.objectives[0])
 
-        # if len(self.convergence_window) < window_size:
-        #     return 1.0
-        #
-        # return (self.convergence_window[-window_size] -
-        #         self.convergence_window[-1]) / self.convergence_window[-window_size]
+        if len(self.convergence_window) < 2:
+            return 0.0
 
-        effective_window_size = min(len(self.convergence_window), window_size)
-        return (self.convergence_window[-effective_window_size] -
-                self.convergence_window[-1]) / self.convergence_window[-effective_window_size]
+        initial = self.convergence_window[0]
+        latest = self.convergence_window[-1]
+
+        epsilon = 1e-8
+        if abs(initial) < epsilon:
+            return 0.0
+
+        improvement_rate = (initial - latest) / abs(initial)
+        return improvement_rate
 
     def perturbation(self, swarm: List[S]) -> None:
-        """Chaotic perturbation for diversity maintenance"""
+        """Chaotic perturbation for diversity maintenance with parameterized probability and scale."""
         best = self.best_global.variables
         for particle in swarm:
-            if random.random() < 0.1 * (1 - self.w):
-                noise = 0.1 * (self.max_inertia - self.w) * (np.random.rand() - 0.5)
+            if random.random() < self.perturbation_probability * (1 - self.w):
+                noise = self.perturbation_scale * (self.max_inertia - self.w) * (np.random.rand() - 0.5)
                 particle.variables = [
                     np.clip(x + noise * (x - best[i]),
                             self.problem.lower_bound[i],
-                            self.problem.upper_bound[i]
-                            ) for i, x in enumerate(particle.variables)]
+                            self.problem.upper_bound[i])
+                    for i, x in enumerate(particle.variables)
+                ]
+
+    def get_name(self) -> str:
+        return "REAPSO"

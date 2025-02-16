@@ -32,7 +32,7 @@ number_of_variables = 100
 solutions_size = 100
 max_evaluations = 25000
 num_runs = 5   # Number of independent runs per problem
-budget = 1000    # Total number of configurations to try in irace
+budget = 5000    # Total number of configurations to try in irace
 
 # Define benchmark problems for tuning
 problems = [
@@ -44,72 +44,79 @@ problems = [
 # Define parameter spaces for each algorithm using irace's Real and Integer objects.
 # (Each parameter space is defined as a list of parameters; later we pass it to ParameterSpace.)
 parameter_spaces = {
-    'SingleObjectivePSO': [
-        Real("c1", 0.01, 10),
-        Real("c2", 0.01, 10),
-        Real("w", 0.01, 10),
-    ],
+    # 'SingleObjectivePSO': [
+    #     Real("c1", 0.01, 10),
+    #     Real("c2", 0.01, 10),
+    #     Real("w", 0.01, 10),
+    # ],
     'REAPSO': [
-        Real("c1", 0.01, 10),
-        Real("c2", 0.01, 10),
-        Real("base_inertia", 0.01, 10),
-        Real("min_inertia", 0.01, 10),
-        Real("max_inertia", 0.01, 10),
+        Real("c1", 0.5, 5.0),
+        Real("c2", 0.5, 5.0),
+        Real("base_inertia", 0.05, 1.0),
+        Real("min_inertia", 0.01, 0.5),  # < base_inertia
+        Real("max_inertia", 0.07, 1.0),  # >= base_inertia
         Real("rebel_ratio", 0.05, 0.8),
         Real("escapist_ratio", 0.05, 0.8),
+        Integer("window_size", 5, 20),
+        Real("perturbation_probability", 0.01, 0.5),
+        Real("perturbation_scale", 0.01, 1.0),
+        Real("max_rebel_ratio", 0.5, 1.0),
+        Real("max_escapist_ratio", 0.5, 1.0),
+        Real("diversity_threshold", 0.01, 1.0),
+        Real("improvement_threshold", 0.001, 0.1),
     ],
-    'RebelPSO': [
-        Real("c1", 0.01, 10),
-        Real("c2", 0.01, 10),
-        Real("w", 0.01, 10),
-        Real("rebel_fraction", 0.05, 0.8),
-    ],
-    'EscapistPSO': [
-        Real("c1", 0.01, 10),
-        Real("c2", 0.01, 10),
-        Real("w", 0.01, 10),
-        Real("escapist_fraction", 0.05, 0.8),
-    ],
-    'RebelEscapistPSO': [
-        Real("c1", 0.01, 10),
-        Real("c2", 0.01, 10),
-        Real("w", 0.01, 10),
-        Real("rebel_fraction", 0.05, 0.8),
-        Real("escapist_fraction", 0.05, 0.8),
-    ],
-    'QTPSO': [
-        Real("c1", 0.01, 10),
-        Real("c2", 0.01, 10),
-        Real("w", 0.01, 10),
-        Real("quantum_prob", 0.01, 1.0),
-        Real("chaos_strength", 0.01, 1.0),
-    ],
-    'SPPPSO': [
-        Real("c1", 0.01, 10),
-        Real("c2", 0.01, 10),
-        Real("w", 0.01, 10),
-        Real("predator_ratio", 0.01, 0.5),
-        Real("scavenger_ratio", 0.01, 0.5),
-    ],
-    'TDPSO': [
-        Real("c1", 0.01, 10),
-        Real("c2", 0.01, 10),
-        Real("w", 0.01, 10),
-        Real("temperature", 0.1, 5.0),
-        Real("cooling_rate", 0.9, 1.0),
-    ],
-    'NPSO': [
-        Real("c1", 0.01, 10),
-        Real("c2", 0.01, 10),
-        Real("w", 0.01, 10),
-        Real("spike_threshold", 0.5, 1.0),
-    ],
-    'FAPSO': [
-        Real("c1", 0.01, 10),
-        Real("c2", 0.01, 10),
-        Real("w", 0.01, 10),
-        Integer("fractal_depth", 1, 5),
-    ],
+    # 'RebelPSO': [
+    #     Real("c1", 0.01, 10),
+    #     Real("c2", 0.01, 10),
+    #     Real("w", 0.01, 10),
+    #     Real("rebel_fraction", 0.05, 0.8),
+    # ],
+    # 'EscapistPSO': [
+    #     Real("c1", 0.01, 10),
+    #     Real("c2", 0.01, 10),
+    #     Real("w", 0.01, 10),
+    #     Real("escapist_fraction", 0.05, 0.8),
+    # ],
+    # 'RebelEscapistPSO': [
+    #     Real("c1", 0.01, 10),
+    #     Real("c2", 0.01, 10),
+    #     Real("w", 0.01, 10),
+    #     Real("rebel_fraction", 0.05, 0.8),
+    #     Real("escapist_fraction", 0.05, 0.8),
+    # ],
+    # 'QTPSO': [
+    #     Real("c1", 0.01, 10),
+    #     Real("c2", 0.01, 10),
+    #     Real("w", 0.01, 10),
+    #     Real("quantum_prob", 0.01, 0.5),
+    #     Real("chaos_strength", 0.01, 1.0),
+    # ],
+    # 'SPPPSO': [
+    #     Real("c1", 0.01, 10),
+    #     Real("c2", 0.01, 10),
+    #     Real("w", 0.01, 10),
+    #     Real("predator_ratio", 0.01, 0.5),
+    #     Real("scavenger_ratio", 0.01, 0.5),
+    # ],
+    # 'TDPSO': [
+    #     Real("c1", 0.01, 10),
+    #     Real("c2", 0.01, 10),
+    #     Real("w", 0.01, 10),
+    #     Real("temperature", 0.1, 5.0),
+    #     Real("cooling_rate", 0.9, 1.0),
+    # ],
+    # 'NPSO': [
+    #     Real("c1", 0.01, 10),
+    #     Real("c2", 0.01, 10),
+    #     Real("w", 0.01, 10),
+    #     Real("spike_threshold", 0.5, 1.0),
+    # ],
+    # 'FAPSO': [
+    #     Real("c1", 0.01, 10),
+    #     Real("c2", 0.01, 10),
+    #     Real("w", 0.01, 10),
+    #     Integer("fractal_depth", 1, 5),
+    # ],
 }
 
 # Global variable to indicate the current algorithm (used in the target_runner)
@@ -122,6 +129,11 @@ def target_runner(experiment: Experiment, scenario: Scenario) -> float:
     It then evaluates the candidate configuration over all benchmark problems and runs.
     """
     config = experiment.configuration
+    # Enforce inertia constraint: if violated, return a high penalty
+    if not (config["min_inertia"] < config["base_inertia"] < config["max_inertia"]):
+        print("Inertia constraints violated; applying penalty.")
+        return 1e8  # penalty
+
     results = []
     AlgorithmClass = globals()[current_algorithm]
     for problem in problems:
@@ -140,19 +152,14 @@ def target_runner(experiment: Experiment, scenario: Scenario) -> float:
 
 if __name__ == "__main__":
     best_configurations = {}
-    # Loop over each algorithm in our parameter_spaces
     for algo_name, space_list in parameter_spaces.items():
-        current_algorithm = algo_name  # Set the current algorithm for the target runner
+        current_algorithm = algo_name
         print(f"Optimizing parameters for {algo_name} ...")
-        # Create a ParameterSpace instance from the list of parameters
         parameter_space = ParameterSpace(params=space_list)
-        # Create a Scenario instance with the desired settings
-        scenario = Scenario(max_experiments=budget, seed=42, n_jobs=4)
-        # Run irace using the target_runner, parameter_space, and scenario.
+        scenario = Scenario(max_experiments=budget, seed=42, n_jobs=8)
         result = irace(target_runner, parameter_space, scenario, return_df=True, remove_metadata=True)
         best_configurations[algo_name] = result
         print(f"Best configuration for {algo_name}: {result}")
 
-    # Save the best configurations to a JSON file for later reference.
     with open("irace_best_configurations.json", "w") as f:
         json.dump(best_configurations, f, indent=4)
