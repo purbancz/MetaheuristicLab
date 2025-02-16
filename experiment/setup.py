@@ -2,6 +2,7 @@ import os
 
 from jmetal.algorithm.singleobjective import GeneticAlgorithm
 from jmetal.operator import PolynomialMutation, SBXCrossover, DifferentialEvolutionCrossover
+from jmetal.problem import Sphere
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
 
@@ -75,10 +76,11 @@ def setup_experiment():
     n_variables_problems = [
         # Zakharov(number_of_variables),
         # Rosenbrock(number_of_variables),
-        # ##
-        Rastrigin(number_of_variables),
-        Ackley(number_of_variables),
-        Griewank(number_of_variables),
+        ##
+        # Rastrigin(number_of_variables),
+        Sphere(number_of_variables),
+        # Ackley(number_of_variables),
+        # Griewank(number_of_variables),
         # Levy(number_of_variables),
         # Michalewicz(number_of_variables),
         # Schwefel(number_of_variables),
@@ -109,14 +111,14 @@ def setup_experiment():
         #     crossover=SBXCrossover(0.75, 5.0),
         #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations),
         # ),
-        # 'PSO': lambda p: SingleObjectivePSO(
-        #     problem=p,
-        #     swarm_size=solutions_size,
-        #     c1=1.132464,
-        #     c2=4.489647,
-        #     w=0.110646,
-        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        # ),
+        'PSO': lambda p: SingleObjectivePSO(
+            problem=p,
+            swarm_size=solutions_size,
+            c1=1.132464,
+            c2=4.489647,
+            w=0.110646,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
         'DE': lambda p: DifferentialEvolution(
             problem=p,
             termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations),

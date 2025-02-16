@@ -32,7 +32,7 @@ number_of_variables = 100
 solutions_size = 100
 max_evaluations = 25000
 num_runs = 5   # Number of independent runs per problem
-budget = 5000    # Total number of configurations to try in irace
+budget = 1000    # Total number of configurations to try in irace
 
 # Define benchmark problems for tuning
 problems = [
