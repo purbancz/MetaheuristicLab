@@ -1,8 +1,8 @@
 #!/bin/bash
-#SBATCH --job-name=bayes_pso_parameters_tuning
+#SBATCH --job-name=irace_pso_parameters_tuning
 #SBATCH --output=%x_%j.out
 #SBATCH --error=%x_%j.err
-#SBATCH --time=48:00:00
+#SBATCH --time=24:00:00
 #SBATCH --partition=plgrid
 #SBATCH --account=plglscclass24-cpu
 #SBATCH --nodes=1
@@ -24,8 +24,8 @@ echo "Job started at: $(date -d @$START_TIME)"
 # Run the Python script
 echo "PYTHON SCRIPT IS BEING EXECUTED"
 export PYTHONPATH="$HOME/GA-PSO_Hybrid:$PYTHONPATH"
-#python -u $HOME/GA-PSO_Hybrid/test/irace_tune.py
-python -u $HOME/GA-PSO_Hybrid/test/bayesian_search.py
+python -u $HOME/GA-PSO_Hybrid/test/irace_tune.py
+#python -u $HOME/GA-PSO_Hybrid/test/bayesian_search.py
 echo "Tuning completed successfully."
 
 # Log end time

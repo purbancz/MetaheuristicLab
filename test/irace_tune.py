@@ -32,7 +32,7 @@ number_of_variables = 100
 solutions_size = 100
 max_evaluations = 25000
 num_runs = 5   # Number of independent runs per problem
-budget = 1000    # Total number of configurations to try in irace
+budget = 3000    # Total number of configurations to try in irace
 
 # Define benchmark problems for tuning
 problems = [
@@ -49,22 +49,22 @@ parameter_spaces = {
     #     Real("c2", 0.01, 10),
     #     Real("w", 0.01, 10),
     # ],
-    'REAPSO': [
-        Real("c1", 0.5, 5.0),
-        Real("c2", 0.5, 5.0),
-        Real("base_inertia", 0.05, 1.0),
-        Real("min_inertia", 0.01, 0.5),  # < base_inertia
-        Real("max_inertia", 0.07, 1.0),  # >= base_inertia
-        Real("rebel_ratio", 0.05, 0.8),
-        Real("escapist_ratio", 0.05, 0.8),
-        Integer("window_size", 5, 20),
-        Real("perturbation_probability", 0.01, 0.5),
-        Real("perturbation_scale", 0.01, 1.0),
-        Real("max_rebel_ratio", 0.5, 1.0),
-        Real("max_escapist_ratio", 0.5, 1.0),
-        Real("diversity_threshold", 0.01, 1.0),
-        Real("improvement_threshold", 0.001, 0.1),
-    ],
+    # 'REAPSO': [
+    #     Real("c1", 0.5, 5.0),
+    #     Real("c2", 0.5, 5.0),
+    #     Real("base_inertia", 0.05, 1.0),
+    #     Real("min_inertia", 0.01, 0.5),  # < base_inertia
+    #     Real("max_inertia", 0.07, 1.0),  # >= base_inertia
+    #     Real("rebel_ratio", 0.05, 0.8),
+    #     Real("escapist_ratio", 0.05, 0.8),
+    #     Integer("window_size", 5, 20),
+    #     Real("perturbation_probability", 0.01, 0.5),
+    #     Real("perturbation_scale", 0.01, 1.0),
+    #     Real("max_rebel_ratio", 0.5, 1.0),
+    #     Real("max_escapist_ratio", 0.5, 1.0),
+    #     Real("diversity_threshold", 0.01, 1.0),
+    #     Real("improvement_threshold", 0.001, 0.1),
+    # ],
     # 'RebelPSO': [
     #     Real("c1", 0.01, 10),
     #     Real("c2", 0.01, 10),
@@ -84,13 +84,13 @@ parameter_spaces = {
     #     Real("rebel_fraction", 0.05, 0.8),
     #     Real("escapist_fraction", 0.05, 0.8),
     # ],
-    # 'QTPSO': [
-    #     Real("c1", 0.01, 10),
-    #     Real("c2", 0.01, 10),
-    #     Real("w", 0.01, 10),
-    #     Real("quantum_prob", 0.01, 0.5),
-    #     Real("chaos_strength", 0.01, 1.0),
-    # ],
+    'QTPSO': [
+        Real("c1", 0.1, 5),
+        Real("c2", 0.1, 5),
+        Real("w", 0.01, 0.5),
+        Real("quantum_prob", 0.01, 0.5),
+        Real("chaos_strength", 0.01, 1.0),
+    ],
     # 'SPPPSO': [
     #     Real("c1", 0.01, 10),
     #     Real("c2", 0.01, 10),
@@ -98,13 +98,13 @@ parameter_spaces = {
     #     Real("predator_ratio", 0.01, 0.5),
     #     Real("scavenger_ratio", 0.01, 0.5),
     # ],
-    # 'TDPSO': [
-    #     Real("c1", 0.01, 10),
-    #     Real("c2", 0.01, 10),
-    #     Real("w", 0.01, 10),
-    #     Real("temperature", 0.1, 5.0),
-    #     Real("cooling_rate", 0.9, 1.0),
-    # ],
+    'TDPSO': [
+        Real("c1", 0.1, 5),
+        Real("c2", 0.1, 5),
+        Real("w", 0.01, 0.5),
+        Real("temperature", 0.1, 5.0),
+        Real("cooling_rate", 0.9, 1.0),
+    ],
     # 'NPSO': [
     #     Real("c1", 0.01, 10),
     #     Real("c2", 0.01, 10),
