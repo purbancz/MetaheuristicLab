@@ -120,7 +120,6 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
 
 
     def perturbation(self, swarm: List[S]) -> None:
-        # Optional: Add any perturbation logic if needed.
         pass
 
     def result(self) -> R:
@@ -158,7 +157,6 @@ class RebelPSO(SingleObjectivePSO):
 
 class EscapistPSO(SingleObjectivePSO):
     """PSO with escapist particles opposing personal best"""
-
     def __init__(self,
                  problem: FloatProblem,
                  swarm_size: int,
@@ -261,6 +259,8 @@ class REAPSO(SingleObjectivePSO):
         self.escapist_ratio = escapist_ratio
         self.max_rebel_ratio = max_rebel_ratio
         self.max_escapist_ratio = max_escapist_ratio
+        self.original_rebel_ratio = rebel_ratio
+        self.original_escapist_ratio = escapist_ratio
         self.diversity_threshold = diversity_threshold
         self.improvement_threshold = improvement_threshold
 
@@ -382,8 +382,8 @@ class REAPSO(SingleObjectivePSO):
             self.rebel_ratio = min(self.max_rebel_ratio, self.rebel_ratio * 1.1)
             self.escapist_ratio = min(self.max_escapist_ratio, self.escapist_ratio * 1.1)
         else:
-            self.rebel_ratio = max(self.rebel_ratio, self.rebel_ratio * 0.95)
-            self.escapist_ratio = max(self.escapist_ratio, self.escapist_ratio * 0.95)
+            self.rebel_ratio = max(self.original_rebel_ratio, self.rebel_ratio * 0.95)
+            self.escapist_ratio = max(self.original_escapist_ratio, self.escapist_ratio * 0.95)
 
         self.update_special_particles(swarm)
 

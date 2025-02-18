@@ -2,12 +2,8 @@ import os
 import json
 import numpy as np
 from datetime import datetime
-
-# Import benchmark problems from jMetalPy
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
-
-# Import your PSO algorithm classes
 from problem.n_variables.ackley import Ackley
 from problem.n_variables.griewank import Griewank
 from algorithm.single_objective_PSO import SingleObjectivePSO, RebelPSO, EscapistPSO, RebelEscapistPSO, REAPSO
@@ -16,12 +12,9 @@ from algorithm.NPSO import NPSO
 from algorithm.QTPSO import QTPSO
 from algorithm.SPPPSO import SPPPSO
 from algorithm.TDPSO import TDPSO
-
-# Import iracepy-tiny components
 from irace import irace, ParameterSpace, Scenario, Experiment, Real, Integer
-
-# Fix encoding issues by enforcing UTF-8 globally
 import rpy2.robjects as robjects
+
 os.environ["LANG"] = "en_US.UTF-8"
 os.environ["LC_ALL"] = "en_US.UTF-8"
 os.environ["R_DEFAULT_ENCODING"] = "UTF-8"
@@ -129,10 +122,10 @@ def target_runner(experiment: Experiment, scenario: Scenario) -> float:
     It then evaluates the candidate configuration over all benchmark problems and runs.
     """
     config = experiment.configuration
-    # Enforce inertia constraint: if violated, return a high penalty
-    if not (config["min_inertia"] < config["base_inertia"] < config["max_inertia"]):
-        print("Inertia constraints violated; applying penalty.")
-        return 1e8  # penalty
+    # # Enforce inertia constraint: if violated, return a high penalty
+    # if not (config["min_inertia"] < config["base_inertia"] < config["max_inertia"]):
+    #     print("Inertia constraints violated; applying penalty.")
+    #     return 1e8  # penalty
 
     results = []
     AlgorithmClass = globals()[current_algorithm]
@@ -156,7 +149,7 @@ if __name__ == "__main__":
         current_algorithm = algo_name
         print(f"Optimizing parameters for {algo_name} ...")
         parameter_space = ParameterSpace(params=space_list)
-        scenario = Scenario(max_experiments=budget, seed=42, n_jobs=8)
+        scenario = Scenario(max_experiments=budget, seed=42, n_jobs=4)
         result = irace(target_runner, parameter_space, scenario, return_df=True, remove_metadata=True)
         best_configurations[algo_name] = result
         print(f"Best configuration for {algo_name}: {result}")
