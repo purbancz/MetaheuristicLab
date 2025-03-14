@@ -26,7 +26,7 @@ class NPSO(SingleObjectivePSO):
     Key Features:
       - Particle "Neurons": Communicate via simulated spike-timing dynamics
       - Plasticity Rules: Hebbian learning adjusts social/cognitive weights
-      - Ensemble Memory: Shared LSTM network remembers promising regions
+      - Ensemble Memory: Shared memory remembers promising regions
     """
     def __init__(self, problem: FloatProblem, swarm_size: int, c1: float, c2: float, w: float,
                  termination_criterion: TerminationCriterion,

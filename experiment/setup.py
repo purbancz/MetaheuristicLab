@@ -54,7 +54,7 @@ from problem.n_variables.zakharov import Zakharov
 
 def setup_experiment():
     no_of_runs = 10
-    number_of_variables = 100
+    number_of_variables = 200
     solutions_size = 100
     max_evaluations = 25000
     frequency = solutions_size  # Snapshot each generation
@@ -229,25 +229,25 @@ def setup_experiment():
         #     escapist_fraction=0.6,
         #     termination_criterion=StoppingByEvaluations(max_evaluations)
         # ),
-        'REAPSO': lambda p: REAPSO(
-            problem=p,
-            swarm_size=solutions_size,
-            c1=1.5510184332980186,
-            c2=4.935325731217671,
-            base_inertia=0.214141581688782,
-            min_inertia=0.11093829549932,
-            max_inertia=0.935915518894973,
-            rebel_ratio=0.2,
-            escapist_ratio=0.43,
-            window_size = 20,
-            perturbation_probability = 0.460269994559271,
-            perturbation_scale = 0.709878890732096,
-            max_rebel_ratio = 0.79,
-            max_escapist_ratio = 0.56,
-            diversity_threshold = 0.058518962214864,
-            improvement_threshold = 0.008656759607128,
-            termination_criterion=StoppingByEvaluations(max_evaluations)
-        ),
+        # 'REAPSO': lambda p: REAPSO(
+        #     problem=p,
+        #     swarm_size=solutions_size,
+        #     c1=1.5510184332980186,
+        #     c2=4.935325731217671,
+        #     base_inertia=0.214141581688782,
+        #     min_inertia=0.11093829549932,
+        #     max_inertia=0.935915518894973,
+        #     rebel_ratio=0.2,
+        #     escapist_ratio=0.43,
+        #     window_size = 20,
+        #     perturbation_probability = 0.460269994559271,
+        #     perturbation_scale = 0.709878890732096,
+        #     max_rebel_ratio = 0.79,
+        #     max_escapist_ratio = 0.56,
+        #     diversity_threshold = 0.058518962214864,
+        #     improvement_threshold = 0.008656759607128,
+        #     termination_criterion=StoppingByEvaluations(max_evaluations)
+        # ),
         # 'ReverseLearningPSO': lambda p: ReverseLearningPSO(
         #     problem=p,
         #     swarm_size=solutions_size,
