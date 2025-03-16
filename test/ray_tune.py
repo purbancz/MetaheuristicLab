@@ -7,34 +7,32 @@ from ray import tune
 from ray.tune.schedulers import PopulationBasedTraining
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
-from algorithm.single_objective_PSO import REAPSO, RebelPSO, EscapistPSO, RebelEscapistPSO
+from algorithm.WAPSO import ReverseLearningPSO, CombinedLearningPSO
+from algorithm.particles_with_roles import RebelPSO, EscapistPSO, RebelEscapistPSO, REAPSO, ContrarianPSO, DefeatistPSO, \
+    ContrarianDefeatistPSO
+from algorithm.single_objective_PSO import SingleObjectivePSO
 
 
 ALGORITHMS = {
-    'REAPSO': {
-        "c1": tune.uniform(0.2, 3),
-        "c2": tune.uniform(0.2, 3),
-        "base_inertia": tune.uniform(0.4, 1.4),
-        "min_inertia": tune.uniform(0.1, 0.6),
-        "max_inertia": tune.uniform(0.6, 2),
-        "rebel_ratio": tune.uniform(0.05, 0.6),
-        "escapist_ratio": tune.uniform(0.05, 0.6),
-    },
     'RebelPSO': {
         "c1": tune.uniform(0.2, 3),
         "c2": tune.uniform(0.2, 3),
+        "ac2": tune.uniform(0.2, 3),
         "w": tune.uniform(0.1, 1.4),
         "rebel_fraction": tune.uniform(0.05, 0.6),
     },
     'EscapistPSO': {
         "c1": tune.uniform(0.2, 3),
         "c2": tune.uniform(0.2, 3),
+        "ac1": tune.uniform(0.2, 3),
         "w": tune.uniform(0.1, 1.4),
         "escapist_fraction": tune.uniform(0.05, 0.6),
     },
     'RebelEscapistPSO': {
         "c1": tune.uniform(0.2, 3),
         "c2": tune.uniform(0.2, 3),
+        "ac1": tune.uniform(0.2, 3),
+        "ac2": tune.uniform(0.2, 3),
         "w": tune.uniform(0.1, 1.4),
         "rebel_fraction": tune.uniform(0.05, 0.6),
         "escapist_fraction": tune.uniform(0.05, 0.6),
@@ -70,13 +68,13 @@ def run_ray_optimization(algorithm_name, param_space):
         mode="min",
         perturbation_interval=5,
         hyperparam_mutations={
-            "c1": tune.uniform(0.2, 3),
-            "c2": tune.uniform(0.2, 3),
+            "b1": tune.uniform(0.2, 3),
+            "b2": tune.uniform(0.2, 3),
             "base_inertia": tune.uniform(0.4, 1.4),
             "min_inertia": tune.uniform(0.1, 0.6),
             "max_inertia": tune.uniform(0.6, 2),
-            "rebel_ratio": tune.uniform(0.05, 0.6),
-            "escapist_ratio": tune.uniform(0.05, 0.6),
+            "rebel_fraction": tune.uniform(0.05, 0.6),
+            "escapist_fraction": tune.uniform(0.05, 0.6),
             "w": tune.uniform(0.1, 1.4),
             "rebel_fraction": tune.uniform(0.05, 0.6),
             "escapist_fraction": tune.uniform(0.05, 0.6),

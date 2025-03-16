@@ -6,7 +6,10 @@ from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
 from problem.n_variables.ackley import Ackley
 from problem.n_variables.griewank import Griewank
-from algorithm.single_objective_PSO import SingleObjectivePSO, RebelPSO, EscapistPSO, RebelEscapistPSO, REAPSO
+from algorithm.WAPSO import ReverseLearningPSO, CombinedLearningPSO
+from algorithm.particles_with_roles import RebelPSO, EscapistPSO, RebelEscapistPSO, REAPSO, ContrarianPSO, DefeatistPSO, \
+    ContrarianDefeatistPSO
+from algorithm.single_objective_PSO import SingleObjectivePSO
 from algorithm.FAPSO import FAPSO
 from algorithm.NPSO import NPSO
 from algorithm.QTPSO import QTPSO
@@ -38,75 +41,75 @@ problems = [
 # (Each parameter space is defined as a list of parameters; later we pass it to ParameterSpace.)
 parameter_spaces = {
     # 'SingleObjectivePSO': [
-    #     Real("c1", 0.01, 10),
-    #     Real("c2", 0.01, 10),
+    #     Real("b1", 0.01, 10),
+    #     Real("b2", 0.01, 10),
     #     Real("w", 0.01, 10),
     # ],
     # 'REAPSO': [
-    #     Real("c1", 0.5, 5.0),
-    #     Real("c2", 0.5, 5.0),
+    #     Real("b1", 0.5, 5.0),
+    #     Real("b2", 0.5, 5.0),
     #     Real("base_inertia", 0.05, 1.0),
     #     Real("min_inertia", 0.01, 0.5),  # < base_inertia
     #     Real("max_inertia", 0.07, 1.0),  # >= base_inertia
-    #     Real("rebel_ratio", 0.05, 0.8),
-    #     Real("escapist_ratio", 0.05, 0.8),
+    #     Real("rebel_fraction", 0.05, 0.8),
+    #     Real("escapist_fraction", 0.05, 0.8),
     #     Integer("window_size", 5, 20),
     #     Real("perturbation_probability", 0.01, 0.5),
     #     Real("perturbation_scale", 0.01, 1.0),
-    #     Real("max_rebel_ratio", 0.5, 1.0),
-    #     Real("max_escapist_ratio", 0.5, 1.0),
+    #     Real("max_rebel_fraction", 0.5, 1.0),
+    #     Real("max_escapist_fraction", 0.5, 1.0),
     #     Real("diversity_threshold", 0.01, 1.0),
     #     Real("improvement_threshold", 0.001, 0.1),
     # ],
-    # 'RebelPSO': [
-    #     Real("c1", 0.01, 10),
-    #     Real("c2", 0.01, 10),
-    #     Real("w", 0.01, 10),
-    #     Real("rebel_fraction", 0.05, 0.8),
-    # ],
-    # 'EscapistPSO': [
-    #     Real("c1", 0.01, 10),
-    #     Real("c2", 0.01, 10),
-    #     Real("w", 0.01, 10),
-    #     Real("escapist_fraction", 0.05, 0.8),
-    # ],
-    # 'RebelEscapistPSO': [
-    #     Real("c1", 0.01, 10),
-    #     Real("c2", 0.01, 10),
-    #     Real("w", 0.01, 10),
-    #     Real("rebel_fraction", 0.05, 0.8),
-    #     Real("escapist_fraction", 0.05, 0.8),
-    # ],
-    'QTPSO': [
-        Real("c1", 0.1, 5),
-        Real("c2", 0.1, 5),
-        Real("w", 0.01, 0.5),
-        Real("quantum_prob", 0.01, 0.5),
-        Real("chaos_strength", 0.01, 1.0),
+    'RebelPSO': [
+        Real("c1", 0.01, 10),
+        Real("c2", 0.01, 10),
+        Real("w", 0.01, 10),
+        Real("rebel_fraction", 0.05, 0.8),
     ],
+    'EscapistPSO': [
+        Real("c1", 0.01, 10),
+        Real("c2", 0.01, 10),
+        Real("w", 0.01, 10),
+        Real("escapist_fraction", 0.05, 0.8),
+    ],
+    'RebelEscapistPSO': [
+        Real("c1", 0.01, 10),
+        Real("c2", 0.01, 10),
+        Real("w", 0.01, 10),
+        Real("rebel_fraction", 0.05, 0.8),
+        Real("escapist_fraction", 0.05, 0.8),
+    ],
+    # 'QTPSO': [
+    #     Real("b1", 0.1, 5),
+    #     Real("b2", 0.1, 5),
+    #     Real("w", 0.01, 0.5),
+    #     Real("quantum_prob", 0.01, 0.5),
+    #     Real("chaos_strength", 0.01, 1.0),
+    # ],
     # 'SPPPSO': [
-    #     Real("c1", 0.01, 10),
-    #     Real("c2", 0.01, 10),
+    #     Real("b1", 0.01, 10),
+    #     Real("b2", 0.01, 10),
     #     Real("w", 0.01, 10),
     #     Real("predator_ratio", 0.01, 0.5),
     #     Real("scavenger_ratio", 0.01, 0.5),
     # ],
-    'TDPSO': [
-        Real("c1", 0.1, 5),
-        Real("c2", 0.1, 5),
-        Real("w", 0.01, 0.5),
-        Real("temperature", 0.1, 5.0),
-        Real("cooling_rate", 0.9, 1.0),
-    ],
+    # 'TDPSO': [
+    #     Real("b1", 0.1, 5),
+    #     Real("b2", 0.1, 5),
+    #     Real("w", 0.01, 0.5),
+    #     Real("temperature", 0.1, 5.0),
+    #     Real("cooling_rate", 0.9, 1.0),
+    # ],
     # 'NPSO': [
-    #     Real("c1", 0.01, 10),
-    #     Real("c2", 0.01, 10),
+    #     Real("b1", 0.01, 10),
+    #     Real("b2", 0.01, 10),
     #     Real("w", 0.01, 10),
     #     Real("spike_threshold", 0.5, 1.0),
     # ],
     # 'FAPSO': [
-    #     Real("c1", 0.01, 10),
-    #     Real("c2", 0.01, 10),
+    #     Real("b1", 0.01, 10),
+    #     Real("b2", 0.01, 10),
     #     Real("w", 0.01, 10),
     #     Integer("fractal_depth", 1, 5),
     # ],

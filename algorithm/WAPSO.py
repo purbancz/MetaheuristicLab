@@ -2,11 +2,13 @@ import random
 import numpy as np
 from typing import List, TypeVar
 from jmetal.core.problem import FloatProblem
+from jmetal.core.solution import FloatSolution
 from jmetal.util.termination_criterion import TerminationCriterion
 from algorithm.single_objective_PSO import SingleObjectivePSO
 
 S = TypeVar("S")
 R = TypeVar("R")
+
 
 class WorstAwarePSO(SingleObjectivePSO):
     """
@@ -40,23 +42,23 @@ class WorstAwarePSO(SingleObjectivePSO):
     def update_global_worst(self, swarm: List[S]) -> None:
         self.global_worst = max(swarm, key=lambda s: s.objectives[0])
 
+
 class ReverseLearningPSO(WorstAwarePSO):
     """
     Reverse Learning PSO:
     Instead of following personal/global best, particles avoid their personal and global worst.
     """
+
     def __init__(self,
                  problem: FloatProblem,
                  swarm_size: int,
-                 c1: float,
-                 c2: float,
+                 b1: float,
+                 b2: float,
                  w: float,
                  termination_criterion: TerminationCriterion):
-        super().__init__(problem, swarm_size, c1, c2, w, termination_criterion)
+        super().__init__(problem, swarm_size, b1, b2, w, termination_criterion)
 
     def update_velocity(self, swarm: List[S]) -> None:
-        self.update_global_worst(swarm)
-        self.update_particle_worst(swarm)
         for particle in swarm:
             r1 = random.random()
             r2 = random.random()
@@ -69,8 +71,11 @@ class ReverseLearningPSO(WorstAwarePSO):
             particle.attributes['velocity'] = new_velocity.tolist()
 
     def update_particle_best(self, swarm: List[S]) -> None:
-        # For reverse learning, we focus on worst tracking.
         self.update_particle_worst(swarm)
+
+    def update_global_best(self, swarm: List[FloatSolution]) -> None:
+        self.update_global_worst(swarm)
+
 
 class CombinedLearningPSO(WorstAwarePSO):
     """
@@ -78,11 +83,12 @@ class CombinedLearningPSO(WorstAwarePSO):
     Particles are attracted to their personal and global bests while avoiding their personal and global worsts.
     Velocity update rule:
       v = w*v +
-          c1*r1*(personal_best - current) +
-          c2*r2*(global_best - current) +
+          b1*r1*(personal_best - current) +
+          b2*r2*(global_best - current) +
           b1*r1*(current - personal_worst) +
           b2*r2*(current - global_worst)
     """
+
     def __init__(self,
                  problem: FloatProblem,
                  swarm_size: int,
@@ -91,7 +97,7 @@ class CombinedLearningPSO(WorstAwarePSO):
                  w: float,
                  termination_criterion: TerminationCriterion,
                  b1: float,  # Coefficient for repulsion from personal worst
-                 b2: float   # Coefficient for repulsion from global worst
+                 b2: float  # Coefficient for repulsion from global worst
                  ):
         super().__init__(problem, swarm_size, c1, c2, w, termination_criterion)
         self.b1 = b1
@@ -103,6 +109,8 @@ class CombinedLearningPSO(WorstAwarePSO):
         for particle in swarm:
             r1 = random.random()
             r2 = random.random()
+            r3 = random.random()
+            r4 = random.random()
             current = np.array(particle.variables)
             best_personal = np.array(particle.attributes['best_position'])
             best_global = np.array(self.best_global.variables)
@@ -111,12 +119,15 @@ class CombinedLearningPSO(WorstAwarePSO):
             new_velocity = (self.w * np.array(particle.attributes['velocity']) +
                             self.c1 * r1 * (best_personal - current) +
                             self.c2 * r2 * (best_global - current) +
-                            self.b1 * r1 * (current - worst_personal) +
-                            self.b2 * r2 * (current - worst_global))
+                            self.b1 * r3 * (current - worst_personal) +
+                            self.b2 * r4 * (current - worst_global))
             particle.attributes['velocity'] = new_velocity.tolist()
 
     def update_particle_best(self, swarm: List[S]) -> None:
-        for particle in swarm:
-            if particle.objectives[0] < particle.attributes.get('best_objective', float('inf')):
-                particle.attributes['best_objective'] = particle.objectives[0]
-                particle.attributes['best_position'] = particle.variables.copy()
+        super().update_particle_best(swarm)
+        self.update_particle_worst(swarm)
+
+    def update_global_best(self, swarm: List[FloatSolution]) -> None:
+        super().update_global_best(swarm)
+        self.update_global_worst(swarm)
+

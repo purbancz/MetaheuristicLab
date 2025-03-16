@@ -19,7 +19,9 @@ from algorithm.QTPSO import QTPSO
 from algorithm.WAPSO import ReverseLearningPSO, CombinedLearningPSO
 from algorithm.SPPPSO import SPPPSO
 from algorithm.TDPSO import TDPSO
-from algorithm.single_objective_PSO import SingleObjectivePSO, RebelPSO, EscapistPSO, RebelEscapistPSO, REAPSO
+from algorithm.particles_with_roles import RebelPSO, EscapistPSO, RebelEscapistPSO, REAPSO, ContrarianPSO, DefeatistPSO, \
+    ContrarianDefeatistPSO
+from algorithm.single_objective_PSO import SingleObjectivePSO
 
 from problem.fixed_varaibles.branin import BraninRCOC
 from problem.fixed_varaibles.camel import SixHumpCamel, ThreeHumpCamel
@@ -91,10 +93,10 @@ def setup_experiment():
         # Rosenbrock(number_of_variables),
         ##
         Rastrigin(number_of_variables),
-        Sphere(number_of_variables),
+        # Sphere(number_of_variables),
         # Quartic(number_of_variables),
         # AlpineN1(number_of_variables),
-        EggHolder(number_of_variables),
+        # EggHolder(number_of_variables),
         # DixonPrice(number_of_variables),
         # Salomon(number_of_variables),
         # GeneralizedPenalizedN1(number_of_variables),
@@ -102,8 +104,8 @@ def setup_experiment():
         # StepN2(number_of_variables),
         # StepN3(number_of_variables),
         # StyblinskiTang(number_of_variables),
-        Ackley(number_of_variables),
-        Griewank(number_of_variables),
+        # Ackley(number_of_variables),
+        # Griewank(number_of_variables),
         # Levy(number_of_variables),
         # Michalewicz(number_of_variables),
         # Schwefel(number_of_variables),
@@ -159,8 +161,8 @@ def setup_experiment():
         #     problem=p,
         #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations),
         #     swarm_size=solutions_size,
-        #     c1=1.132464,
-        #     c2=4.489647,
+        #     b1=1.132464,
+        #     b2=4.489647,
         #     w=0.110646,
         #     de_probability = 0.5,
         #     crossover_operator=DifferentialEvolutionCrossover(CR=0.9, F=0.5),
@@ -171,8 +173,8 @@ def setup_experiment():
         #     mutation=PolynomialMutation(0.38 / p.number_of_variables(), 20.0),
         #     crossover=SBXCrossover(1, 5.0),
         #     swap_interval=13,  # int(max_evaluations/(2 * solutions_size))
-        #     c1=2.63,
-        #     c2=0.21,
+        #     b1=2.63,
+        #     b2=0.21,
         #     w=0.01,
         #     starting_algorithm='PSO',
         #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
@@ -184,8 +186,8 @@ def setup_experiment():
         #     crossover=SBXCrossover(1, 5.0),
         #     exchange_interval=13,
         #     exchange_number=7,  # 11
-        #     c1=0.00001,
-        #     c2=0.26,
+        #     b1=0.00001,
+        #     b2=0.26,
         #     w=0.17,
         #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
         # ),
@@ -194,8 +196,8 @@ def setup_experiment():
         #     solutions_size=solutions_size,
         #     mutation=PolynomialMutation(0.61 / p.number_of_variables(), 20.0),
         #     crossover=SBXCrossover(1, 5.0),
-        #     c1=1.85,
-        #     c2=0.5,
+        #     b1=1.85,
+        #     b2=0.5,
         #     w=1.53,
         #     starting_algorithm='PSO',
         #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
@@ -206,69 +208,107 @@ def setup_experiment():
             swarm_size=solutions_size,
             c1=2.9291453027606287,
             c2=2.899888793334852,
+            ac2=2.899888793334852,
             w=0.06742018332897903,
             rebel_fraction=0.8,
             termination_criterion=StoppingByEvaluations(max_evaluations)
         ),
-        # 'EscapistPSO': lambda p: EscapistPSO(
-        #     problem=p,
-        #     swarm_size=solutions_size,
-        #     c1=2.49,
-        #     c2=2.47,
-        #     w=0.15,
-        #     escapist_fraction=0.21,
-        #     termination_criterion=StoppingByEvaluations(max_evaluations)
-        # ),
-        # 'RebelEscapistPSO': lambda p: RebelEscapistPSO(
-        #     problem=p,
-        #     swarm_size=solutions_size,
-        #     c1=2.5,
-        #     c2=2.5,
-        #     w=0.1,
-        #     rebel_fraction=0.05,
-        #     escapist_fraction=0.6,
-        #     termination_criterion=StoppingByEvaluations(max_evaluations)
-        # ),
+        'EscapistPSO': lambda p: EscapistPSO(
+            problem=p,
+            swarm_size=solutions_size,
+            c1=2.49,
+            c2=2.47,
+            ac1=2.49,
+            w=0.15,
+            escapist_fraction=0.21,
+            termination_criterion=StoppingByEvaluations(max_evaluations)
+        ),
+        'RebelEscapistPSO': lambda p: RebelEscapistPSO(
+            problem=p,
+            swarm_size=solutions_size,
+            c1=2.5,
+            c2=2.5,
+            ac1=2.5,
+            ac2=2.5,
+            w=0.1,
+            rebel_fraction=0.05,
+            escapist_fraction=0.6,
+            termination_criterion=StoppingByEvaluations(max_evaluations)
+        ),
         # 'REAPSO': lambda p: REAPSO(
         #     problem=p,
         #     swarm_size=solutions_size,
         #     c1=1.5510184332980186,
         #     c2=4.935325731217671,
+        #     ac1=1.5510184332980186,
+        #     ac2=4.935325731217671,
         #     base_inertia=0.214141581688782,
         #     min_inertia=0.11093829549932,
         #     max_inertia=0.935915518894973,
-        #     rebel_ratio=0.2,
-        #     escapist_ratio=0.43,
+        #     rebel_fraction=0.2,
+        #     escapist_fraction=0.43,
         #     window_size = 20,
         #     perturbation_probability = 0.460269994559271,
         #     perturbation_scale = 0.709878890732096,
-        #     max_rebel_ratio = 0.79,
-        #     max_escapist_ratio = 0.56,
+        #     max_rebel_fraction= 0.79,
+        #     max_escapist_fraction= 0.56,
         #     diversity_threshold = 0.058518962214864,
         #     improvement_threshold = 0.008656759607128,
         #     termination_criterion=StoppingByEvaluations(max_evaluations)
         # ),
-        # 'ReverseLearningPSO': lambda p: ReverseLearningPSO(
-        #     problem=p,
-        #     swarm_size=solutions_size,
-        #     c1=1.132464,
-        #     c2=4.489647,
-        #     w=0.110646,
-        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        # ),
-        # 'CombinedLearningPSO': lambda p: CombinedLearningPSO(problem=p,
-        #     swarm_size=solutions_size,
-        #     c1=1.132464,
-        #     c2=4.489647,
-        #     b1=0.132464,
-        #     b2=0.489647,
-        #     w=0.110646,
-        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)),
+        'ReverseLearningPSO': lambda p: ReverseLearningPSO(
+            problem=p,
+            swarm_size=solutions_size,
+            b1=1.132464,
+            b2=4.489647,
+            w=0.110646,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
+        'CombinedLearningPSO': lambda p: CombinedLearningPSO(problem=p,
+            swarm_size=solutions_size,
+            c1=1.132464,
+            c2=4.489647,
+            b1=0.132464,
+            b2=0.489647,
+            w=0.110646,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)),
+        'ContrarianPSO': lambda p: ContrarianPSO(
+            problem=p,
+            swarm_size=solutions_size,
+            c1=2.9291453027606287,
+            c2=2.899888793334852,
+            ac2=2.899888793334852,
+            w=0.06742018332897903,
+            contrarian_fraction=0.2,
+            termination_criterion=StoppingByEvaluations(max_evaluations)
+        ),
+        'DefeatistPSO': lambda p: DefeatistPSO(
+            problem=p,
+            swarm_size=solutions_size,
+            c1=2.49,
+            c2=2.47,
+            ac1=2.49,
+            w=0.15,
+            defeatist_fraction=0.21,
+            termination_criterion=StoppingByEvaluations(max_evaluations)
+        ),
+        'ContrarianDefeatistPSO': lambda p: ContrarianDefeatistPSO(
+            problem=p,
+            swarm_size=solutions_size,
+            c1=2.5,
+            c2=2.5,
+            ac1=2.5,
+            ac2=2.5,
+            w=0.1,
+            contrarian_fraction=0.05,
+            defeatist_fraction=0.05,
+            termination_criterion=StoppingByEvaluations(max_evaluations)
+        ),
         # "GradientEnhancedPSO": lambda p: GradientEnhancedPSO(
         #     problem=p,
         #     swarm_size=solutions_size,
-        #     c1=1.97,
-        #     c2=0.94,
+        #     b1=1.97,
+        #     b2=0.94,
         #     c3=1.97,
         #     w=0.56,
         #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
@@ -276,8 +316,8 @@ def setup_experiment():
         # "LightningPSO": lambda p: LightningPSO(
         #     problem=p,
         #     swarm_size=solutions_size,
-        #     c1=2.5,
-        #     c2=2.5,
+        #     b1=2.5,
+        #     b2=2.5,
         #     c3=0.3,
         #     w=0.1,
         #     dim_sample=0.5,
@@ -288,8 +328,8 @@ def setup_experiment():
         # 'QTPSO': lambda p: QTPSO(
         #     problem=p,
         #     swarm_size=solutions_size,
-        #     c1=0.9441842367886241,
-        #     c2=5.4875414623505385,
+        #     b1=0.9441842367886241,
+        #     b2=5.4875414623505385,
         #     w=0.08830337945791762,
         #     quantum_prob=0.1,
         #     chaos_strength=0.05,
@@ -298,8 +338,8 @@ def setup_experiment():
         # 'SPPPSO': lambda p: SPPPSO(
         #     problem=p,
         #     swarm_size=solutions_size,
-        #     c1=0.9441842367886241,
-        #     c2=5.4875414623505385,
+        #     b1=0.9441842367886241,
+        #     b2=5.4875414623505385,
         #     w=0.08830337945791762,
         #     predator_ratio=0.05,
         #     scavenger_ratio=0.2,
@@ -308,8 +348,8 @@ def setup_experiment():
         # 'TDPSO': lambda p: TDPSO(
         #     problem=p,
         #     swarm_size=solutions_size,
-        #     c1=0.9441842367886241,
-        #     c2=5.4875414623505385,
+        #     b1=0.9441842367886241,
+        #     b2=5.4875414623505385,
         #     w=0.08830337945791762,
         #     temperature = 1.0,
         #     cooling_rate = 0.99,
@@ -327,8 +367,8 @@ def setup_experiment():
         # 'FAPSO': lambda p: FAPSO(
         #     problem=p,
         #     swarm_size=solutions_size,
-        #     c1=0.9441842367886241,
-        #     c2=5.4875414623505385,
+        #     b1=0.9441842367886241,
+        #     b2=5.4875414623505385,
         #     w=0.08830337945791762,
         #     fractal_depth=3,
         #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
