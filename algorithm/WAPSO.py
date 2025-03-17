@@ -43,38 +43,68 @@ class WorstAwarePSO(SingleObjectivePSO):
         self.global_worst = max(swarm, key=lambda s: s.objectives[0])
 
 
-class ReverseLearningPSO(WorstAwarePSO):
+class ReverseLearningGlobalAttractorPSO(WorstAwarePSO):
     """
     Reverse Learning PSO:
     Instead of following personal/global best, particles avoid their personal and global worst.
+    Nonetheless, some attraction is needed, otherwise the all particles are spreading to the edges
     """
 
     def __init__(self,
                  problem: FloatProblem,
                  swarm_size: int,
+                 a: float,
                  b1: float,
                  b2: float,
                  w: float,
                  termination_criterion: TerminationCriterion):
         super().__init__(problem, swarm_size, b1, b2, w, termination_criterion)
+        self.a = a
 
     def update_velocity(self, swarm: List[S]) -> None:
+        best_global = np.array(self.best_global.variables)
+        worst_global = np.array(self.global_worst.variables)
         for particle in swarm:
-            r1 = random.random()
-            r2 = random.random()
+            r1, r2, r3 = random.random(), random.random(), random.random()
             current = np.array(particle.variables)
             worst_personal = np.array(particle.attributes['worst_position'])
-            worst_global = np.array(self.global_worst.variables)
+            attraction = self.a * r3 * (best_global - current)
+            repulsion = (self.c1 * r1 * (current - worst_personal) +
+                         self.c2 * r2 * (current - worst_global))
             new_velocity = (self.w * np.array(particle.attributes['velocity']) +
-                            self.c1 * r1 * (current - worst_personal) +
-                            self.c2 * r2 * (current - worst_global))
+                            repulsion + attraction)
             particle.attributes['velocity'] = new_velocity.tolist()
 
     def update_particle_best(self, swarm: List[S]) -> None:
+        super().update_particle_best(swarm)
         self.update_particle_worst(swarm)
 
     def update_global_best(self, swarm: List[FloatSolution]) -> None:
+        super().update_global_best(swarm)
         self.update_global_worst(swarm)
+
+class ReverseLearningPersonalAttractorPSO(ReverseLearningGlobalAttractorPSO):
+    """
+    Reverse Learning PSO:
+    Instead of following personal/global best, particles avoid their personal and global worst.
+    Nonetheless, some attraction is needed, otherwise the all particles are spreading to the edges
+    """
+
+    def update_velocity(self, swarm: List[S]) -> None:
+        worst_global = np.array(self.global_worst.variables)
+        for particle in swarm:
+            r1, r2, r3 = random.random(), random.random(), random.random()
+            current = np.array(particle.variables)
+            best_personal = np.array(particle.attributes['best_position'])
+            worst_personal = np.array(particle.attributes['worst_position'])
+            attraction = self.a * r3 * (best_personal - current)
+            repulsion = (self.c1 * r1 * (current - worst_personal) +
+                         self.c2 * r2 * (current - worst_global))
+            new_velocity = (self.w * np.array(particle.attributes['velocity']) +
+                            repulsion + attraction)
+            particle.attributes['velocity'] = new_velocity.tolist()
+
+
 
 
 class CombinedLearningPSO(WorstAwarePSO):

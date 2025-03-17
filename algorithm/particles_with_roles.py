@@ -24,19 +24,19 @@ class RoleMixin:
 
     @staticmethod
     def compute_component(particle: S, target: np.ndarray,
-                          current: np.ndarray, normal_coeff: float,
-                          role_coeff: float, role_flag: str) -> np.ndarray:
+                          current: np.ndarray, normal_coefficient: float,
+                          role_coefficient: float, role_flag: str) -> np.ndarray:
         """
         Computes a directional component based on whether the particle has the given role.
-        If the role is active, the direction is inverted (i.e. repulsion) and scaled by role_coeff.
-        Otherwise, the normal attraction is computed scaled by normal_coeff.
+        If the role is active, the direction is inverted (i.e. repulsion) and scaled by role_coefficient.
+        Otherwise, the normal attraction is computed scaled by normal_coefficient.
         """
         r = random.random()
         if particle.attributes.get(role_flag, False):
             # inverted direction
-            return r * role_coeff * (current - target)
+            return r * role_coefficient * (current - target)
         else:
-            return r * normal_coeff * (target - current)
+            return r * normal_coefficient * (target - current)
 
 
 class RebelPSO(SingleObjectivePSO, RoleMixin):
@@ -61,12 +61,12 @@ class RebelPSO(SingleObjectivePSO, RoleMixin):
         return solutions
 
     def update_velocity(self, swarm: List[S]) -> None:
-        gbest = np.array(self.best_global.variables)
+        g_best = np.array(self.best_global.variables)
         for particle in swarm:
             r1 = random.random()
             cognitive_vec = self.c1 * r1 * (
                     np.array(particle.attributes['best_position']) - np.array(particle.variables))
-            social_vec = self.compute_component(particle, gbest, np.array(particle.variables),
+            social_vec = self.compute_component(particle, g_best, np.array(particle.variables),
                                                 self.c2, self.ac2, 'is_rebel')
             velocity = (self.w * np.array(particle.attributes['velocity'])
                         + cognitive_vec
@@ -96,13 +96,13 @@ class EscapistPSO(SingleObjectivePSO, RoleMixin):
         return solutions
 
     def update_velocity(self, swarm: List[S]) -> None:
-        gbest = np.array(self.best_global.variables)
+        g_best = np.array(self.best_global.variables)
         for particle in swarm:
             r2 = random.random()
             cognitive_vec = self.compute_component(particle, np.array(particle.attributes['best_position']),
                                                    np.array(particle.variables),
                                                    self.c1, self.ac1, 'is_escapist')
-            social_vec = self.c2 * r2 * (gbest - np.array(particle.variables))
+            social_vec = self.c2 * r2 * (g_best - np.array(particle.variables))
             velocity = (self.w * np.array(particle.attributes['velocity'])
                         + cognitive_vec
                         + social_vec)
@@ -149,12 +149,12 @@ class RebelEscapistPSO(SingleObjectivePSO, RoleMixin):
         return solutions
 
     def update_velocity(self, swarm: List[S]) -> None:
-        gbest = np.array(self.best_global.variables)
+        g_best = np.array(self.best_global.variables)
         for particle in swarm:
             current = np.array(particle.variables)
-            pbest = np.array(particle.attributes['best_position'])
-            social_vec = self.compute_component(particle, gbest, current, self.c2, self.ac2, 'is_rebel')
-            cognitive_vec = self.compute_component(particle, pbest, current, self.c1, self.ac1, 'is_escapist')
+            p_best = np.array(particle.attributes['best_position'])
+            social_vec = self.compute_component(particle, g_best, current, self.c2, self.ac2, 'is_rebel')
+            cognitive_vec = self.compute_component(particle, p_best, current, self.c1, self.ac1, 'is_escapist')
             velocity = (self.w * np.array(particle.attributes['velocity'])
                         + social_vec
                         + cognitive_vec)
@@ -341,17 +341,17 @@ class ContrarianPSO(WorstAwarePSO, RoleMixin):
         return solutions
 
     def update_velocity(self, swarm: List[S]) -> None:
+        g_best = np.array(self.best_global.variables)
+        g_worst = np.array(self.global_worst.variables)
         # For each particle, if marked as contrarian, use global worst; otherwise use global best.
         for particle in swarm:
             current = np.array(particle.variables)
-            pbest = np.array(particle.attributes['best_position'])
+            p_best = np.array(particle.attributes['best_position'])
             if particle.attributes.get('is_contrarian', False):
-                alternative = np.array(self.global_worst.variables)  # global worst
-                social_vec = self.ac2 * random.random() * (alternative - current)
+                social_vec = self.ac2 * random.random() * (g_worst - current)
             else:
-                gbest = np.array(self.best_global.variables)
-                social_vec = self.c2 * random.random() * (gbest - current)
-            cognitive_vec = self.c1 * random.random() * (pbest - current)
+                social_vec = self.c2 * random.random() * (g_best - current)
+            cognitive_vec = self.c1 * random.random() * (p_best - current)
             velocity = self.w * np.array(particle.attributes['velocity']) + social_vec + cognitive_vec
             particle.attributes['velocity'] = velocity.tolist()
 
@@ -391,17 +391,17 @@ class DefeatistPSO(WorstAwarePSO, RoleMixin):
         return solutions
 
     def update_velocity(self, swarm: List[S]) -> None:
+        g_best = np.array(self.best_global.variables)
         # For each particle, if marked as defeatist, use personal worst; otherwise use personal best.
         for particle in swarm:
             current = np.array(particle.variables)
-            gbest = np.array(self.best_global.variables)
             if particle.attributes.get('is_defeatist', False):
-                alternative = np.array(particle.attributes['worst_position'])  # personal worst
-                cognitive_vec = self.ac1 * random.random() * (alternative - current)
+                p_worst = np.array(particle.attributes['worst_position'])  # personal worst
+                cognitive_vec = self.ac1 * random.random() * (p_worst - current)
             else:
-                pbest = np.array(particle.attributes['best_position'])
-                cognitive_vec = self.c1 * random.random() * (pbest - current)
-            social_vec = self.c2 * random.random() * (gbest - current)
+                p_best = np.array(particle.attributes['best_position'])
+                cognitive_vec = self.c1 * random.random() * (p_best - current)
+            social_vec = self.c2 * random.random() * (g_best - current)
             velocity = self.w * np.array(particle.attributes['velocity']) + social_vec + cognitive_vec
             particle.attributes['velocity'] = velocity.tolist()
 

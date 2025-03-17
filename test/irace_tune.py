@@ -6,7 +6,7 @@ from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
 from problem.n_variables.ackley import Ackley
 from problem.n_variables.griewank import Griewank
-from algorithm.WAPSO import ReverseLearningPSO, CombinedLearningPSO
+from algorithm.WAPSO import ReverseLearningGlobalAttractorPSO, CombinedLearningPSO, ReverseLearningPersonalAttractorPSO
 from algorithm.particles_with_roles import RebelPSO, EscapistPSO, RebelEscapistPSO, REAPSO, ContrarianPSO, DefeatistPSO, \
     ContrarianDefeatistPSO
 from algorithm.single_objective_PSO import SingleObjectivePSO
@@ -22,118 +22,108 @@ os.environ["LANG"] = "en_US.UTF-8"
 os.environ["LC_ALL"] = "en_US.UTF-8"
 os.environ["R_DEFAULT_ENCODING"] = "UTF-8"
 robjects.r('Sys.setlocale("LC_ALL", "en_US.UTF-8")')
+robjects.r('library(iraceplot)')
 
-# Define constants
+
+
+# number_of_variables = 10
+# solutions_size = 10
+# max_evaluations = 1000
+# num_runs = 2
+# budget = 60
+
+
 number_of_variables = 100
 solutions_size = 100
 max_evaluations = 25000
 num_runs = 5   # Number of independent runs per problem
-budget = 3000    # Total number of configurations to try in irace
+budget = 1000    # Total number of configurations to try per parameter
 
-# Define benchmark problems for tuning
 problems = [
     Rastrigin(number_of_variables),
     Ackley(number_of_variables),
     Griewank(number_of_variables)
 ]
 
-# Define parameter spaces for each algorithm using irace's Real and Integer objects.
-# (Each parameter space is defined as a list of parameters; later we pass it to ParameterSpace.)
 parameter_spaces = {
-    # 'SingleObjectivePSO': [
-    #     Real("b1", 0.01, 10),
-    #     Real("b2", 0.01, 10),
-    #     Real("w", 0.01, 10),
-    # ],
-    # 'REAPSO': [
-    #     Real("b1", 0.5, 5.0),
-    #     Real("b2", 0.5, 5.0),
-    #     Real("base_inertia", 0.05, 1.0),
-    #     Real("min_inertia", 0.01, 0.5),  # < base_inertia
-    #     Real("max_inertia", 0.07, 1.0),  # >= base_inertia
-    #     Real("rebel_fraction", 0.05, 0.8),
-    #     Real("escapist_fraction", 0.05, 0.8),
-    #     Integer("window_size", 5, 20),
-    #     Real("perturbation_probability", 0.01, 0.5),
-    #     Real("perturbation_scale", 0.01, 1.0),
-    #     Real("max_rebel_fraction", 0.5, 1.0),
-    #     Real("max_escapist_fraction", 0.5, 1.0),
-    #     Real("diversity_threshold", 0.01, 1.0),
-    #     Real("improvement_threshold", 0.001, 0.1),
-    # ],
     'RebelPSO': [
-        Real("c1", 0.01, 10),
-        Real("c2", 0.01, 10),
-        Real("w", 0.01, 10),
+        Real("c1", 0.01, 6),
+        Real("c2", 0.01, 6),
+        Real("ac2", 0.01, 6),
+        Real("w", 0.01, 2),
         Real("rebel_fraction", 0.05, 0.8),
     ],
     'EscapistPSO': [
-        Real("c1", 0.01, 10),
-        Real("c2", 0.01, 10),
-        Real("w", 0.01, 10),
+        Real("c1", 0.01, 6),
+        Real("c2", 0.01, 6),
+        Real("ac1", 0.01, 6),
+        Real("w", 0.01, 2),
         Real("escapist_fraction", 0.05, 0.8),
     ],
     'RebelEscapistPSO': [
-        Real("c1", 0.01, 10),
-        Real("c2", 0.01, 10),
-        Real("w", 0.01, 10),
+        Real("c1", 0.01, 6),
+        Real("c2", 0.01, 6),
+        Real("ac1", 0.01, 6),
+        Real("ac2", 0.01, 6),
+        Real("w", 0.01, 2),
         Real("rebel_fraction", 0.05, 0.8),
         Real("escapist_fraction", 0.05, 0.8),
     ],
-    # 'QTPSO': [
-    #     Real("b1", 0.1, 5),
-    #     Real("b2", 0.1, 5),
-    #     Real("w", 0.01, 0.5),
-    #     Real("quantum_prob", 0.01, 0.5),
-    #     Real("chaos_strength", 0.01, 1.0),
-    # ],
-    # 'SPPPSO': [
-    #     Real("b1", 0.01, 10),
-    #     Real("b2", 0.01, 10),
-    #     Real("w", 0.01, 10),
-    #     Real("predator_ratio", 0.01, 0.5),
-    #     Real("scavenger_ratio", 0.01, 0.5),
-    # ],
-    # 'TDPSO': [
-    #     Real("b1", 0.1, 5),
-    #     Real("b2", 0.1, 5),
-    #     Real("w", 0.01, 0.5),
-    #     Real("temperature", 0.1, 5.0),
-    #     Real("cooling_rate", 0.9, 1.0),
-    # ],
-    # 'NPSO': [
-    #     Real("b1", 0.01, 10),
-    #     Real("b2", 0.01, 10),
-    #     Real("w", 0.01, 10),
-    #     Real("spike_threshold", 0.5, 1.0),
-    # ],
-    # 'FAPSO': [
-    #     Real("b1", 0.01, 10),
-    #     Real("b2", 0.01, 10),
-    #     Real("w", 0.01, 10),
-    #     Integer("fractal_depth", 1, 5),
-    # ],
+    'ReverseLearningGlobalAttractorPSO': [
+        Real("a", 0.01, 6),
+        Real("b1", 0.01, 6),
+        Real("b2", 0.01, 6),
+        Real("w", 0.01, 2),
+    ],
+    'ReverseLearningPersonalAttractorPSO': [
+        Real("a", 0.01, 6),
+        Real("b1", 0.01, 6),
+        Real("b2", 0.01, 6),
+        Real("w", 0.01, 2),
+    ],
+    'CombinedLearningPSO': [
+        Real("c1", 0.01, 6),
+        Real("c2", 0.01, 6),
+        Real("b1", 0.01, 6),
+        Real("b2", 0.01, 6),
+        Real("w", 0.01, 2),
+    ],
+    'ContrarianPSO': [
+        Real("c1", 0.01, 6),
+        Real("c2", 0.01, 6),
+        Real("ac2", 0.01, 6),
+        Real("w", 0.01, 2),
+        Real("contrarian_fraction", 0.05, 0.8),
+    ],
+    'DefeatistPSO': [
+        Real("c1", 0.01, 6),
+        Real("c2", 0.01, 6),
+        Real("ac1", 0.01, 6),
+        Real("w", 0.01, 2),
+        Real("defeatist_fraction", 0.05, 0.8),
+    ],
+    'ContrarianDefeatistPSO': [
+        Real("c1", 0.01, 6),
+        Real("c2", 0.01, 6),
+        Real("ac1", 0.01, 6),
+        Real("ac2", 0.01, 6),
+        Real("w", 0.01, 2),
+        Real("contrarian_fraction", 0.05, 0.8),
+        Real("defeatist_fraction", 0.05, 0.8),
+    ],
+
 }
 
-# Global variable to indicate the current algorithm (used in the target_runner)
 current_algorithm = None
 
 def target_runner(experiment: Experiment, scenario: Scenario) -> float:
-    """
-    The target runner function that irace calls. It receives an Experiment object
-    (with a candidate configuration in experiment.configuration) and a Scenario.
-    It then evaluates the candidate configuration over all benchmark problems and runs.
-    """
+    print(f"Running experiment with configuration: {experiment.configuration}")
     config = experiment.configuration
-    # # Enforce inertia constraint: if violated, return a high penalty
-    # if not (config["min_inertia"] < config["base_inertia"] < config["max_inertia"]):
-    #     print("Inertia constraints violated; applying penalty.")
-    #     return 1e8  # penalty
-
     results = []
     AlgorithmClass = globals()[current_algorithm]
     for problem in problems:
         for _ in range(num_runs):
+            # print(f"Running {AlgorithmClass.__name__} on {problem.__class__.__name__}")
             algorithm = AlgorithmClass(
                 problem=problem,
                 swarm_size=solutions_size,
@@ -148,14 +138,21 @@ def target_runner(experiment: Experiment, scenario: Scenario) -> float:
 
 if __name__ == "__main__":
     best_configurations = {}
+    output_file = "irace_best_configurations.json"
+
     for algo_name, space_list in parameter_spaces.items():
         current_algorithm = algo_name
         print(f"Optimizing parameters for {algo_name} ...")
+
         parameter_space = ParameterSpace(params=space_list)
-        scenario = Scenario(max_experiments=budget, seed=42, n_jobs=4)
+        scenario = Scenario(max_experiments=budget * len(space_list), seed=42, n_jobs=8)
+
         result = irace(target_runner, parameter_space, scenario, return_df=True, remove_metadata=True)
         best_configurations[algo_name] = result
-        print(f"Best configuration for {algo_name}: {result}")
 
-    with open("irace_best_configurations.json", "w") as f:
-        json.dump(best_configurations, f, indent=4)
+        # Save results **after each algorithm**
+        with open(output_file, "w") as f:
+            json.dump({k: v.to_json() for k, v in best_configurations.items()}, f, indent=4)
+
+        print(f"Saved best configuration for {algo_name} to {output_file}")
+
