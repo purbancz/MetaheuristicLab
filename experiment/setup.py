@@ -6,6 +6,7 @@ from jmetal.problem import Sphere, Srinivas
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
 
+from algorithm.AdaptivePSO import GlobalAdaptivePSO, LocalAdaptivePSO
 from algorithm.DifferentialEvolution import DifferentialEvolution
 from algorithm.FAPSO import FAPSO
 from algorithm.GradientEnhancedPSO import GradientEnhancedPSO
@@ -85,7 +86,9 @@ def setup_experiment():
         'DefeatistPSO': 'darkcyan',
         'ContrarianDefeatistPSO': 'darkblue',
         'DE': 'gold',
-        'HybridPSODE': 'turquoise'
+        'HybridPSODE': 'turquoise',
+        'GlobalAdaptivePSO': 'xkcd:lemon',
+        'LocalAdaptivePSO': 'xkcd:camouflage green'
     }
 
     results_dir = 'experiment_results'
@@ -369,15 +372,15 @@ def setup_experiment():
         #     cooling_rate = 0.99,
         #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
         # ),
-        'NPSO': lambda p: NPSO(
-            problem=p,
-            swarm_size=solutions_size,
-            c1=0.025515929851215,
-            c2=2.251249703372387,
-            w=0.056059595444136,
-            spike_threshold = 0.963856605654984,
-            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        ),
+        # 'NPSO': lambda p: NPSO(
+        #     problem=p,
+        #     swarm_size=solutions_size,
+        #     c1=0.025515929851215,
+        #     c2=2.251249703372387,
+        #     w=0.056059595444136,
+        #     spike_threshold = 0.963856605654984,
+        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        # ),
         # 'FAPSO': lambda p: FAPSO(
         #     problem=p,
         #     swarm_size=solutions_size,
@@ -386,7 +389,27 @@ def setup_experiment():
         #     w=0.08830337945791762,
         #     fractal_depth=3,
         #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        # )
+        # ),
+        'GlobalAdaptivePSO': lambda p: GlobalAdaptivePSO(
+            problem=p,
+            swarm_size=solutions_size,
+            c1=0.025515929851215,
+            c2=2.251249703372387,
+            max_c1=7,
+            max_c2=7,
+            w=0.056059595444136,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
+        'LocalAdaptivePSO': lambda p: LocalAdaptivePSO(
+            problem=p,
+            swarm_size=solutions_size,
+            c1=0.025515929851215,
+            c2=2.251249703372387,
+            max_c1=7,
+            max_c2=7,
+            w=0.056059595444136,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
     }
 
     return (algorithms, problems, no_of_runs, number_of_variables, solutions_size,
