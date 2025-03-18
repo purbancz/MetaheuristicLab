@@ -314,19 +314,19 @@ def setup_experiment():
             defeatist_fraction=0.53,
             termination_criterion=StoppingByEvaluations(max_evaluations)
         ),
-        'ContrarianDefeatistPSO': lambda p: ContrarianDefeatistPSO(
+        'ContrarianDefeatistPSO': lambda p: ContrarianDefeatistPSO( # rough tuning
             problem=p,
             swarm_size=solutions_size,
-            c1=2.5,
-            c2=2.5,
-            ac1=2.5,
-            ac2=2.5,
-            w=0.1,
-            contrarian_fraction=0.05,
-            defeatist_fraction=0.05,
+            c1=0.9052,
+            c2=5.0633,
+            ac1=1.7460,
+            ac2=4.3333,
+            w=0.0665,
+            contrarian_fraction=0.12,
+            defeatist_fraction=0.19,
             termination_criterion=StoppingByEvaluations(max_evaluations)
         ),
-        'EschewerPSO': lambda p: EschewerPSO(  # rough tuning
+        'EschewerPSO': lambda p: EschewerPSO(
             problem=p,
             swarm_size=solutions_size,
             c1=0.4049,
@@ -336,7 +336,7 @@ def setup_experiment():
             eschewer_fraction=0.4802,
             termination_criterion=StoppingByEvaluations(max_evaluations)
         ),
-        'EscapistPSO': lambda p: EscapistPSO(  # rough tuning
+        'EscapistPSO': lambda p: EscapistPSO(
             problem=p,
             swarm_size=solutions_size,
             c1=0.4045,
