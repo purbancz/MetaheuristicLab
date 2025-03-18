@@ -184,7 +184,7 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
 #             particle.attributes['velocity'] = velocity.tolist()
 
 
-# class EscapistPSO(SingleObjectivePSO):
+# class RejectorPSO(SingleObjectivePSO):
 #     """PSO with escapist particles opposing personal best"""
 #
 #     def __init__(self,
@@ -241,7 +241,7 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
 #             particle.attributes['velocity'] = velocity.tolist()
 
 
-# class RebelEscapistPSO(SingleObjectivePSO):
+# class RebelRejectorPSO(SingleObjectivePSO):
 #     """PSO with both rebel and escapist particles"""
 #
 #     def __init__(self,
@@ -316,7 +316,7 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
 #             particle.attributes['velocity'] = velocity.tolist()
 
 
-# class REAPSO(SingleObjectivePSO):
+# class RRAPSO(SingleObjectivePSO):
 #     """PSO with rebel and escapist particles and adaptive parameters"""
 #
 #     def create_initial_solutions(self) -> List[S]:
@@ -533,4 +533,4 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
 #                 ]
 #
 #     def get_name(self) -> str:
-#         return "REAPSO"
+#         return "RRAPSO"

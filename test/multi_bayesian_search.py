@@ -16,7 +16,7 @@ rank = comm.Get_rank()
 size = comm.Get_size()
 
 ALGORITHMS = {
-    'REAPSO': [
+    'RRAPSO': [
         Real(0.2, 2.5, name='b1'),
         Real(0.2, 2.5, name='b2'),
         Real(0.4, 1.4, name='base_inertia'),
@@ -31,13 +31,13 @@ ALGORITHMS = {
         Real(0.1, 1.4, name='w'),
         Real(0.05, 0.4, name='rebel_fraction'),
     ],
-    'EscapistPSO': [
+    'RejectorPSO': [
         Real(0.5, 2.5, name='b1'),
         Real(0.5, 2.5, name='b2'),
         Real(0.1, 1.4, name='w'),
         Real(0.05, 0.4, name='escapist_fraction'),
     ],
-    'RebelEscapistPSO': [
+    'RebelRejectorPSO': [
         Real(0.5, 2.5, name='b1'),
         Real(0.5, 2.5, name='b2'),
         Real(0.1, 1.4, name='w'),

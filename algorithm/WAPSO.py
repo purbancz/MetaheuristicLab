@@ -33,7 +33,8 @@ class WorstAwarePSO(SingleObjectivePSO):
         self.global_worst = max(solutions, key=lambda s: s.objectives[0])
         return solutions
 
-    def update_particle_worst(self, swarm: List[S]) -> None:
+    @staticmethod
+    def update_particle_worst(swarm: List[S]) -> None:
         for particle in swarm:
             if particle.objectives[0] > particle.attributes['worst_objective']:
                 particle.attributes['worst_objective'] = particle.objectives[0]

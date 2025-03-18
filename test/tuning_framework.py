@@ -49,20 +49,20 @@ ALGO_SPACES = {
         Real(0.1, 1.4, name='w'),
         Real(0.05, 0.4, name='rebel_fraction'),
     ],
-    'EscapistPSO': [
+    'RejectorPSO': [
         Real(0.5, 2.5, name='b1'),
         Real(0.5, 2.5, name='b2'),
         Real(0.1, 1.4, name='w'),
         Real(0.05, 0.4, name='escapist_fraction'),
     ],
-    'RebelEscapistPSO': [
+    'RebelRejectorPSO': [
         Real(0.5, 2.5, name='b1'),
         Real(0.5, 2.5, name='b2'),
         Real(0.1, 1.4, name='w'),
         Real(0.05, 0.4, name='rebel_fraction'),
         Real(0.05, 0.4, name='escapist_fraction'),
     ],
-    'REAPSO': [
+    'RRAPSO': [
         Real(0.5, 2.5, name='b1'),
         Real(0.5, 2.5, name='b2'),
         Real(0.1, 1.4, name='w'),
@@ -369,9 +369,9 @@ class MetaOptimizer:
 if __name__ == "__main__":
     algorithms_to_tune = [
         'RebelPSO',
-        'EscapistPSO',
-        'RebelEscapistPSO',
-        'REAPSO'
+        'RejectorPSO',
+        'RebelRejectorPSO',
+        'RRAPSO'
     ]
 
     for algo_name in algorithms_to_tune:

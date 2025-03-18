@@ -6,9 +6,10 @@ from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
 from problem.n_variables.ackley import Ackley
 from problem.n_variables.griewank import Griewank
+from algorithm.AdaptivePSO import GlobalAdaptivePSO, LocalAdaptivePSO
 from algorithm.WAPSO import ReverseLearningGlobalAttractorPSO, CombinedLearningPSO, ReverseLearningPersonalAttractorPSO
-from algorithm.particles_with_roles import RebelPSO, EscapistPSO, RebelEscapistPSO, REAPSO, ContrarianPSO, DefeatistPSO, \
-    ContrarianDefeatistPSO
+from algorithm.particles_with_roles import RebelPSO, RejectorPSO, RebelRejectorPSO, RRAPSO, ContrarianPSO, DefeatistPSO, \
+    ContrarianDefeatistPSO, EschewerPSO, EscapistPSO, EschewerEscapistPSO
 from algorithm.single_objective_PSO import SingleObjectivePSO
 from algorithm.FAPSO import FAPSO
 from algorithm.NPSO import NPSO
@@ -22,7 +23,7 @@ os.environ["LANG"] = "en_US.UTF-8"
 os.environ["LC_ALL"] = "en_US.UTF-8"
 os.environ["R_DEFAULT_ENCODING"] = "UTF-8"
 robjects.r('Sys.setlocale("LC_ALL", "en_US.UTF-8")')
-robjects.r('library(iraceplot)')
+# robjects.r('library(iraceplot)')
 
 
 
@@ -46,28 +47,10 @@ problems = [
 ]
 
 parameter_spaces = {
-    'RebelPSO': [
+    'SingleObjectivePSO': [
         Real("c1", 0.01, 6),
         Real("c2", 0.01, 6),
-        Real("ac2", 0.01, 6),
         Real("w", 0.01, 2),
-        Real("rebel_fraction", 0.05, 0.8),
-    ],
-    'EscapistPSO': [
-        Real("c1", 0.01, 6),
-        Real("c2", 0.01, 6),
-        Real("ac1", 0.01, 6),
-        Real("w", 0.01, 2),
-        Real("escapist_fraction", 0.05, 0.8),
-    ],
-    'RebelEscapistPSO': [
-        Real("c1", 0.01, 6),
-        Real("c2", 0.01, 6),
-        Real("ac1", 0.01, 6),
-        Real("ac2", 0.01, 6),
-        Real("w", 0.01, 2),
-        Real("rebel_fraction", 0.05, 0.8),
-        Real("escapist_fraction", 0.05, 0.8),
     ],
     'ReverseLearningGlobalAttractorPSO': [
         Real("a", 0.01, 6),
@@ -81,37 +64,44 @@ parameter_spaces = {
         Real("b2", 0.01, 6),
         Real("w", 0.01, 2),
     ],
-    'CombinedLearningPSO': [
-        Real("c1", 0.01, 6),
-        Real("c2", 0.01, 6),
-        Real("b1", 0.01, 6),
-        Real("b2", 0.01, 6),
-        Real("w", 0.01, 2),
-    ],
-    'ContrarianPSO': [
+    'EschewerPSO': [
         Real("c1", 0.01, 6),
         Real("c2", 0.01, 6),
         Real("ac2", 0.01, 6),
         Real("w", 0.01, 2),
-        Real("contrarian_fraction", 0.05, 0.8),
+        Real("eschewer_fraction", 0.05, 0.8),
     ],
-    'DefeatistPSO': [
+    'EscapistPSO': [
         Real("c1", 0.01, 6),
         Real("c2", 0.01, 6),
         Real("ac1", 0.01, 6),
         Real("w", 0.01, 2),
-        Real("defeatist_fraction", 0.05, 0.8),
+        Real("escapist_fraction", 0.05, 0.8),
     ],
-    'ContrarianDefeatistPSO': [
+    'EschewerEscapistPSO': [ # 7
         Real("c1", 0.01, 6),
         Real("c2", 0.01, 6),
         Real("ac1", 0.01, 6),
         Real("ac2", 0.01, 6),
         Real("w", 0.01, 2),
-        Real("contrarian_fraction", 0.05, 0.8),
-        Real("defeatist_fraction", 0.05, 0.8),
+        Real("eschewer_fraction", 0.05, 0.8),
+        Real("escapist_fraction", 0.05, 0.8),
     ],
+    'GlobalAdaptivePSO': [
+        Real("c1", 0.01, 6),
+        Real("c2", 0.01, 6),
+        Real("max_c1", 4, 20),
+        Real("max_c2", 4, 20),
+        Real("w", 0.01, 2),
 
+    ],
+    'LocalAdaptivePSO': [
+        Real("c1", 0.01, 6),
+        Real("c2", 0.01, 6),
+        Real("max_c1", 4, 20),
+        Real("max_c2", 4, 20),
+        Real("w", 0.01, 2),
+    ],
 }
 
 current_algorithm = None
@@ -155,4 +145,3 @@ if __name__ == "__main__":
             json.dump({k: v.to_json() for k, v in best_configurations.items()}, f, indent=4)
 
         print(f"Saved best configuration for {algo_name} to {output_file}")
-

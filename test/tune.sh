@@ -6,9 +6,9 @@
 #SBATCH --partition=plgrid
 #SBATCH --account=plglscclass24-cpu
 #SBATCH --nodes=1
-#SBATCH --ntasks=4
+#SBATCH --ntasks=2
 #SBATCH --cpus-per-task=4
-#SBATCH --mem=32G
+#SBATCH --mem=16G
 
 
 # Load modules and activate the conda environment

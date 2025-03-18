@@ -22,7 +22,7 @@ ALGORITHMS = {
     #     Real(0.01, 10, name='b2'),
     #     Real(0.01, 10, name='w'),
     # ],
-    # 'REAPSO': [
+    # 'RRAPSO': [
     #     Real(0.01, 10, name='b1'),
     #     Real(0.01, 10, name='b2'),
     #     Real(0.01, 10, name='base_inertia'),
@@ -37,13 +37,13 @@ ALGORITHMS = {
         Real(0.01, 0.3, name='w'),
         Real(0.05, 0.8, name='rebel_fraction'),
     ],
-    'EscapistPSO': [
+    'RejectorPSO': [
         Real(0.8, 1.7, name='b1'),
         Real(0.8, 4.5, name='b2'),
         Real(0.6, 0.8, name='w'),
         Real(0.05, 0.8, name='escapist_fraction'),
     ],
-    'RebelEscapistPSO': [
+    'RebelRejectorPSO': [
         Real(0.6, 2, name='b1'),
         Real(0.9, 5, name='b2'),
         Real(0.06, 0.3, name='w'),

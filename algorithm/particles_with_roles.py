@@ -74,8 +74,8 @@ class RebelPSO(SingleObjectivePSO, RoleMixin):
             particle.attributes['velocity'] = velocity.tolist()
 
 
-class EscapistPSO(SingleObjectivePSO, RoleMixin):
-    """PSO with escapist particles opposing personal best"""
+class RejectorPSO(SingleObjectivePSO, RoleMixin):
+    """PSO with rejector particles opposing personal best"""
 
     def __init__(self,
                  problem: FloatProblem,
@@ -92,7 +92,7 @@ class EscapistPSO(SingleObjectivePSO, RoleMixin):
 
     def create_initial_solutions(self) -> List[FloatSolution]:
         solutions = super().create_initial_solutions()
-        self.mark_particles(solutions, self.escapist_fraction, 'is_escapist')
+        self.mark_particles(solutions, self.escapist_fraction, 'is_rejector')
         return solutions
 
     def update_velocity(self, swarm: List[S]) -> None:
@@ -101,7 +101,7 @@ class EscapistPSO(SingleObjectivePSO, RoleMixin):
             r2 = random.random()
             cognitive_vec = self.compute_component(particle, np.array(particle.attributes['best_position']),
                                                    np.array(particle.variables),
-                                                   self.c1, self.ac1, 'is_escapist')
+                                                   self.c1, self.ac1, 'is_rejector')
             social_vec = self.c2 * r2 * (g_best - np.array(particle.variables))
             velocity = (self.w * np.array(particle.attributes['velocity'])
                         + cognitive_vec
@@ -109,8 +109,8 @@ class EscapistPSO(SingleObjectivePSO, RoleMixin):
             particle.attributes['velocity'] = velocity.tolist()
 
 
-class RebelEscapistPSO(SingleObjectivePSO, RoleMixin):
-    """PSO with both rebel and escapist particles"""
+class RebelRejectorPSO(SingleObjectivePSO, RoleMixin):
+    """PSO with both rebel and rejector particles"""
 
     def __init__(self,
                  problem: FloatProblem,
@@ -161,8 +161,9 @@ class RebelEscapistPSO(SingleObjectivePSO, RoleMixin):
             particle.attributes['velocity'] = velocity.tolist()
 
 
-class REAPSO(RebelEscapistPSO):
+class RRAPSO(RebelRejectorPSO):
     """PSO with rebel and escapist particles and adaptive parameters"""
+
     def __init__(self,
                  problem: FloatProblem,
                  termination_criterion: TerminationCriterion,
@@ -184,7 +185,8 @@ class REAPSO(RebelEscapistPSO):
                  diversity_threshold: float = 0.1,
                  improvement_threshold: float = 0.01):
         # Initialize base using rebel and escapist fractions.
-        super().__init__(problem, swarm_size, c1, c2, ac1, ac2, base_inertia, rebel_fraction, escapist_fraction, termination_criterion)
+        super().__init__(problem, swarm_size, c1, c2, ac1, ac2, base_inertia, rebel_fraction, escapist_fraction,
+                         termination_criterion)
         # Adaptive parameters
         self.base_inertia = base_inertia
         self.min_inertia = min_inertia
@@ -261,18 +263,19 @@ class REAPSO(RebelEscapistPSO):
 
     def adapt_parameters(self, diversity: float, swarm: List[FloatSolution]) -> None:
         if diversity < self.diversity_threshold:
-            self.w = min(self.max_inertia, self.w * 1.05)
+            self.w = min(self.max_inertia, self.w * 1.01)
         else:
-            self.w = max(self.min_inertia, self.w * 0.95)
+            self.w = max(self.min_inertia, self.w * 0.99)
 
         # Role adaptation: update ratios based on improvement rate
         improvement_rate = self.calculate_improvement_rate()
         if improvement_rate < self.improvement_threshold:
-            self.rebel_fraction = min(self.max_rebel_fraction, self.rebel_fraction * 1.1)
-            self.escapist_fraction = min(self.max_escapist_fraction, self.escapist_fraction * 1.1)
+            self.rebel_fraction = min(self.max_rebel_fraction, self.rebel_fraction + 1 / super().swarm_size)
+            self.escapist_fraction = min(self.max_escapist_fraction, self.escapist_fraction + 1 / super().swarm_size)
         else:
-            self.rebel_fraction = max(self.original_rebel_fraction, self.rebel_fraction * 0.95)
-            self.escapist_fraction = max(self.original_escapist_fraction, self.escapist_fraction * 0.95)
+            self.rebel_fraction = max(self.original_rebel_fraction, self.rebel_fraction - 1 / super().swarm_size)
+            self.escapist_fraction = max(self.original_escapist_fraction,
+                                         self.escapist_fraction - 1 / super().swarm_size)
 
         self.update_special_particles(swarm)
 
@@ -314,14 +317,20 @@ class REAPSO(RebelEscapistPSO):
                 ]
 
     def get_name(self) -> str:
-        return "REAPSO"
+        return "RRAPSO"
 
+
+#####################################
+# Worst aware roles
+# Negative
+#####################################
 
 class ContrarianPSO(WorstAwarePSO, RoleMixin):
     """
     Contrarian PSO:
     Particles marked as contrarian (flag 'is_contrarian') use global worst instead of global best.
     """
+
     def __init__(self,
                  problem: FloatProblem,
                  swarm_size: int,
@@ -363,21 +372,19 @@ class ContrarianPSO(WorstAwarePSO, RoleMixin):
         super().update_global_best(swarm)
         self.update_global_worst(swarm)
 
-#####################################
-# 2) DefeatistPSO
-#####################################
 
 class DefeatistPSO(WorstAwarePSO, RoleMixin):
     """
     Defeatist PSO:
     Particles marked as defeatist (flag 'is_defeatist') use their personal worst instead of personal best.
     """
+
     def __init__(self,
                  problem: FloatProblem,
                  swarm_size: int,
                  c1: float,
                  c2: float,
-                 ac1:float,
+                 ac1: float,
                  w: float,
                  defeatist_fraction: float,
                  termination_criterion: TerminationCriterion):
@@ -413,15 +420,13 @@ class DefeatistPSO(WorstAwarePSO, RoleMixin):
         super().update_global_best(swarm)
         self.update_global_worst(swarm)
 
-#####################################
-# 3) ContrarianDefeatistPSO
-#####################################
 
 class ContrarianDefeatistPSO(WorstAwarePSO, RoleMixin):
     """
     Contrarian-Defeatist PSO:
     Particles may be marked as contrarian (using global worst) and/or defeatist (using personal worst).
     """
+
     def __init__(self,
                  problem: FloatProblem,
                  swarm_size: int,
@@ -458,6 +463,166 @@ class ContrarianDefeatistPSO(WorstAwarePSO, RoleMixin):
             # Cognitive component: choose personal worst if defeatist; else personal best.
             if particle.attributes.get('is_defeatist', False):
                 cognitive_dir = np.array(particle.attributes['worst_position']) - current
+                cognitive_vec = self.ac1 * random.random() * cognitive_dir
+            else:
+                cognitive_dir = np.array(particle.attributes['best_position']) - current
+                cognitive_vec = self.c1 * random.random() * cognitive_dir
+            velocity = self.w * np.array(particle.attributes['velocity']) + social_vec + cognitive_vec
+            particle.attributes['velocity'] = velocity.tolist()
+
+    def update_particle_best(self, swarm: List[S]) -> None:
+        super().update_particle_best(swarm)
+        self.update_particle_worst(swarm)
+
+    def update_global_best(self, swarm: List[FloatSolution]) -> None:
+        super().update_global_best(swarm)
+        self.update_global_worst(swarm)
+
+
+#####################################
+# Worst aware roles
+# Positive
+#####################################
+
+
+class EschewerPSO(WorstAwarePSO, RoleMixin):
+    """
+    Eschewer PSO:
+    Particles marked as eschewer (flag 'is_eschewer') avoid global worst instead of going towards global best.
+    """
+
+    def __init__(self,
+                 problem: FloatProblem,
+                 swarm_size: int,
+                 c1: float,
+                 c2: float,
+                 ac2: float,
+                 w: float,
+                 eschewer_fraction: float,
+                 termination_criterion: TerminationCriterion):
+        super().__init__(problem, swarm_size, c1, c2, w, termination_criterion)
+        self.ac2 = ac2
+        self.eschewer_fraction = eschewer_fraction
+
+    def create_initial_solutions(self) -> List[S]:
+        solutions = super().create_initial_solutions()
+        self.mark_particles(solutions, self.eschewer_fraction, 'is_eschewer')
+        return solutions
+
+    def update_velocity(self, swarm: List[S]) -> None:
+        g_best = np.array(self.best_global.variables)
+        g_worst = np.array(self.global_worst.variables)
+        for particle in swarm:
+            current = np.array(particle.variables)
+            p_best = np.array(particle.attributes['best_position'])
+            if particle.attributes.get('is_eschewer', False):
+                social_vec = self.ac2 * random.random() * (current - g_worst)
+            else:
+                social_vec = self.c2 * random.random() * (g_best - current)
+            cognitive_vec = self.c1 * random.random() * (p_best - current)
+            velocity = self.w * np.array(particle.attributes['velocity']) + social_vec + cognitive_vec
+            particle.attributes['velocity'] = velocity.tolist()
+
+    def update_particle_best(self, swarm: List[S]) -> None:
+        super().update_particle_best(swarm)
+        self.update_particle_worst(swarm)
+
+    def update_global_best(self, swarm: List[FloatSolution]) -> None:
+        super().update_global_best(swarm)
+        self.update_global_worst(swarm)
+
+
+class EscapistPSO(WorstAwarePSO, RoleMixin):
+    """
+    Escapist PSO:
+    Particles marked as escapist (flag 'is_escapist') avoid their personal worst instead of going towards
+    personal best.
+    """
+
+    def __init__(self,
+                 problem: FloatProblem,
+                 swarm_size: int,
+                 c1: float,
+                 c2: float,
+                 ac1: float,
+                 w: float,
+                 escapist_fraction: float,
+                 termination_criterion: TerminationCriterion):
+        super().__init__(problem, swarm_size, c1, c2, w, termination_criterion)
+        self.ac1 = ac1
+        self.escapist_fraction = escapist_fraction
+
+    def create_initial_solutions(self) -> List[S]:
+        solutions = super().create_initial_solutions()
+        self.mark_particles(solutions, self.escapist_fraction, 'is_escapist')
+        return solutions
+
+    def update_velocity(self, swarm: List[S]) -> None:
+        g_best = np.array(self.best_global.variables)
+        for particle in swarm:
+            current = np.array(particle.variables)
+            if particle.attributes.get('is_escapist', False):
+                p_worst = np.array(particle.attributes['worst_position'])  # personal worst
+                cognitive_vec = self.ac1 * random.random() * (current - p_worst)
+            else:
+                p_best = np.array(particle.attributes['best_position'])
+                cognitive_vec = self.c1 * random.random() * (p_best - current)
+            social_vec = self.c2 * random.random() * (g_best - current)
+            velocity = self.w * np.array(particle.attributes['velocity']) + social_vec + cognitive_vec
+            particle.attributes['velocity'] = velocity.tolist()
+
+    def update_particle_best(self, swarm: List[S]) -> None:
+        super().update_particle_best(swarm)
+        self.update_particle_worst(swarm)
+
+    def update_global_best(self, swarm: List[FloatSolution]) -> None:
+        super().update_global_best(swarm)
+        self.update_global_worst(swarm)
+
+
+class EschewerEscapistPSO(WorstAwarePSO, RoleMixin):
+
+    def __init__(self,
+                 problem: FloatProblem,
+                 swarm_size: int,
+                 c1: float,
+                 c2: float,
+                 ac1: float,
+                 ac2: float,
+                 w: float,
+                 eschewer_fraction: float,
+                 escapist_fraction: float,
+                 termination_criterion: TerminationCriterion):
+        super().__init__(problem, swarm_size, c1, c2, w, termination_criterion)
+        self.ac1 = ac1
+        self.ac2 = ac2
+        self.eschewer_fraction = eschewer_fraction
+        self.escapist_fraction = escapist_fraction
+
+    """
+    Eschewer - Escapist PSO:
+    Particles may be marked as eschewer (avoiding global worst) and/or escapist (avoiding personal worst).
+    """
+
+    def create_initial_solutions(self) -> List[S]:
+        solutions = super().create_initial_solutions()
+        self.mark_particles(solutions, self.eschewer_fraction, 'is_eschewer')
+        self.mark_particles(solutions, self.escapist_fraction, 'is_escapist')
+        return solutions
+
+    def update_velocity(self, swarm: List[S]) -> None:
+        for particle in swarm:
+            current = np.array(particle.variables)
+            # Social component: choose global worst if eschewer; else global best.
+            if particle.attributes.get('is_eschewer', False):
+                social_dir = current - np.array(self.global_worst.variables)
+                social_vec = self.ac2 * random.random() * social_dir
+            else:
+                social_dir = np.array(self.best_global.variables) - current
+                social_vec = self.c2 * random.random() * social_dir
+            # Cognitive component: choose personal worst if escapist; else personal best.
+            if particle.attributes.get('is_escapist', False):
+                cognitive_dir = current - np.array(particle.attributes['worst_position'])
                 cognitive_vec = self.ac1 * random.random() * cognitive_dir
             else:
                 cognitive_dir = np.array(particle.attributes['best_position']) - current

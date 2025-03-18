@@ -8,7 +8,7 @@ from ray.tune.schedulers import PopulationBasedTraining
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
 from algorithm.WAPSO import ReverseLearningGlobalAttractorPSO, CombinedLearningPSO
-from algorithm.particles_with_roles import RebelPSO, EscapistPSO, RebelEscapistPSO, REAPSO, ContrarianPSO, DefeatistPSO, \
+from algorithm.particles_with_roles import RebelPSO, RejectorPSO, RebelRejectorPSO, RRAPSO, ContrarianPSO, DefeatistPSO, \
     ContrarianDefeatistPSO
 from algorithm.single_objective_PSO import SingleObjectivePSO
 
@@ -21,14 +21,14 @@ ALGORITHMS = {
         "w": tune.uniform(0.1, 1.4),
         "rebel_fraction": tune.uniform(0.05, 0.6),
     },
-    'EscapistPSO': {
+    'RejectorPSO': {
         "c1": tune.uniform(0.2, 3),
         "c2": tune.uniform(0.2, 3),
         "ac1": tune.uniform(0.2, 3),
         "w": tune.uniform(0.1, 1.4),
         "escapist_fraction": tune.uniform(0.05, 0.6),
     },
-    'RebelEscapistPSO': {
+    'RebelRejectorPSO': {
         "c1": tune.uniform(0.2, 3),
         "c2": tune.uniform(0.2, 3),
         "ac1": tune.uniform(0.2, 3),
