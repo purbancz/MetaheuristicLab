@@ -12,3 +12,7 @@ rpy2
 irace
 futures
 joblib
+mpi4py
+cffi
+seaborn
+scikit-learn
