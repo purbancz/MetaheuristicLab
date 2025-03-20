@@ -17,7 +17,8 @@ from algorithm.PGCHEA import PGCHEA
 from algorithm.PGPHEA import PGPHEA
 from algorithm.PGSHEA import PGSHEA
 from algorithm.QTPSO import QTPSO
-from algorithm.WAPSO import ReverseLearningGlobalAttractorPSO, CombinedLearningPSO, ReverseLearningPersonalAttractorPSO
+from algorithm.WAPSO import ReverseLearningGlobalAttractorPSO, CombinedLearningPSO, ReverseLearningLocalAttractorPSO, \
+    ReverseLearningPSO
 from algorithm.SPPPSO import SPPPSO
 from algorithm.TDPSO import TDPSO
 from algorithm.particles_with_roles import RebelPSO, RejectorPSO, RebelRejectorPSO, RRAPSO, ContrarianPSO, DefeatistPSO, \
@@ -79,8 +80,9 @@ def setup_experiment():
         'TDPSO': 'teal',
         'NPSO': 'maroon',
         'FAPSO': 'navy',
+        'ReverseLearningPSO': 'xkcd:indigo',
         'ReverseLearningGlobalAttractorPSO': 'lime',
-        'ReverseLearningPersonalAttractorPSO': 'deepskyblue',
+        'ReverseLearningLocalAttractorPSO': 'deepskyblue',
         'CombinedLearningPSO': 'lavender',
         'ContrarianPSO': 'darkgreen',
         'DefeatistPSO': 'darkcyan',
@@ -266,6 +268,14 @@ def setup_experiment():
         #     improvement_threshold = 0.008656759607128,
         #     termination_criterion=StoppingByEvaluations(max_evaluations)
         # ),
+        # 'ReverseLearningPSO': lambda p: ReverseLearningPSO(  # rough tuning
+        #     problem=p,
+        #     swarm_size=solutions_size,
+        #     b1=4.3732,
+        #     b2=2.7552,
+        #     w=0.0632,
+        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        # ),
         'ReverseLearningGlobalAttractorPSO': lambda p: ReverseLearningGlobalAttractorPSO( # rough tuning
             problem=p,
             swarm_size=solutions_size,
@@ -275,7 +285,7 @@ def setup_experiment():
             w=0.0243,
             termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
         ),
-        'ReverseLearningPersonalAttractorPSO': lambda p: ReverseLearningPersonalAttractorPSO( # rough tuning
+        'ReverseLearningLocalAttractorPSO': lambda p: ReverseLearningLocalAttractorPSO( # rough tuning
             problem=p,
             swarm_size=solutions_size,
             a=3.2241,
@@ -454,10 +464,10 @@ def setup_experiment():
                                   'ContrarianPSO', 'DefeatistPSO', 'ContrarianDefeatistPSO',
                                   'EschewerPSO', 'EscapistPSO', 'EschewerEscapistPSO'],
         'Rebel algorithms': ['RebelPSO', 'RejectorPSO', 'RebelRejectorPSO'],
-        'Worse aware algorithms all': ['ReverseLearningGlobalAttractorPSO', 'ReverseLearningPersonalAttractorPSO',
+        'Worse aware algorithms all': ['ReverseLearningPSO', 'ReverseLearningGlobalAttractorPSO', 'ReverseLearningLocalAttractorPSO',
                                        'CombinedLearningPSO', 'ContrarianPSO', 'DefeatistPSO', 'ContrarianDefeatistPSO',
                                        'EschewerPSO', 'EscapistPSO', 'EschewerEscapistPSO'],
-        'Reverse learning algorithms': ['ReverseLearningGlobalAttractorPSO', 'ReverseLearningPersonalAttractorPSO',
+        'Reverse learning algorithms': ['ReverseLearningPSO', 'ReverseLearningGlobalAttractorPSO', 'ReverseLearningLocalAttractorPSO',
                                         'CombinedLearningPSO'],
         'Worse aware algorithms negative': ['ContrarianPSO', 'DefeatistPSO', 'ContrarianDefeatistPSO'],
         'Worse aware algorithms positive': ['EschewerPSO', 'EscapistPSO', 'EschewerEscapistPSO'],

@@ -43,12 +43,44 @@ class WorstAwarePSO(SingleObjectivePSO):
     def update_global_worst(self, swarm: List[S]) -> None:
         self.global_worst = max(swarm, key=lambda s: s.objectives[0])
 
+class ReverseLearningPSO(WorstAwarePSO):
+    """
+    Reverse Learning PSO:
+    Instead of following personal/global best, particles avoid their personal and global worst
+    (particles avoid their personal and global worst by moving away from them).
+    """
+
+    def __init__(self,
+                 problem: FloatProblem,
+                 swarm_size: int,
+                 b1: float,
+                 b2: float,
+                 w: float,
+                 termination_criterion: TerminationCriterion):
+        super().__init__(problem, swarm_size, b1, b2, w, termination_criterion)
+
+    def update_velocity(self, swarm: List[S]) -> None:
+        worst_global = np.array(self.global_worst.variables)
+        for particle in swarm:
+            r1, r2 = random.random(), random.random()
+            current = np.array(particle.variables)
+            worst_personal = np.array(particle.attributes['worst_position'])
+            repulsion = (self.c1 * r1 * (current - worst_personal) +
+                         self.c2 * r2 * (current - worst_global))
+            new_velocity = (self.w * np.array(particle.attributes['velocity']) +
+                            repulsion)
+            particle.attributes['velocity'] = new_velocity.tolist()
+
+    def update_particle_best(self, swarm: List[S]) -> None:
+        self.update_particle_worst(swarm)
+
+    def update_global_best(self, swarm: List[FloatSolution]) -> None:
+        self.update_global_worst(swarm)
 
 class ReverseLearningGlobalAttractorPSO(WorstAwarePSO):
     """
-    Reverse Learning PSO:
-    Instead of following personal/global best, particles avoid their personal and global worst.
-    Nonetheless, some attraction is needed, otherwise the all particles are spreading to the edges
+    Reverse Learning PSO with global attraction.
+    Particles avoid their personal and global worst while also being attracted to the global best.
     """
 
     def __init__(self,
@@ -84,11 +116,10 @@ class ReverseLearningGlobalAttractorPSO(WorstAwarePSO):
         super().update_global_best(swarm)
         self.update_global_worst(swarm)
 
-class ReverseLearningPersonalAttractorPSO(ReverseLearningGlobalAttractorPSO):
+class ReverseLearningLocalAttractorPSO(ReverseLearningGlobalAttractorPSO):
     """
-    Reverse Learning PSO:
-    Instead of following personal/global best, particles avoid their personal and global worst.
-    Nonetheless, some attraction is needed, otherwise the all particles are spreading to the edges
+    Reverse Learning PSO with personal (local) attraction.
+    Particles avoid their personal and global worst while being attracted to their personal best.
     """
 
     def update_velocity(self, swarm: List[S]) -> None:

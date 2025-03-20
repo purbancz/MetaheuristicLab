@@ -7,7 +7,7 @@ from jmetal.util.termination_criterion import StoppingByEvaluations
 from problem.n_variables.ackley import Ackley
 from problem.n_variables.griewank import Griewank
 from algorithm.AdaptivePSO import GlobalAdaptivePSO, LocalAdaptivePSO
-from algorithm.WAPSO import ReverseLearningGlobalAttractorPSO, CombinedLearningPSO, ReverseLearningPersonalAttractorPSO
+from algorithm.WAPSO import ReverseLearningGlobalAttractorPSO, CombinedLearningPSO, ReverseLearningLocalAttractorPSO
 from algorithm.particles_with_roles import RebelPSO, RejectorPSO, RebelRejectorPSO, RRAPSO, ContrarianPSO, DefeatistPSO, \
     ContrarianDefeatistPSO, EschewerPSO, EscapistPSO, EschewerEscapistPSO
 from algorithm.single_objective_PSO import SingleObjectivePSO
@@ -58,7 +58,7 @@ parameter_spaces = {
         Real("b2", 0.01, 6),
         Real("w", 0.01, 2),
     ],
-    'ReverseLearningPersonalAttractorPSO': [
+    'ReverseLearningLocalAttractorPSO': [
         Real("a", 0.01, 6),
         Real("b1", 0.01, 6),
         Real("b2", 0.01, 6),
