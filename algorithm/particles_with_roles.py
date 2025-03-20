@@ -84,15 +84,15 @@ class RejectorPSO(SingleObjectivePSO, RoleMixin):
                  c2: float,
                  ac1: float,
                  w: float,
-                 escapist_fraction: float,
+                 rejector_fraction: float,
                  termination_criterion: TerminationCriterion):
         super().__init__(problem, swarm_size, c1, c2, w, termination_criterion)
         self.ac1 = ac1
-        self.escapist_fraction = escapist_fraction
+        self.rejector_fraction = rejector_fraction
 
     def create_initial_solutions(self) -> List[FloatSolution]:
         solutions = super().create_initial_solutions()
-        self.mark_particles(solutions, self.escapist_fraction, 'is_rejector')
+        self.mark_particles(solutions, self.rejector_fraction, 'is_rejector')
         return solutions
 
     def update_velocity(self, swarm: List[S]) -> None:
@@ -121,27 +121,27 @@ class RebelRejectorPSO(SingleObjectivePSO, RoleMixin):
                  ac2: float,
                  w: float,
                  rebel_fraction: float,
-                 escapist_fraction: float,
+                 rejector_fraction: float,
                  termination_criterion: TerminationCriterion):
         super().__init__(problem, swarm_size, c1, c2, w, termination_criterion)
         self.ac1 = ac1
         self.ac2 = ac2
         self.rebel_fraction = rebel_fraction
-        self.escapist_fraction = escapist_fraction
+        self.rejector_fraction = rejector_fraction
 
     def _mark_special_particles(self, swarm: List[S]) -> None:
         self.mark_particles(swarm, self.rebel_fraction, 'is_rebel')
 
         # disjoint sets, so to use my method I need to recalculate the fraction
         total = len(swarm)
-        desired_escapists = max(1, int(total * self.escapist_fraction))
+        desired_rejectors = max(1, int(total * self.rejector_fraction))
         num_rebels = sum(1 for p in swarm if p.attributes.get('is_rebel', False))
         non_rebel_count = total - num_rebels
-        effective_fraction = desired_escapists / non_rebel_count if non_rebel_count > 0 else 1.0
+        effective_fraction = desired_rejectors / non_rebel_count if non_rebel_count > 0 else 1.0
         effective_fraction = min(1.0, effective_fraction)
 
         non_rebels = [p for p in swarm if not p.attributes.get('is_rebel', False)]
-        self.mark_particles(non_rebels, effective_fraction, 'is_escapist')
+        self.mark_particles(non_rebels, effective_fraction, 'is_rejector')
 
     def create_initial_solutions(self) -> List[S]:
         solutions = super().create_initial_solutions()
@@ -154,7 +154,7 @@ class RebelRejectorPSO(SingleObjectivePSO, RoleMixin):
             current = np.array(particle.variables)
             p_best = np.array(particle.attributes['best_position'])
             social_vec = self.compute_component(particle, g_best, current, self.c2, self.ac2, 'is_rebel')
-            cognitive_vec = self.compute_component(particle, p_best, current, self.c1, self.ac1, 'is_escapist')
+            cognitive_vec = self.compute_component(particle, p_best, current, self.c1, self.ac1, 'is_rejector')
             velocity = (self.w * np.array(particle.attributes['velocity'])
                         + social_vec
                         + cognitive_vec)
@@ -162,7 +162,7 @@ class RebelRejectorPSO(SingleObjectivePSO, RoleMixin):
 
 
 class RRAPSO(RebelRejectorPSO):
-    """PSO with rebel and escapist particles and adaptive parameters"""
+    """PSO with rebel and rejector particles and adaptive parameters"""
 
     def __init__(self,
                  problem: FloatProblem,
@@ -176,16 +176,16 @@ class RRAPSO(RebelRejectorPSO):
                  min_inertia: float,
                  max_inertia: float,
                  rebel_fraction: float,
-                 escapist_fraction: float,
+                 rejector_fraction: float,
                  window_size: int = 10,
                  perturbation_probability: float = 0.1,
                  perturbation_scale: float = 0.1,
                  max_rebel_fraction: float = 0.8,
-                 max_escapist_fraction: float = 0.8,
+                 max_rejector_fraction: float = 0.8,
                  diversity_threshold: float = 0.1,
                  improvement_threshold: float = 0.01):
-        # Initialize base using rebel and escapist fractions.
-        super().__init__(problem, swarm_size, c1, c2, ac1, ac2, base_inertia, rebel_fraction, escapist_fraction,
+        # Initialize base using rebel and rejector fractions.
+        super().__init__(problem, swarm_size, c1, c2, ac1, ac2, base_inertia, rebel_fraction, rejector_fraction,
                          termination_criterion)
         # Adaptive parameters
         self.base_inertia = base_inertia
@@ -193,9 +193,9 @@ class RRAPSO(RebelRejectorPSO):
         self.max_inertia = max_inertia
         self.w = base_inertia
         self.max_rebel_fraction = max_rebel_fraction
-        self.max_escapist_fraction = max_escapist_fraction
+        self.max_rejector_fraction = max_rejector_fraction
         self.original_rebel_fraction = rebel_fraction
-        self.original_escapist_fraction = escapist_fraction
+        self.original_rejector_fraction = rejector_fraction
         self.diversity_threshold = diversity_threshold
         self.improvement_threshold = improvement_threshold
         self.perturbation_probability = perturbation_probability
@@ -205,22 +205,22 @@ class RRAPSO(RebelRejectorPSO):
 
     def _mark_special_particles(self, swarm: List[S]) -> None:
         self.mark_particles(swarm, self.rebel_fraction, 'is_rebel')
-        self.mark_particles(swarm, self.escapist_fraction, 'is_escapist')
+        self.mark_particles(swarm, self.rejector_fraction, 'is_rejector')
 
     def update_special_particles(self, swarm: List[S]) -> None:
         """
-        Adjust the rebel and escapist properties for the swarm based on
-        self.rebel_fraction and self.escapist_fraction.
+        Adjust the rebel and rejector properties for the swarm based on
+        self.rebel_fraction and self.rejector_fraction.
         """
         total_particles = len(swarm)
 
         # Determine desired counts (ensuring at least one particle per type)
         desired_num_rebels = max(1, int(total_particles * self.rebel_fraction))
-        desired_num_escapists = max(1, int(total_particles * self.escapist_fraction))
+        desired_num_rejectors = max(1, int(total_particles * self.rejector_fraction))
 
         # Get current particles with these properties
         current_rebels = [p for p in swarm if p.attributes.get('is_rebel', False)]
-        current_escapists = [p for p in swarm if p.attributes.get('is_escapist', False)]
+        current_rejectors = [p for p in swarm if p.attributes.get('is_rejector', False)]
 
         # --- Adjust Rebel Particles ---
         if len(current_rebels) < desired_num_rebels:
@@ -239,22 +239,22 @@ class RRAPSO(RebelRejectorPSO):
                 for particle in selected:
                     particle.attributes['is_rebel'] = False
 
-        # --- Adjust Escapist Particles ---
-        if len(current_escapists) < desired_num_escapists:
-            # Increase: Only assign to those that are not yet escapists.
-            non_escapists = [p for p in swarm if not p.attributes.get('is_escapist', False)]
-            num_to_assign = desired_num_escapists - len(current_escapists)
-            if non_escapists and num_to_assign > 0:
-                selected = random.sample(non_escapists, min(num_to_assign, len(non_escapists)))
+        # --- Adjust Rejector Particles ---
+        if len(current_rejectors) < desired_num_rejectors:
+            # Increase: Only assign to those that are not yet rejectors.
+            non_rejectors = [p for p in swarm if not p.attributes.get('is_rejector', False)]
+            num_to_assign = desired_num_rejectors - len(current_rejectors)
+            if non_rejectors and num_to_assign > 0:
+                selected = random.sample(non_rejectors, min(num_to_assign, len(non_rejectors)))
                 for particle in selected:
-                    particle.attributes['is_escapist'] = True
-        elif len(current_escapists) > desired_num_escapists:
-            # Decrease: Remove escapist property randomly.
-            num_to_remove = len(current_escapists) - desired_num_escapists
-            if current_escapists and num_to_remove > 0:
-                selected = random.sample(current_escapists, num_to_remove)
+                    particle.attributes['is_rejector'] = True
+        elif len(current_rejectors) > desired_num_rejectors:
+            # Decrease: Remove rejector property randomly.
+            num_to_remove = len(current_rejectors) - desired_num_rejectors
+            if current_rejectors and num_to_remove > 0:
+                selected = random.sample(current_rejectors, num_to_remove)
                 for particle in selected:
-                    particle.attributes['is_escapist'] = False
+                    particle.attributes['is_rejector'] = False
 
     def update_velocity(self, swarm: List[S]) -> None:
         diversity = self.calculate_swarm_diversity(swarm)
@@ -271,11 +271,11 @@ class RRAPSO(RebelRejectorPSO):
         improvement_rate = self.calculate_improvement_rate()
         if improvement_rate < self.improvement_threshold:
             self.rebel_fraction = min(self.max_rebel_fraction, self.rebel_fraction + 1 / super().swarm_size)
-            self.escapist_fraction = min(self.max_escapist_fraction, self.escapist_fraction + 1 / super().swarm_size)
+            self.rejector_fraction = min(self.max_rejector_fraction, self.rejector_fraction + 1 / super().swarm_size)
         else:
             self.rebel_fraction = max(self.original_rebel_fraction, self.rebel_fraction - 1 / super().swarm_size)
-            self.escapist_fraction = max(self.original_escapist_fraction,
-                                         self.escapist_fraction - 1 / super().swarm_size)
+            self.rejector_fraction = max(self.original_rejector_fraction,
+                                         self.rejector_fraction - 1 / super().swarm_size)
 
         self.update_special_particles(swarm)
 

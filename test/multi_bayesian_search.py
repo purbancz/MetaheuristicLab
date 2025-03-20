@@ -23,7 +23,7 @@ ALGORITHMS = {
         Real(0.1, 0.6, name='min_inertia'),
         Real(0.6, 2, name='max_inertia'),
         Real(0.05, 0.6, name='rebel_fraction'),
-        Real(0.05, 0.6, name='escapist_fraction'),
+        Real(0.05, 0.6, name='rejector_fraction'),
     ],
     'RebelPSO': [
         Real(0.5, 2.5, name='b1'),
@@ -35,14 +35,14 @@ ALGORITHMS = {
         Real(0.5, 2.5, name='b1'),
         Real(0.5, 2.5, name='b2'),
         Real(0.1, 1.4, name='w'),
-        Real(0.05, 0.4, name='escapist_fraction'),
+        Real(0.05, 0.4, name='rejector_fraction'),
     ],
     'RebelRejectorPSO': [
         Real(0.5, 2.5, name='b1'),
         Real(0.5, 2.5, name='b2'),
         Real(0.1, 1.4, name='w'),
         Real(0.05, 0.4, name='rebel_fraction'),
-        Real(0.05, 0.4, name='escapist_fraction'),
+        Real(0.05, 0.4, name='rejector_fraction'),
     ],
 }
 

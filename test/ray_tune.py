@@ -26,7 +26,7 @@ ALGORITHMS = {
         "c2": tune.uniform(0.2, 3),
         "ac1": tune.uniform(0.2, 3),
         "w": tune.uniform(0.1, 1.4),
-        "escapist_fraction": tune.uniform(0.05, 0.6),
+        "rejector_fraction": tune.uniform(0.05, 0.6),
     },
     'RebelRejectorPSO': {
         "c1": tune.uniform(0.2, 3),
@@ -35,7 +35,7 @@ ALGORITHMS = {
         "ac2": tune.uniform(0.2, 3),
         "w": tune.uniform(0.1, 1.4),
         "rebel_fraction": tune.uniform(0.05, 0.6),
-        "escapist_fraction": tune.uniform(0.05, 0.6),
+        "rejector_fraction": tune.uniform(0.05, 0.6),
     },
 }
 
@@ -74,10 +74,10 @@ def run_ray_optimization(algorithm_name, param_space):
             "min_inertia": tune.uniform(0.1, 0.6),
             "max_inertia": tune.uniform(0.6, 2),
             "rebel_fraction": tune.uniform(0.05, 0.6),
-            "escapist_fraction": tune.uniform(0.05, 0.6),
+            "rejector_fraction": tune.uniform(0.05, 0.6),
             "w": tune.uniform(0.1, 1.4),
             "rebel_fraction": tune.uniform(0.05, 0.6),
-            "escapist_fraction": tune.uniform(0.05, 0.6),
+            "rejector_fraction": tune.uniform(0.05, 0.6),
         },
     )
 

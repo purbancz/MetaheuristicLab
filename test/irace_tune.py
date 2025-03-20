@@ -76,7 +76,7 @@ parameter_spaces = {
         Real("c2", 0.01, 6),
         Real("ac1", 0.01, 6),
         Real("w", 0.01, 2),
-        Real("escapist_fraction", 0.05, 0.8),
+        Real("rejector_fraction", 0.05, 0.8),
     ],
     'EschewerEscapistPSO': [ # 7
         Real("c1", 0.01, 6),
@@ -85,7 +85,7 @@ parameter_spaces = {
         Real("ac2", 0.01, 6),
         Real("w", 0.01, 2),
         Real("eschewer_fraction", 0.05, 0.8),
-        Real("escapist_fraction", 0.05, 0.8),
+        Real("rejector_fraction", 0.05, 0.8),
     ],
     'GlobalAdaptivePSO': [
         Real("c1", 0.01, 6),

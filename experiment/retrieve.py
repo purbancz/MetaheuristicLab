@@ -70,7 +70,7 @@ def combine_data(data_list):
 
     for data in data_list:
         # Accumulate the number of runs from each data set
-        total_runs += data[0]['results']['GA']['data'].shape[0]  # You can change 'GA' to any consistently run algorithm
+        total_runs += data[0]['results']['PSO']['data'].shape[0]  # You can change 'GA' to any consistently run algorithm
 
         for problem_data in data:
             problem_name = problem_data['problem']
@@ -144,100 +144,108 @@ def plot_combined_data_from_pickles(pickle_files):
         plot_final_box(results, matched_problem, dimensions_dir, algorithm_colors)
 
 
-def kruskal_wallis_with_posthoc(pickle_files, perform_shapiro=False, perform_posthoc=True):
-    best_algorithms = {
-        "Ackley": {10: "PSO", 50: "PGPHEA", 100: "PGPHEA", 500: "PGPHEA", 1000: "PGPHEA"},
-        "Griewank": {10: "PSO", 50: "PSO", 100: "PGPHEA", 500: "PGPHEA", 1000: "PGPHEA"},
-        "Levy": {10: ["PSO", "PGPHEA"], 50: "PGSHEA", 100: "PGPHEA", 500: "PGPHEA", 1000: "PGPHEA"},
-        "Michalewicz": {10: "GA", 50: "PGPHEA", 100: "PGPHEA", 500: "PGPHEA", 1000: "PGPHEA"},
-        "Rastrigin": {10: "GA", 50: "PGPHEA", 100: "PGPHEA", 500: "PGPHEA", 1000: "PGPHEA"},
-        "Schwefel": {10: "PGCHEA", 50: "GA", 100: "GA", 500: "PGPHEA", 1000: "PGPHEA"},
-        "Shifted Rotated Weierstrass": {10: "GA", 50: "PGCHEA", 100: "PGSHEA", 500: "PGCHEA", 1000: "PGCHEA"},
-    }
+def extract_best_algorithms_from_experiment_data(experiment_data):
+    best_algorithms = {}
 
+    for problem_data in experiment_data:
+        problem_name = problem_data["problem"]
+        dimension = problem_data["n_vars"]
+        avg_fitness_values = {algo: algo_data["avg_fitness"] for algo, algo_data in problem_data["results"].items()}
+        best_value = min(avg_fitness_values.values())
+        best_algos = [algo for algo, fitness in avg_fitness_values.items() if fitness == best_value]
+        best_algorithms.setdefault(problem_name, {})[dimension] = best_algos
+
+    return best_algorithms
+
+
+def kruskal_wallis_with_posthoc(pickle_files, perform_shapiro=False, perform_posthoc=True):
+    """Perform Kruskal-Wallis and posthoc tests (Dunn's/Tukey's) using dynamically extracted the best algorithms."""
+
+    all_normal = False
     non_significant_dunn = []
     non_significant_tukey = []
     non_significant_vs_best_dunn = []
     non_significant_vs_best_tukey = []
 
+    all_experiment_data = []
     for pickle_file in pickle_files:
         with open(pickle_file, 'rb') as f:
             loaded_data = pickle.load(f)
+            all_experiment_data.extend(loaded_data)
 
-        for problem_data in loaded_data:
-            problem_name = problem_data['problem']
-            dimension = problem_data['n_vars']
-            best_algos = best_algorithms.get(problem_name, {}).get(dimension, [])
+    best_algorithms = extract_best_algorithms_from_experiment_data(all_experiment_data)
 
-            if not best_algos:
-                continue
+    for problem_data in all_experiment_data:
+        problem_name = problem_data['problem']
+        dimension = problem_data['n_vars']
+        best_algos = best_algorithms.get(problem_name, {}).get(dimension, [])
 
-            if isinstance(best_algos, str):
-                best_algos = [best_algos]
+        if not best_algos:
+            continue
 
-            print(f"\nPerforming analysis for Problem: {problem_name}, Dimension: {dimension}")
+        print(f"\nPerforming analysis for Problem: {problem_name}, Dimension: {dimension}")
 
-            final_fitness_values = {
-                algo: [run[-1] for run in algo_data['data']]
-                for algo, algo_data in problem_data['results'].items()
-            }
+        final_fitness_values = {
+            algo: [run[-1] for run in algo_data['data']]
+            for algo, algo_data in problem_data['results'].items()
+        }
 
-            if perform_shapiro:
-                normality_results = {algo: shapiro(values) for algo, values in final_fitness_values.items()}
-                all_normal = all(p > 0.05 for _, p in normality_results.values())
-                print("\tShapiro-Wilk Test Results (p-values):")
-                for algo, (stat, p_value) in normality_results.items():
-                    print(f"{algo}: Statistic={stat:.4f}, P-value={p_value:.4e}")
-                if all_normal:
-                    print("\tAll groups are normally distributed. Performing ANOVA.")
-                    stat, p = f_oneway(*final_fitness_values.values())
-                else:
-                    print("\tNot all groups are normally distributed. Performing Kruskal-Wallis test.")
-                    stat, p = kruskal(*final_fitness_values.values())
-                print(f"Test Statistic: {stat}")
-                print(f"P-value: {p}")
+        if perform_shapiro:
+            normality_results = {algo: shapiro(values) for algo, values in final_fitness_values.items()}
+            all_normal = all(p > 0.05 for _, p in normality_results.values())
+            print("\tShapiro-Wilk Test Results (p-values):")
+            for algo, (stat, p_value) in normality_results.items():
+                print(f"{algo}: Statistic={stat:.4f}, P-value={p_value:.4e}")
+            if all_normal:
+                print("\tAll groups are normally distributed. Performing ANOVA.")
+                stat, p = f_oneway(*final_fitness_values.values())
             else:
+                print("\tNot all groups are normally distributed. Performing Kruskal-Wallis test.")
                 stat, p = kruskal(*final_fitness_values.values())
-                print(f"\tKruskal-Wallis Statistic: {stat}")
-                print(f"P-value: {p}")
+            print(f"Test Statistic: {stat}")
+            print(f"P-value: {p}")
+        else:
+            stat, p = kruskal(*final_fitness_values.values())
+            print(f"\tKruskal-Wallis Statistic: {stat}")
+            print(f"P-value: {p}")
 
-            if p < 0.05 and perform_posthoc:
-                data = list(final_fitness_values.values())
-                algo_names = list(final_fitness_values.keys())
+        if p < 0.05 and perform_posthoc:
+            data = list(final_fitness_values.values())
+            algo_names = list(final_fitness_values.keys())
 
-                if perform_shapiro and all_normal:
-                    combined_data = pd.Series(data[0])
-                    groups = [algo_names[0]] * len(data[0])
-                    for i in range(1, len(data)):
-                        combined_data = combined_data._append(pd.Series(data[i]))
-                        groups.extend([algo_names[i]] * len(data[i]))
+            if perform_shapiro and all_normal:
+                combined_data = pd.Series(data[0])
+                groups = [algo_names[0]] * len(data[0])
+                for i in range(1, len(data)):
+                    combined_data = combined_data._append(pd.Series(data[i]))
+                    groups.extend([algo_names[i]] * len(data[i]))
 
-                    tukey_results = pairwise_tukeyhsd(combined_data, groups)
-                    print("\nTukey's HSD test pairwise comparison results:")
-                    print(tukey_results.summary())
+                tukey_results = pairwise_tukeyhsd(combined_data, groups)
+                print("\nTukey's HSD test pairwise comparison results:")
+                print(tukey_results.summary())
 
-                    for res in tukey_results._results_table.data[1:]:
-                        group1, group2, meandiff, p_adj, lower, upper, reject = res
-                        if not reject:
-                            non_significant_tukey.append((problem_name, dimension, group1, group2, p_adj))
-                            if group1 in best_algos or group2 in best_algos:
-                                non_significant_vs_best_tukey.append((problem_name, dimension, group1, group2, p_adj))
-                else:
-                    dunn_results = sp.posthoc_dunn(data, p_adjust='fdr_bh')
-                    dunn_results.index = algo_names
-                    dunn_results.columns = algo_names
-                    print("Dunn's test pairwise comparison p-values:")
-                    print(dunn_results)
+                for res in tukey_results._results_table.data[1:]:
+                    group1, group2, meandiff, p_adj, lower, upper, reject = res
+                    if not reject:
+                        non_significant_tukey.append((problem_name, dimension, group1, group2, p_adj))
+                        if group1 in best_algos or group2 in best_algos:
+                            non_significant_vs_best_tukey.append((problem_name, dimension, group1, group2, p_adj))
+            else:
+                dunn_results = sp.posthoc_dunn(data, p_adjust='fdr_bh')
+                dunn_results.index = algo_names
+                dunn_results.columns = algo_names
+                print("Dunn's test pairwise comparison p-values:")
+                print(dunn_results)
 
-                    for i, algo1 in enumerate(algo_names):
-                        for j, algo2 in enumerate(algo_names):
-                            if i < j:
-                                p_val = dunn_results.iloc[i, j]
-                                if p_val >= 0.05:
-                                    non_significant_dunn.append((problem_name, dimension, algo1, algo2, p_val))
-                                    if algo1 in best_algos or algo2 in best_algos:
-                                        non_significant_vs_best_dunn.append(
-                                            (problem_name, dimension, algo1, algo2, p_val))
+                for i, algo1 in enumerate(algo_names):
+                    for j, algo2 in enumerate(algo_names):
+                        if i < j:
+                            p_val = dunn_results.iloc[i, j]
+                            if p_val >= 0.05:
+                                non_significant_dunn.append((problem_name, dimension, algo1, algo2, p_val))
+                                if algo1 in best_algos or algo2 in best_algos:
+                                    non_significant_vs_best_dunn.append(
+                                        (problem_name, dimension, algo1, algo2, p_val))
 
     # Output Results
     print("\nNon-Significant Results from Dunn's Test (LaTeX Format):")
@@ -263,8 +271,3 @@ def kruskal_wallis_with_posthoc(pickle_files, perform_shapiro=False, perform_pos
         problem, dimension, group1, group2, p_adj = result
         print(f"{problem} & {dimension} & {group1} vs {group2} & {p_adj:.4f} \\\\")
     print(f"Size: {len(non_significant_vs_best_tukey)}")
-
-
-
-
-

@@ -230,7 +230,7 @@ def setup_experiment():
             c2=5.9175,
             ac1=0.4661,
             w=0.0839,
-            escapist_fraction=0.68,
+            rejector_fraction=0.68,
             termination_criterion=StoppingByEvaluations(max_evaluations)
         ),
         'RebelRejectorPSO': lambda p: RebelRejectorPSO( # rough tuning
@@ -242,7 +242,7 @@ def setup_experiment():
             ac2=3.7445,
             w=0.1155,
             rebel_fraction=0.19,
-            escapist_fraction=0.19,
+            rejector_fraction=0.19,
             termination_criterion=StoppingByEvaluations(max_evaluations)
         ),
         # 'RRAPSO': lambda p: RRAPSO(
@@ -256,12 +256,12 @@ def setup_experiment():
         #     min_inertia=0.11093829549932,
         #     max_inertia=0.935915518894973,
         #     rebel_fraction=0.2,
-        #     escapist_fraction=0.43,
+        #     rejector_fraction=0.43,
         #     window_size = 20,
         #     perturbation_probability = 0.460269994559271,
         #     perturbation_scale = 0.709878890732096,
         #     max_rebel_fraction= 0.79,
-        #     max_escapist_fraction= 0.56,
+        #     max_rejector_fraction= 0.56,
         #     diversity_threshold = 0.058518962214864,
         #     improvement_threshold = 0.008656759607128,
         #     termination_criterion=StoppingByEvaluations(max_evaluations)

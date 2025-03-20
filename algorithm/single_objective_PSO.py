@@ -194,11 +194,11 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
 #                  b2: float,
 #                  ac1: float,
 #                  w: float,
-#                  escapist_fraction: float,
+#                  rejector_fraction: float,
 #                  termination_criterion: TerminationCriterion):
 #         super().__init__(problem, swarm_size, b1, b2, w, termination_criterion)
 #         self.ac1 = ac1
-#         self.escapist_fraction = escapist_fraction
+#         self.rejector_fraction = rejector_fraction
 #
 #     def create_initial_solutions(self) -> List[S]:
 #         solutions = super().create_initial_solutions()
@@ -206,7 +206,7 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
 #         return solutions
 #
 #     def _mark_escapists(self, swarm: List[S]):
-#         num_escapists = max(1, int(len(swarm) * self.escapist_fraction))
+#         num_escapists = max(1, int(len(swarm) * self.rejector_fraction))
 #         escapists = random.sample(swarm, num_escapists)
 #         for particle in escapists:
 #             particle.attributes['is_escapist'] = True
@@ -253,13 +253,13 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
 #                  ac2: float,
 #                  w: float,
 #                  rebel_fraction: float,
-#                  escapist_fraction: float,
+#                  rejector_fraction: float,
 #                  termination_criterion: TerminationCriterion):
 #         super().__init__(problem, swarm_size, b1, b2, w, termination_criterion)
 #         self.ac1 = ac1
 #         self.ac2 = ac2
 #         self.rebel_fraction = rebel_fraction
-#         self.escapist_fraction = escapist_fraction
+#         self.rejector_fraction = rejector_fraction
 #
 #     def create_initial_solutions(self) -> List[S]:
 #         solutions = super().create_initial_solutions()
@@ -275,7 +275,7 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
 #
 #         # Mark escapists from remaining particles
 #         remaining = [p for p in swarm if 'is_rebel' not in p.attributes]
-#         num_escapists = max(1, int(len(remaining) * self.escapist_fraction))
+#         num_escapists = max(1, int(len(remaining) * self.rejector_fraction))
 #         escapists = random.sample(remaining, num_escapists)
 #         for particle in escapists:
 #             particle.attributes['is_escapist'] = True
@@ -336,12 +336,12 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
 #                  min_inertia: float,
 #                  max_inertia: float,
 #                  rebel_fraction: float,
-#                  escapist_fraction: float,
+#                  rejector_fraction: float,
 #                  window_size: int = 10,
 #                  perturbation_probability: float = 0.1,
 #                  perturbation_scale: float = 0.1,
 #                  max_rebel_fraction: float = 0.8,
-#                  max_escapist_fraction: float = 0.8,
+#                  max_rejector_fraction: float = 0.8,
 #                  diversity_threshold: float = 0.1,
 #                  improvement_threshold: float = 0.01):
 #         super().__init__(
@@ -360,11 +360,11 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
 #         self.min_inertia = min_inertia
 #         self.max_inertia = max_inertia
 #         self.rebel_fraction = rebel_fraction
-#         self.escapist_fraction = escapist_fraction
+#         self.rejector_fraction = rejector_fraction
 #         self.max_rebel_fraction = max_rebel_fraction
-#         self.max_escapist_fraction = max_escapist_fraction
+#         self.max_rejector_fraction = max_rejector_fraction
 #         self.original_rebel_fraction = rebel_fraction
-#         self.original_escapist_fraction = escapist_fraction
+#         self.original_rejector_fraction = rejector_fraction
 #         self.diversity_threshold = diversity_threshold
 #         self.improvement_threshold = improvement_threshold
 #
@@ -379,7 +379,7 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
 #     def _mark_special_particles(self, swarm: List[S]):
 #         # Ensure minimum 1 particle per type
 #         num_rebels = max(1, int(len(swarm) * self.rebel_fraction))
-#         num_escapists = max(1, int(len(swarm) * self.escapist_fraction))
+#         num_escapists = max(1, int(len(swarm) * self.rejector_fraction))
 #
 #         # Select distinct particles for each role
 #         all_indices = np.random.permutation(len(swarm))
@@ -394,13 +394,13 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
 #     def update_special_particles(self, swarm: List[S]) -> None:
 #         """
 #         Adjust the rebel and escapist properties for the swarm based on
-#         self.rebel_fraction and self.escapist_fraction.
+#         self.rebel_fraction and self.rejector_fraction.
 #         """
 #         total_particles = len(swarm)
 #
 #         # Determine desired counts (ensuring at least one particle per type)
 #         desired_num_rebels = max(1, int(total_particles * self.rebel_fraction))
-#         desired_num_escapists = max(1, int(total_particles * self.escapist_fraction))
+#         desired_num_escapists = max(1, int(total_particles * self.rejector_fraction))
 #
 #         # Get current particles with these properties
 #         current_rebels = [p for p in swarm if p.attributes.get('is_rebel', False)]
@@ -489,10 +489,10 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
 #         improvement_rate = self.calculate_improvement_rate()
 #         if improvement_rate < self.improvement_threshold:
 #             self.rebel_fraction = min(self.max_rebel_fraction, self.rebel_fraction * 1.1)
-#             self.escapist_fraction = min(self.max_escapist_fraction, self.escapist_fraction * 1.1)
+#             self.rejector_fraction = min(self.max_rejector_fraction, self.rejector_fraction * 1.1)
 #         else:
 #             self.rebel_fraction = max(self.original_rebel_fraction, self.rebel_fraction * 0.95)
-#             self.escapist_fraction = max(self.original_escapist_fraction, self.escapist_fraction * 0.95)
+#             self.rejector_fraction = max(self.original_rejector_fraction, self.rejector_fraction * 0.95)
 #
 #         self.update_special_particles(swarm)
 #
