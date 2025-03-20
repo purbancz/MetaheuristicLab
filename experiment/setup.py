@@ -56,10 +56,10 @@ from problem.n_variables.zakharov import Zakharov
 
 
 def setup_experiment():
-    no_of_runs = 10
-    number_of_variables = 500
+    no_of_runs = 5
+    number_of_variables = 10
     solutions_size = 100
-    max_evaluations = 25001
+    max_evaluations = 250
     frequency = solutions_size  # Snapshot each generation
 
     algorithm_colors = {
@@ -449,7 +449,26 @@ def setup_experiment():
         ),
     }
 
-    return (algorithms, problems, no_of_runs, number_of_variables, solutions_size,
+    group_of_algorithms = {
+        'Algorithms with roles': ['RebelPSO', 'RejectorPSO', 'RebelRejectorPSO',
+                                  'ContrarianPSO', 'DefeatistPSO', 'ContrarianDefeatistPSO',
+                                  'EschewerPSO', 'EscapistPSO', 'EschewerEscapistPSO'],
+        'Rebel algorithms': ['RebelPSO', 'RejectorPSO', 'RebelRejectorPSO'],
+        'Worse aware algorithms all': ['ReverseLearningGlobalAttractorPSO', 'ReverseLearningPersonalAttractorPSO',
+                                       'CombinedLearningPSO', 'ContrarianPSO', 'DefeatistPSO', 'ContrarianDefeatistPSO',
+                                       'EschewerPSO', 'EscapistPSO', 'EschewerEscapistPSO'],
+        'Reverse learning algorithms': ['ReverseLearningGlobalAttractorPSO', 'ReverseLearningPersonalAttractorPSO',
+                                        'CombinedLearningPSO'],
+        'Worse aware algorithms negative': ['ContrarianPSO', 'DefeatistPSO', 'ContrarianDefeatistPSO'],
+        'Worse aware algorithms positive': ['EschewerPSO', 'EscapistPSO', 'EschewerEscapistPSO'],
+        'Adaptive algorithms': ['GlobalAdaptivePSO', 'LocalAdaptivePSO'],
+    }
+    group_of_algorithms = {
+        group_name: ['PSO'] + [algo for algo in algorithm_list if algo != 'PSO']
+        for group_name, algorithm_list in group_of_algorithms.items()
+    }
+
+    return (algorithms, group_of_algorithms, problems, no_of_runs, number_of_variables, solutions_size,
             max_evaluations, frequency, algorithm_colors, results_dir)
 
 

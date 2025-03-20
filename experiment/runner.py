@@ -10,7 +10,7 @@ from experiment.setup import setup_experiment, initialize_algorithms, make_dir
 from observer.fitness_observer import FitnessObserver
 
 # Configuration
-(algorithms, problems, no_of_runs, number_of_variables, solutions_size,
+(algorithms, group_of_algorithms, problems, no_of_runs, number_of_variables, solutions_size,
  max_evaluations, frequency, algorithm_colors, results_dir) = setup_experiment()
 
 
@@ -63,6 +63,23 @@ def run_all_experiments():
             #                           results_dir=dimensions_dir,
             #                           algorithm_colors=algorithm_colors)
             plot_final_box(problem_data['results'], problem, dimensions_dir, algorithm_colors)
+
+            for group_name, algorithm_list in group_of_algorithms.items():
+                filtered_results = {algo: problem_data['results'][algo] for algo in algorithm_list if
+                                    algo in problem_data['results']}
+
+                if not filtered_results or set(filtered_results.keys()) == {'PSO'}:
+                    print(f"Skipping {group_name}, no valid algorithms found (only 'PSO' or empty).")
+                    continue
+
+                plot_results(filtered_results, problem, dimensions_dir, max_evaluations, no_of_runs, algorithm_colors,
+                             group_name)
+                plot_results_with_std(filtered_results, problem, dimensions_dir, max_evaluations, no_of_runs,
+                                      algorithm_colors, group_name)
+                plot_box_at_intervals(filtered_results, problem, max_evaluations=max_evaluations, no_of_runs=no_of_runs,
+                                      algorithms_to_compare=list(filtered_results.keys()), results_dir=dimensions_dir,
+                                      algorithm_colors=algorithm_colors, group_name=group_name)
+                plot_final_box(filtered_results, problem, dimensions_dir, algorithm_colors, group_name)
 
     with open(f'{dimensions_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_experiment_data.pkl', 'wb') as f:
         pickle.dump(all_data, f)

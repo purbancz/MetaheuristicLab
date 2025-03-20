@@ -3,7 +3,7 @@ jmetalpy
 matplotlib
 numpy
 pandas
-scikit_posthocs
+scikit-posthocs
 scipy
 statsmodels
 scikit-optimize

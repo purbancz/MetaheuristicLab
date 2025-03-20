@@ -9,7 +9,7 @@ from matplotlib import pyplot as plt
 #  algorithm_colors, results_dir) = setup_experiment()
 
 
-def plot_results(data_dict, problem, results_dir, max_evaluations, no_of_runs, algorithm_colors):
+def plot_results(data_dict, problem, results_dir, max_evaluations, no_of_runs, algorithm_colors, group_name="all"):
     plt.figure(figsize=(12, 6))
     for label, fitness_data in data_dict.items():
         average_fitness = np.mean(fitness_data['data'], axis=0)
@@ -22,11 +22,14 @@ def plot_results(data_dict, problem, results_dir, max_evaluations, no_of_runs, a
     plt.legend(frameon=True, facecolor='white', framealpha=1)
     plt.grid()
     plt.tight_layout()
-    plt.savefig(f'{results_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{problem.name()}.png')
+    safe_group_name = group_name.replace(' ', '_').replace('-', '_')
+    filename = f"{results_dir}/{datetime.now().strftime('%Y%m%d_%H%M%S')}_{problem.name()}_{safe_group_name}.png"
+    plt.savefig(filename, dpi=300)
     plt.show()
 
 
-def plot_results_with_std(data_dict, problem, results_dir, max_evaluations, no_of_runs, algorithm_colors):
+def plot_results_with_std(data_dict, problem, results_dir, max_evaluations, no_of_runs, algorithm_colors,
+                          group_name="all"):
     plt.figure(figsize=(12, 6))
     for label, fitness_data in data_dict.items():
         average_fitness = np.mean(fitness_data['data'], axis=0)
@@ -44,13 +47,16 @@ def plot_results_with_std(data_dict, problem, results_dir, max_evaluations, no_o
     plt.legend(frameon=True, facecolor='white', framealpha=1)
     plt.grid()
     plt.tight_layout()
-    plt.savefig(f'{results_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{problem.name()}_with_stddev.png')
+    safe_group_name = group_name.replace(' ', '_').replace('-', '_')
+    filename = f'{results_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{problem.name()}_{safe_group_name}_with_stddev.png'
+    plt.savefig(filename, dpi=300)
     plt.show()
 
 
 def plot_box_at_intervals(data_dict, problem, interval=10, max_evaluations=25000, no_of_runs=10,
                           algorithms_to_compare=None, results_dir=None,
-                          algorithm_colors=None):
+                          algorithm_colors=None,
+                          group_name=None):
     if algorithms_to_compare is None:
         algorithms_to_compare = data_dict.keys()
 
@@ -107,17 +113,24 @@ def plot_box_at_intervals(data_dict, problem, interval=10, max_evaluations=25000
 
     plt.tight_layout()
 
-    # Join algorithm names with underscores, removing any special characters that could cause issues in filenames
-    algorithm_names = '_'.join([algo.replace(' ', '_').replace('-', '_') for algo in algorithms_to_compare])
+    # filename
+    base_filename = f"{results_dir}/{datetime.now().strftime('%Y%m%d_%H%M%S')}_{problem.name()}"
+    algorithm_names = '_'.join(algo.replace(' ', '_').replace('-', '_') for algo in algorithms_to_compare)
+    max_length = 255 - len(base_filename) - len("_etc") - len("_box_intervals.png")
 
-    # Save the figure with the algorithm names included in the filename
-    plt.savefig(
-        f'{results_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}'
-        f'_{problem.name()}_{algorithm_names}_box_intervals.png')
+    if len(algorithm_names) > max_length:
+        truncated_algorithm_names = algorithm_names[:max_length] + "_etc"
+    else:
+        truncated_algorithm_names = algorithm_names
+
+    safe_group_name = group_name.replace(' ', '_').replace('-', '_') if group_name else truncated_algorithm_names
+    filename = f"{base_filename}_{safe_group_name}_box_intervals.png"
+
+    plt.savefig(filename, dpi=300)
     plt.show()
 
 
-def plot_final_box(data_dict, problem, results_dir, algorithm_colors):
+def plot_final_box(data_dict, problem, results_dir, algorithm_colors, group_name="all"):
     plt.figure(figsize=(12, 6))
     box_data = [fitness_data['data'][:, -1] for fitness_data in data_dict.values()]
     labels = [label for label in data_dict.keys()]
@@ -127,12 +140,17 @@ def plot_final_box(data_dict, problem, results_dir, algorithm_colors):
         patch.set_facecolor(color)
     plt.title(f'{problem.name()} ({problem.number_of_variables()} dimensions)')
     plt.ylabel('Final Fitness Distribution')
+    plt.xticks(rotation=45, ha="right")
 
     # Remove the top, right, and bottom spines (the frame around the boxes)
     plt.gca().spines['top'].set_visible(False)
     plt.gca().spines['right'].set_visible(False)
     # plt.gca().spines['bottom'].set_visible(False)
 
+    plt.tight_layout()
+
     plt.tick_params(axis='x', which='both', bottom=False, top=False)
-    plt.savefig(f'{results_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{problem.name()}_final_box.png')
+    safe_group_name = group_name.replace(' ', '_').replace('-', '_')
+    filename = f'{results_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{problem.name()}_{safe_group_name}_final_box.png'
+    plt.savefig(filename, dpi=300)
     plt.show()

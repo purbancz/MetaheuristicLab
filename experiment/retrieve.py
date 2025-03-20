@@ -10,7 +10,7 @@ from experiment.plotting_utilities import plot_results, plot_results_with_std, p
 from experiment.setup import setup_experiment, make_dir
 
 # Setup experiment to retrieve settings like algorithm_colors, max_evaluations, etc.
-(algorithms, problems, _, number_of_variables, solutions_size,
+(algorithms, group_of_algorithms, problems, _, number_of_variables, solutions_size,
  max_evaluations, frequency, algorithm_colors, results_dir) = setup_experiment()
 
 
