@@ -39,7 +39,7 @@ class GlobalAdaptivePSO(SingleObjectivePSO):
         super().step()
 
 
-class LocalAdaptivePSO(SingleObjectivePSO):
+class PersonalAdaptivePSO(SingleObjectivePSO):
     """
     PSO with adaptive coefficients
     """

@@ -6,7 +6,7 @@ from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
 from problem.n_variables.ackley import Ackley
 from problem.n_variables.griewank import Griewank
-from algorithm.AdaptivePSO import GlobalAdaptivePSO, LocalAdaptivePSO
+from algorithm.AdaptivePSO import GlobalAdaptivePSO, PersonalAdaptivePSO
 from algorithm.WAPSO import ReverseLearningGlobalAttractorPSO, CombinedLearningPSO, ReverseLearningLocalAttractorPSO
 from algorithm.particles_with_roles import RebelPSO, RejectorPSO, RebelRejectorPSO, RRAPSO, ContrarianPSO, DefeatistPSO, \
     ContrarianDefeatistPSO, EschewerPSO, EscapistPSO, EschewerEscapistPSO
@@ -95,7 +95,7 @@ parameter_spaces = {
         Real("w", 0.01, 2),
 
     ],
-    'LocalAdaptivePSO': [
+    'PersonalAdaptivePSO': [
         Real("c1", 0.01, 6),
         Real("c2", 0.01, 6),
         Real("max_c1", 4, 20),

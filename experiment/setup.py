@@ -6,7 +6,7 @@ from jmetal.problem import Sphere, Srinivas
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
 
-from algorithm.AdaptivePSO import GlobalAdaptivePSO, LocalAdaptivePSO
+from algorithm.AdaptivePSO import GlobalAdaptivePSO, PersonalAdaptivePSO
 from algorithm.DifferentialEvolution import DifferentialEvolution
 from algorithm.FAPSO import FAPSO
 from algorithm.GradientEnhancedPSO import GradientEnhancedPSO
@@ -38,11 +38,22 @@ from problem.fixed_varaibles.mccormick import McCormick
 from problem.fixed_varaibles.schaffer import SchafferN2
 from problem.fixed_varaibles.shekel import Shekel
 from problem.fixed_varaibles.shubert import Shubert
+from problem.n_variables.CEC import RotatedHighConditionedElliptic, RotatedBentCigar, RotatedDiscus, \
+    ShiftedRotatedRosenbrock, ShiftedRotatedAckley, ShiftedRastrigin, ShiftedRotatedRastrigin, ShiftedSchwefel, \
+    ShiftedRotatedSchwefel, ShiftedRotatedKatsuura, ShiftedRotatedHappyCat, ShiftedRotatedHGBat, \
+    ShiftedRotatedExpandedGriewankPlusRosenbrock, ShiftedRotatedExpandedScafferF6, HybridFunction1, HybridFunction2, \
+    HybridFunction3, HybridFunction4, HybridFunction5, HybridFunction6, CompositionFunction1, CompositionFunction2, \
+    CompositionFunction3, CompositionFunction4, CompositionFunction5, CompositionFunction6, CompositionFunction7, \
+    CompositionFunction8
 from problem.n_variables.ackley import Ackley
 from problem.n_variables.alpine import AlpineN1
+from problem.n_variables.bent_cigar import BentCigar
+from problem.n_variables.discus import Discus
 from problem.n_variables.dixon import DixonPrice
 from problem.n_variables.eggholder import EggHolder
+from problem.n_variables.expanded_schaffer import ExpandedShaffer
 from problem.n_variables.griewank import Griewank
+from problem.n_variables.lenard_johnes_minimum_energy_cluster import LenardJohnesMinimumEnergyCluster
 from problem.n_variables.levy import Levy
 from problem.n_variables.michalewicz import Michalewicz
 from problem.n_variables.penalized import GeneralizedPenalizedN1
@@ -58,9 +69,9 @@ from problem.n_variables.zakharov import Zakharov
 
 def setup_experiment():
     no_of_runs = 5
-    number_of_variables = 10
+    number_of_variables = 100
     solutions_size = 100
-    max_evaluations = 250
+    max_evaluations = 25000
     frequency = solutions_size  # Snapshot each generation
 
     algorithm_colors = {
@@ -90,7 +101,7 @@ def setup_experiment():
         'DE': 'gold',
         'HybridPSODE': 'turquoise',
         'GlobalAdaptivePSO': 'xkcd:lemon',
-        'LocalAdaptivePSO': 'xkcd:camouflage green',
+        'PersonalAdaptivePSO': 'xkcd:camouflage green',
         'EschewerPSO': 'xkcd:puke green',
         'EscapistPSO': 'xkcd:azure',
         'EschewerEscapistPSO': 'xkcd:claret',
@@ -103,7 +114,6 @@ def setup_experiment():
     n_variables_problems = [
         # Zakharov(number_of_variables),
         # Rosenbrock(number_of_variables),
-        ##
         Rastrigin(number_of_variables),
         # Sphere(number_of_variables),
         # Quartic(number_of_variables),
@@ -121,8 +131,40 @@ def setup_experiment():
         # Levy(number_of_variables),
         # Michalewicz(number_of_variables),
         # Schwefel(number_of_variables),
+        # LenardJohnesMinimumEnergyCluster(number_of_variables),
+        # BentCigar(number_of_variables),
+        # ExpandedShaffer(number_of_variables),
+        # Discus(number_of_variables),
         # ShiftedRotatedWeierstrass(number_of_variables),
         ##
+        # RotatedHighConditionedElliptic(number_of_variables),
+        # RotatedBentCigar(number_of_variables),
+        # RotatedDiscus(number_of_variables),
+        # ShiftedRotatedRosenbrock(number_of_variables),
+        # ShiftedRotatedAckley(number_of_variables),
+        # ShiftedRastrigin(number_of_variables),
+        # ShiftedRotatedRastrigin(number_of_variables),
+        # ShiftedSchwefel(number_of_variables),
+        # ShiftedRotatedSchwefel(number_of_variables),
+        # ShiftedRotatedKatsuura(number_of_variables),
+        # ShiftedRotatedHappyCat(number_of_variables),
+        # ShiftedRotatedHGBat(number_of_variables),
+        # ShiftedRotatedExpandedGriewankPlusRosenbrock(number_of_variables),
+        # ShiftedRotatedExpandedScafferF6(number_of_variables),
+        # HybridFunction1(number_of_variables),
+        # HybridFunction2(number_of_variables),
+        # HybridFunction3(number_of_variables),
+        # HybridFunction4(number_of_variables),
+        # HybridFunction5(number_of_variables),
+        # HybridFunction6(number_of_variables),
+        # CompositionFunction1(number_of_variables),
+        # CompositionFunction2(number_of_variables),
+        # CompositionFunction3(number_of_variables),
+        # CompositionFunction4(number_of_variables),
+        # CompositionFunction5(number_of_variables),
+        # CompositionFunction6(number_of_variables),
+        # CompositionFunction7(number_of_variables),
+        # CompositionFunction8(number_of_variables),
     ]
 
     fixed_variables_problems = [
@@ -447,7 +489,7 @@ def setup_experiment():
             w=0.0355,
             termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
         ),
-        'LocalAdaptivePSO': lambda p: LocalAdaptivePSO(
+        'PersonalAdaptivePSO': lambda p: PersonalAdaptivePSO(
             problem=p,
             swarm_size=solutions_size,
             c1=0.2412,
@@ -471,7 +513,7 @@ def setup_experiment():
                                         'CombinedLearningPSO'],
         'Worse aware algorithms negative': ['ContrarianPSO', 'DefeatistPSO', 'ContrarianDefeatistPSO'],
         'Worse aware algorithms positive': ['EschewerPSO', 'EscapistPSO', 'EschewerEscapistPSO'],
-        'Adaptive algorithms': ['GlobalAdaptivePSO', 'LocalAdaptivePSO'],
+        'Adaptive algorithms': ['GlobalAdaptivePSO', 'PersonalAdaptivePSO'],
     }
     group_of_algorithms = {
         group_name: ['PSO'] + [algo for algo in algorithm_list if algo != 'PSO']

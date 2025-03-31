@@ -55,4 +55,4 @@ class ShiftedRotatedWeierstrass(FloatProblem):
         return solution
 
     def name(self) -> str:
-        return 'Shifted Rotated Weierstrass'
+        return 'Shifted and Rotated Weierstrass'
