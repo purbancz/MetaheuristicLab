@@ -58,7 +58,7 @@ from problem.n_variables.levy import Levy
 from problem.n_variables.michalewicz import Michalewicz
 from problem.n_variables.penalized import GeneralizedPenalizedN1
 from problem.n_variables.quartic import Quartic
-from problem.n_variables.rosenbrock import Rosenbrock
+from problem.n_variables.rosenbrock import Rosenbrock, RosenbrockModified01, RosenbrockModified02
 from problem.n_variables.salomon import Salomon
 from problem.n_variables.schwefel import Schwefel
 from problem.n_variables.step import StepN1, StepN2, StepN3
@@ -113,8 +113,10 @@ def setup_experiment():
     # Define problems
     n_variables_problems = [
         # Zakharov(number_of_variables),
-        # Rosenbrock(number_of_variables),
-        Rastrigin(number_of_variables),
+        Rosenbrock(number_of_variables),
+        RosenbrockModified01(number_of_variables),
+        RosenbrockModified02(number_of_variables),
+        # Rastrigin(number_of_variables),
         # Sphere(number_of_variables),
         # Quartic(number_of_variables),
         # AlpineN1(number_of_variables),
@@ -197,7 +199,7 @@ def setup_experiment():
         #     crossover=SBXCrossover(0.75, 5.0),
         #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations),
         # ),
-        'PSO': lambda p: SingleObjectivePSO( # rough tuning
+        'PSO': lambda p: SingleObjectivePSO(  # rough tuning
             problem=p,
             swarm_size=solutions_size,
             c1=4.3732,
@@ -257,7 +259,7 @@ def setup_experiment():
         #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
         # ),
         # New PSO variants
-        'RebelPSO': lambda p: RebelPSO( # rough tuning
+        'RebelPSO': lambda p: RebelPSO(  # rough tuning
             problem=p,
             swarm_size=solutions_size,
             c1=0.3077,
@@ -267,7 +269,7 @@ def setup_experiment():
             rebel_fraction=0.18,
             termination_criterion=StoppingByEvaluations(max_evaluations)
         ),
-        'RejectorPSO': lambda p: RejectorPSO( # rough tuning
+        'RejectorPSO': lambda p: RejectorPSO(  # rough tuning
             problem=p,
             swarm_size=solutions_size,
             c1=1.5453,
@@ -277,7 +279,7 @@ def setup_experiment():
             rejector_fraction=0.68,
             termination_criterion=StoppingByEvaluations(max_evaluations)
         ),
-        'RebelRejectorPSO': lambda p: RebelRejectorPSO( # rough tuning
+        'RebelRejectorPSO': lambda p: RebelRejectorPSO(  # rough tuning
             problem=p,
             swarm_size=solutions_size,
             c1=1.2917,
@@ -318,16 +320,16 @@ def setup_experiment():
         #     w=0.0632,
         #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
         # ),
-        'ReverseLearningGlobalAttractorPSO': lambda p: ReverseLearningGlobalAttractorPSO( # rough tuning
+        'ReverseLearningGlobalAttractorPSO': lambda p: ReverseLearningGlobalAttractorPSO(  # rough tuning
             problem=p,
             swarm_size=solutions_size,
-            a = 3.0859,
+            a=3.0859,
             b1=0.1083,
             b2=0.8373,
             w=0.0243,
             termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
         ),
-        'ReverseLearningLocalAttractorPSO': lambda p: ReverseLearningLocalAttractorPSO( # rough tuning
+        'ReverseLearningLocalAttractorPSO': lambda p: ReverseLearningLocalAttractorPSO(  # rough tuning
             problem=p,
             swarm_size=solutions_size,
             a=3.2241,
@@ -336,7 +338,7 @@ def setup_experiment():
             w=0.0355,
             termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
         ),
-        'CombinedLearningPSO': lambda p: CombinedLearningPSO( # rough tuning
+        'CombinedLearningPSO': lambda p: CombinedLearningPSO(  # rough tuning
             problem=p,
             swarm_size=solutions_size,
             c1=0.6799,
@@ -346,7 +348,7 @@ def setup_experiment():
             w=0.2530,
             termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
         ),
-        'ContrarianPSO': lambda p: ContrarianPSO( # rough tuning
+        'ContrarianPSO': lambda p: ContrarianPSO(  # rough tuning
             problem=p,
             swarm_size=solutions_size,
             c1=0.4049,
@@ -356,7 +358,7 @@ def setup_experiment():
             contrarian_fraction=0.4802,
             termination_criterion=StoppingByEvaluations(max_evaluations)
         ),
-        'DefeatistPSO': lambda p: DefeatistPSO( # rough tuning
+        'DefeatistPSO': lambda p: DefeatistPSO(  # rough tuning
             problem=p,
             swarm_size=solutions_size,
             c1=0.4045,
@@ -366,7 +368,7 @@ def setup_experiment():
             defeatist_fraction=0.53,
             termination_criterion=StoppingByEvaluations(max_evaluations)
         ),
-        'ContrarianDefeatistPSO': lambda p: ContrarianDefeatistPSO( # rough tuning
+        'ContrarianDefeatistPSO': lambda p: ContrarianDefeatistPSO(  # rough tuning
             problem=p,
             swarm_size=solutions_size,
             c1=0.9052,
@@ -378,7 +380,7 @@ def setup_experiment():
             defeatist_fraction=0.19,
             termination_criterion=StoppingByEvaluations(max_evaluations)
         ),
-        'EschewerPSO': lambda p: EschewerPSO( # rough tuning
+        'EschewerPSO': lambda p: EschewerPSO(  # rough tuning
             problem=p,
             swarm_size=solutions_size,
             c1=2.1774,
@@ -388,7 +390,7 @@ def setup_experiment():
             eschewer_fraction=0.22,
             termination_criterion=StoppingByEvaluations(max_evaluations)
         ),
-        'EscapistPSO': lambda p: EscapistPSO( # rough tuning
+        'EscapistPSO': lambda p: EscapistPSO(  # rough tuning
             problem=p,
             swarm_size=solutions_size,
             c1=2.5767,
@@ -398,7 +400,7 @@ def setup_experiment():
             escapist_fraction=0.48,
             termination_criterion=StoppingByEvaluations(max_evaluations)
         ),
-        'EschewerEscapistPSO': lambda p: EschewerEscapistPSO( # rough tuning
+        'EschewerEscapistPSO': lambda p: EschewerEscapistPSO(  # rough tuning
             problem=p,
             swarm_size=solutions_size,
             c1=0.8995,
@@ -479,7 +481,7 @@ def setup_experiment():
         #     fractal_depth=3,
         #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
         # ),
-        'GlobalAdaptivePSO': lambda p: GlobalAdaptivePSO( # rough tuning
+        'GlobalAdaptivePSO': lambda p: GlobalAdaptivePSO(  # rough tuning
             problem=p,
             swarm_size=solutions_size,
             c1=0.2853,
@@ -506,14 +508,37 @@ def setup_experiment():
                                   'ContrarianPSO', 'DefeatistPSO', 'ContrarianDefeatistPSO',
                                   'EschewerPSO', 'EscapistPSO', 'EschewerEscapistPSO'],
         'Rebel algorithms': ['RebelPSO', 'RejectorPSO', 'RebelRejectorPSO'],
-        'Worse aware algorithms all': ['ReverseLearningPSO', 'ReverseLearningGlobalAttractorPSO', 'ReverseLearningLocalAttractorPSO',
+        'Worse aware algorithms all': ['ReverseLearningPSO', 'ReverseLearningGlobalAttractorPSO',
+                                       'ReverseLearningLocalAttractorPSO',
                                        'CombinedLearningPSO', 'ContrarianPSO', 'DefeatistPSO', 'ContrarianDefeatistPSO',
                                        'EschewerPSO', 'EscapistPSO', 'EschewerEscapistPSO'],
-        'Reverse learning algorithms': ['ReverseLearningPSO', 'ReverseLearningGlobalAttractorPSO', 'ReverseLearningLocalAttractorPSO',
+        'Reverse learning algorithms': ['ReverseLearningPSO', 'ReverseLearningGlobalAttractorPSO',
+                                        'ReverseLearningLocalAttractorPSO',
                                         'CombinedLearningPSO'],
+        'Worse aware algorithms without reverse learning': ['ReverseLearningGlobalAttractorPSO',
+                                                            'ReverseLearningLocalAttractorPSO',
+                                                            'CombinedLearningPSO', 'ContrarianPSO', 'DefeatistPSO',
+                                                            'ContrarianDefeatistPSO',
+                                                            'EschewerPSO', 'EscapistPSO', 'EschewerEscapistPSO'],
+        'Worse aware algorithms without all reverse learning': ['ContrarianPSO', 'DefeatistPSO',
+                                                                'ContrarianDefeatistPSO',
+                                                                'EschewerPSO', 'EscapistPSO', 'EschewerEscapistPSO'],
+        'Reverse learning algorithms without reverse learning': ['ReverseLearningGlobalAttractorPSO',
+                                                                 'ReverseLearningLocalAttractorPSO',
+                                                                 'CombinedLearningPSO'],
         'Worse aware algorithms negative': ['ContrarianPSO', 'DefeatistPSO', 'ContrarianDefeatistPSO'],
         'Worse aware algorithms positive': ['EschewerPSO', 'EscapistPSO', 'EschewerEscapistPSO'],
         'Adaptive algorithms': ['GlobalAdaptivePSO', 'PersonalAdaptivePSO'],
+        'All without reverse learning': ['RebelPSO', 'RejectorPSO', 'RebelRejectorPSO',
+                                         'ContrarianPSO', 'DefeatistPSO', 'ContrarianDefeatistPSO',
+                                         'EschewerPSO', 'EscapistPSO', 'EschewerEscapistPSO',
+                                         'ReverseLearningGlobalAttractorPSO', 'ReverseLearningLocalAttractorPSO',
+                                         'CombinedLearningPSO',
+                                         'GlobalAdaptivePSO', 'PersonalAdaptivePSO'],
+        'All without all reverse learning': ['RebelPSO', 'RejectorPSO', 'RebelRejectorPSO',
+                                         'ContrarianPSO', 'DefeatistPSO', 'ContrarianDefeatistPSO',
+                                         'EschewerPSO', 'EscapistPSO', 'EschewerEscapistPSO',
+                                         'GlobalAdaptivePSO', 'PersonalAdaptivePSO'],
     }
     group_of_algorithms = {
         group_name: ['PSO'] + [algo for algo in algorithm_list if algo != 'PSO']
