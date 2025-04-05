@@ -49,7 +49,7 @@ from problem.n_variables.ackley import Ackley
 from problem.n_variables.alpine import AlpineN1
 from problem.n_variables.bent_cigar import BentCigar
 from problem.n_variables.discus import Discus
-from problem.n_variables.dixon import DixonPrice
+from problem.n_variables.dixon import DixonPrice, GeneralizedDixonPriceRosenbrock
 from problem.n_variables.eggholder import EggHolder
 from problem.n_variables.expanded_schaffer import ExpandedShaffer
 from problem.n_variables.griewank import Griewank
@@ -113,15 +113,16 @@ def setup_experiment():
     # Define problems
     n_variables_problems = [
         # Zakharov(number_of_variables),
-        Rosenbrock(number_of_variables),
-        RosenbrockModified01(number_of_variables),
-        RosenbrockModified02(number_of_variables),
+        # Rosenbrock(number_of_variables),
+        # RosenbrockModified01(number_of_variables),
+        # RosenbrockModified02(number_of_variables),
         # Rastrigin(number_of_variables),
         # Sphere(number_of_variables),
         # Quartic(number_of_variables),
         # AlpineN1(number_of_variables),
         # EggHolder(number_of_variables),
-        # DixonPrice(number_of_variables),
+        DixonPrice(number_of_variables),
+        GeneralizedDixonPriceRosenbrock(number_of_variables),
         # Salomon(number_of_variables),
         # GeneralizedPenalizedN1(number_of_variables),
         # StepN1(number_of_variables),
@@ -320,34 +321,34 @@ def setup_experiment():
         #     w=0.0632,
         #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
         # ),
-        'ReverseLearningGlobalAttractorPSO': lambda p: ReverseLearningGlobalAttractorPSO(  # rough tuning
-            problem=p,
-            swarm_size=solutions_size,
-            a=3.0859,
-            b1=0.1083,
-            b2=0.8373,
-            w=0.0243,
-            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        ),
-        'ReverseLearningLocalAttractorPSO': lambda p: ReverseLearningLocalAttractorPSO(  # rough tuning
-            problem=p,
-            swarm_size=solutions_size,
-            a=3.2241,
-            b1=1.6475,
-            b2=0.0101,
-            w=0.0355,
-            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        ),
-        'CombinedLearningPSO': lambda p: CombinedLearningPSO(  # rough tuning
-            problem=p,
-            swarm_size=solutions_size,
-            c1=0.6799,
-            c2=3.2484,
-            b1=0.0445,
-            b2=0.3843,
-            w=0.2530,
-            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        ),
+        # 'ReverseLearningGlobalAttractorPSO': lambda p: ReverseLearningGlobalAttractorPSO(  # rough tuning
+        #     problem=p,
+        #     swarm_size=solutions_size,
+        #     a=3.0859,
+        #     b1=0.1083,
+        #     b2=0.8373,
+        #     w=0.0243,
+        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        # ),
+        # 'ReverseLearningLocalAttractorPSO': lambda p: ReverseLearningLocalAttractorPSO(  # rough tuning
+        #     problem=p,
+        #     swarm_size=solutions_size,
+        #     a=3.2241,
+        #     b1=1.6475,
+        #     b2=0.0101,
+        #     w=0.0355,
+        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        # ),
+        # 'CombinedLearningPSO': lambda p: CombinedLearningPSO(  # rough tuning
+        #     problem=p,
+        #     swarm_size=solutions_size,
+        #     c1=0.6799,
+        #     c2=3.2484,
+        #     b1=0.0445,
+        #     b2=0.3843,
+        #     w=0.2530,
+        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        # ),
         'ContrarianPSO': lambda p: ContrarianPSO(  # rough tuning
             problem=p,
             swarm_size=solutions_size,

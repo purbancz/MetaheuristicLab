@@ -62,7 +62,7 @@ class RosenbrockModified01(FloatProblem):
         return solution
 
     def name(self) -> str:
-        return "Modified Rosenbrock No.01 (Flat-Ground Bent Knife-Edge)"
+        return "Modified Rosenbrock No.01 - Flat-Ground Bent Knife-Edge"
 
 class RosenbrockModified02(FloatProblem):
     def __init__(self, number_of_variables: int = 2):
@@ -92,6 +92,6 @@ class RosenbrockModified02(FloatProblem):
         return solution
 
     def name(self) -> str:
-        return "Modified Rosenbrock No.02 (Hollow-Ground Bent Knife-Edge)"
+        return "Modified Rosenbrock No.02 - Hollow-Ground Bent Knife-Edge"
 
 
