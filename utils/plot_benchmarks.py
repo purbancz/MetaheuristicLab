@@ -22,7 +22,7 @@ from problem.n_variables.dixon import DixonPrice
 from problem.n_variables.eggholder import EggHolder
 from problem.n_variables.expanded_schaffer import ExpandedShaffer
 from problem.n_variables.griewank import Griewank
-from problem.n_variables.lenard_johnes_minimum_energy_cluster import LenardJohnesMinimumEnergyCluster
+from problem.n_variables.lenard_johnes_minimum_energy_cluster import LennardJonesMinimumEnergyCluster
 from problem.n_variables.levy import Levy
 from problem.n_variables.michalewicz import Michalewicz
 from problem.n_variables.penalized import GeneralizedPenalizedN1
@@ -114,7 +114,7 @@ def plot_all_benchmarks():
         Michalewicz(number_of_variables),
         Schwefel(number_of_variables),
 
-        LenardJohnesMinimumEnergyCluster(number_of_variables),
+        LennardJonesMinimumEnergyCluster(number_of_variables),
         BentCigar(number_of_variables),
         ExpandedShaffer(number_of_variables),
         Discus(number_of_variables),

@@ -21,6 +21,7 @@ from algorithm.WAPSO import ReverseLearningGlobalAttractorPSO, CombinedLearningP
     ReverseLearningPSO
 from algorithm.SPPPSO import SPPPSO
 from algorithm.TDPSO import TDPSO
+from algorithm.hgbat import HGBat
 from algorithm.particles_with_roles import RebelPSO, RejectorPSO, RebelRejectorPSO, RRAPSO, ContrarianPSO, DefeatistPSO, \
     ContrarianDefeatistPSO, EschewerPSO, EscapistPSO, EschewerEscapistPSO
 from algorithm.single_objective_PSO import SingleObjectivePSO
@@ -44,7 +45,7 @@ from problem.n_variables.CEC import RotatedHighConditionedElliptic, RotatedBentC
     ShiftedRotatedExpandedGriewankPlusRosenbrock, ShiftedRotatedExpandedScafferF6, HybridFunction1, HybridFunction2, \
     HybridFunction3, HybridFunction4, HybridFunction5, HybridFunction6, CompositionFunction1, CompositionFunction2, \
     CompositionFunction3, CompositionFunction4, CompositionFunction5, CompositionFunction6, CompositionFunction7, \
-    CompositionFunction8
+    CompositionFunction8, ShiftedRotatedSchafferF7
 from problem.n_variables.ackley import Ackley
 from problem.n_variables.alpine import AlpineN1
 from problem.n_variables.bent_cigar import BentCigar
@@ -53,13 +54,16 @@ from problem.n_variables.dixon import DixonPrice, GeneralizedDixonPriceRosenbroc
 from problem.n_variables.eggholder import EggHolder
 from problem.n_variables.expanded_schaffer import ExpandedShaffer
 from problem.n_variables.griewank import Griewank
-from problem.n_variables.lenard_johnes_minimum_energy_cluster import LenardJohnesMinimumEnergyCluster
+from problem.n_variables.happy_cat import HappyCat
+from problem.n_variables.katsuura import Katsuura, ExpandedKatsuura
+from problem.n_variables.lenard_johnes_minimum_energy_cluster import LennardJonesMinimumEnergyCluster
 from problem.n_variables.levy import Levy
 from problem.n_variables.michalewicz import Michalewicz
 from problem.n_variables.penalized import GeneralizedPenalizedN1
 from problem.n_variables.quartic import Quartic
 from problem.n_variables.rosenbrock import Rosenbrock, RosenbrockModified01, RosenbrockModified02
 from problem.n_variables.salomon import Salomon
+from problem.n_variables.schaffer_f7 import SchafferF7
 from problem.n_variables.schwefel import Schwefel
 from problem.n_variables.step import StepN1, StepN2, StepN3
 from problem.n_variables.styblinski import StyblinskiTang
@@ -121,8 +125,14 @@ def setup_experiment():
         # Quartic(number_of_variables),
         # AlpineN1(number_of_variables),
         # EggHolder(number_of_variables),
-        DixonPrice(number_of_variables),
-        GeneralizedDixonPriceRosenbrock(number_of_variables),
+        # DixonPrice(number_of_variables),
+        # GeneralizedDixonPriceRosenbrock(number_of_variables),
+        # Katsuura(number_of_variables),
+        # ExpandedKatsuura(number_of_variables),
+        # HappyCat(number_of_variables),
+        # HGBat(number_of_variables),
+        SchafferF7(number_of_variables),
+        ShiftedRotatedSchafferF7(number_of_variables),
         # Salomon(number_of_variables),
         # GeneralizedPenalizedN1(number_of_variables),
         # StepN1(number_of_variables),

@@ -397,7 +397,6 @@ class ShiftedRotatedKatsuura(FloatProblem):
         return 0
 
     def evaluate(self, solution: FloatSolution) -> FloatSolution:
-        # Przybliżona implementacja funkcji Katsuura:
         x = np.array(solution.variables)
         z = np.dot(self.rotation_matrix, (x - self.shift))
         d = self._number_of_variables
@@ -412,7 +411,7 @@ class ShiftedRotatedKatsuura(FloatProblem):
         return solution
 
     def name(self) -> str:
-        return "Shifted and Rotated Katsuura"
+        return "Shifted and Rotated Expanded Katsuura"
 
 class ShiftedRotatedHappyCat(FloatProblem):
     def __init__(self, number_of_variables: int = 30):
@@ -473,13 +472,14 @@ class ShiftedRotatedHGBat(FloatProblem):
         return 0
 
     def evaluate(self, solution: FloatSolution) -> FloatSolution:
-        # HGBat function (przybliżenie):
         x = np.array(solution.variables)
         z = np.dot(self.rotation_matrix, (x - self.shift))
         d = self._number_of_variables
-        sum_z2 = np.sum(z**2)
-        sum_z = np.sum(z)
-        result = abs(sum_z2 - d)**(1/8) + (0.5 * sum_z2 + sum_z)/d + 0.5
+        S2 = np.sum(z**2)
+        S1 = np.sum(z)
+        val1 = math.sqrt(abs(S2**2 - S1**2))
+        val2 = (0.5 * S2 + S1) / d
+        result = val1 + val2 + 0.5
         solution.objectives[0] = result
         return solution
 
@@ -520,6 +520,38 @@ class ShiftedRotatedExpandedGriewankPlusRosenbrock(FloatProblem):
 
     def name(self) -> str:
         return "Shifted and Rotated Expanded Griewank plus Rosenbrock"
+
+class ShiftedRotatedSchafferF7(FloatProblem):
+    def __init__(self, number_of_variables: int = 2):
+        super(ShiftedRotatedSchafferF7, self).__init__()
+        self.obj_directions = [self.MINIMIZE]
+        self.obj_labels = ['f(x)']
+        self.lower_bound = [-100.0] * number_of_variables
+        self.upper_bound = [100.0] * number_of_variables
+        FloatSolution.lower_bound = self.lower_bound
+        FloatSolution.upper_bound = self.upper_bound
+        self.shift = generate_shift(self)
+        self.rotation_matrix = generate_random_orthogonal_matrix(self)
+
+    def number_of_objectives(self) -> int:
+        return 1
+
+    def number_of_constraints(self) -> int:
+        return 0
+
+    def evaluate(self, solution: FloatSolution) -> FloatSolution:
+        x = np.array(solution.variables)
+        d = self.number_of_variables()
+        z = np.dot(self.rotation_matrix, (x - self.shift))
+        z = 10 * z
+        s = np.array([z[i]**2 + z[i+1]**2 for i in range(d - 1)])
+        inner = np.sum(s + s * (np.sin(50 * (s ** (1/5)))**2)) / (d - 1)
+        result = inner**2
+        solution.objectives[0] = result
+        return solution
+
+    def name(self) -> str:
+        return "Shifted and Rotated Schaffer F7"
 
 class ShiftedRotatedExpandedScafferF6(FloatProblem):
     def __init__(self, number_of_variables: int = 30):
