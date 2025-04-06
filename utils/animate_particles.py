@@ -47,7 +47,7 @@ def animate_swarm(func, observer):
     fig, ax = plt.subplots(figsize=(12, 10))
     heatmap = ax.contourf(X, Y, Z, levels=50, cmap='viridis')
     plt.colorbar(heatmap, ax=ax)
-    scatter = ax.scatter([], [], c='white', s=30)
+    scatter = ax.scatter([], [], c='orange', s=30)
     ax.set_title(f"Swarm Animation of {algorithm.get_name()} on {func.name()}")
     ax.set_xlabel("x")
     ax.set_ylabel("y")
@@ -96,9 +96,9 @@ if __name__ == "__main__":
     algorithm = SingleObjectivePSO(
         problem=problem,
         swarm_size=30,
-        c1=4.1,
-        c2=2.1,
-        w=0.1,
+        c1=2,
+        c2=2,
+        w=0.5,
         termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
     )
 

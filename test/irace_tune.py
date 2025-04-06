@@ -32,18 +32,18 @@ robjects.r('Sys.setlocale("LC_ALL", "en_US.UTF-8")')
 
 
 
-number_of_variables = 10
-solutions_size = 10
-max_evaluations = 1000
-num_runs = 2
-budget = 60
+# number_of_variables = 10
+# solutions_size = 10
+# max_evaluations = 1000
+# num_runs = 2
+# budget = 60
 
 
-# number_of_variables = 100
-# solutions_size = 100
-# max_evaluations = 25000
-# num_runs = 5   # Number of independent runs per problem
-# budget = 750    # Total number of configurations to try per parameter
+number_of_variables = 100
+solutions_size = 100
+max_evaluations = 25000
+num_runs = 5   # Number of independent runs per problem
+budget = 333    # Total number of configurations to try per parameter
 
 problems = [
     Sphere(number_of_variables),
@@ -197,7 +197,7 @@ if __name__ == "__main__":
         print(f"Optimizing parameters for {algo_name} ...")
 
         parameter_space = ParameterSpace(params=space_list)
-        scenario = Scenario(max_experiments=budget * len(space_list), seed=42, n_jobs=8)
+        scenario = Scenario(max_experiments=budget * len(space_list), seed=42, n_jobs=16)
 
         result = irace(target_runner, parameter_space, scenario, return_df=True, remove_metadata=True)
         best_configurations[algo_name] = result

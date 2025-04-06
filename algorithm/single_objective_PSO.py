@@ -120,10 +120,12 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
 
 
 
+
         elif self.constraint_handling_mode == "bounce":
             new_position = position.copy()
             new_velocity = velocity.copy()
             r = upper_bound - lower_bound
+            damping = random.random()
 
             mask_lower = new_position < lower_bound
             if np.any(mask_lower):
@@ -135,10 +137,11 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
                     lower_bound[mask_lower] + delta_lower,
                     upper_bound[mask_lower] - delta_lower
                 )
+
                 new_velocity[mask_lower] = np.where(
                     n_lower % 2 == 0,
-                    -np.abs(new_velocity[mask_lower]),
-                    np.abs(new_velocity[mask_lower])
+                    -np.abs(new_velocity[mask_lower]) * damping,
+                    np.abs(new_velocity[mask_lower]) * damping
                 )
 
             mask_upper = new_position > upper_bound
@@ -151,13 +154,11 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
                     upper_bound[mask_upper] - delta_upper,
                     lower_bound[mask_upper] + delta_upper
                 )
-
                 new_velocity[mask_upper] = np.where(
                     n_upper % 2 == 0,
-                    -np.abs(new_velocity[mask_upper]),
-                    np.abs(new_velocity[mask_upper])
+                    -np.abs(new_velocity[mask_upper]) * damping,
+                    np.abs(new_velocity[mask_upper]) * damping
                 )
-
             return new_position, new_velocity
 
 
@@ -200,7 +201,6 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
 
     def get_name(self) -> str:
         return "PSO"
-
 
 # class RebelPSO(SingleObjectivePSO):
 #     """PSO with rebel particles opposing global best"""
