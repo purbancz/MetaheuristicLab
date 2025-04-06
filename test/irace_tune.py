@@ -4,10 +4,10 @@ import numpy as np
 from datetime import datetime
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
-from problem.n_variables.ackley import Ackley
-from problem.n_variables.griewank import Griewank
+
 from algorithm.AdaptivePSO import GlobalAdaptivePSO, PersonalAdaptivePSO
-from algorithm.WAPSO import ReverseLearningGlobalAttractorPSO, CombinedLearningPSO, ReverseLearningLocalAttractorPSO
+from algorithm.WAPSO import ReverseLearningGlobalAttractorPSO, CombinedLearningPSO, ReverseLearningPersonalAttractorPSO, \
+    ReverseLearningPSO
 from algorithm.particles_with_roles import RebelPSO, RejectorPSO, RebelRejectorPSO, RRAPSO, ContrarianPSO, DefeatistPSO, \
     ContrarianDefeatistPSO, EschewerPSO, EscapistPSO, EschewerEscapistPSO
 from algorithm.single_objective_PSO import SingleObjectivePSO
@@ -19,6 +19,13 @@ from algorithm.TDPSO import TDPSO
 from irace import irace, ParameterSpace, Scenario, Experiment, Real, Integer
 import rpy2.robjects as robjects
 
+from problem.n_variables.ackley import Ackley
+from problem.n_variables.alpine import AlpineN2
+from problem.n_variables.griewank import Griewank
+from problem.n_variables.step import StepN2
+from problem.n_variables.zakharov import Zakharov
+
+
 os.environ["LANG"] = "en_US.UTF-8"
 os.environ["LC_ALL"] = "en_US.UTF-8"
 os.environ["R_DEFAULT_ENCODING"] = "UTF-8"
@@ -27,23 +34,23 @@ robjects.r('Sys.setlocale("LC_ALL", "en_US.UTF-8")')
 
 
 
-# number_of_variables = 10
-# solutions_size = 10
-# max_evaluations = 1000
-# num_runs = 2
-# budget = 60
+number_of_variables = 10
+solutions_size = 10
+max_evaluations = 1000
+num_runs = 2
+budget = 60
 
 
-number_of_variables = 100
-solutions_size = 100
-max_evaluations = 25000
-num_runs = 5   # Number of independent runs per problem
-budget = 1000    # Total number of configurations to try per parameter
+# number_of_variables = 100
+# solutions_size = 100
+# max_evaluations = 25000
+# num_runs = 5   # Number of independent runs per problem
+# budget = 750    # Total number of configurations to try per parameter
 
 problems = [
-    Rastrigin(number_of_variables),
-    Ackley(number_of_variables),
-    Griewank(number_of_variables)
+    AlpineN2(number_of_variables),
+    StepN2(number_of_variables),
+    Zakharov(number_of_variables)
 ]
 
 parameter_spaces = {
@@ -52,17 +59,51 @@ parameter_spaces = {
         Real("c2", 0.01, 6),
         Real("w", 0.01, 2),
     ],
-    'ReverseLearningGlobalAttractorPSO': [
-        Real("a", 0.01, 6),
-        Real("b1", 0.01, 6),
-        Real("b2", 0.01, 6),
+    'RebelPSO': [
+        Real("c1", 0.01, 6),
+        Real("c2", 0.01, 6),
+        Real("ac2", 0.01, 6),
         Real("w", 0.01, 2),
+        Real("rebel_fraction", 0.05, 0.8),
     ],
-    'ReverseLearningLocalAttractorPSO': [
-        Real("a", 0.01, 6),
-        Real("b1", 0.01, 6),
-        Real("b2", 0.01, 6),
+    'RejectorPSO': [
+        Real("c1", 0.01, 6),
+        Real("c2", 0.01, 6),
+        Real("ac1", 0.01, 6),
         Real("w", 0.01, 2),
+        Real("rejector_fraction", 0.05, 0.8),
+    ],
+    'RebelRejectorPSO': [
+        Real("c1", 0.01, 6),
+        Real("c2", 0.01, 6),
+        Real("ac1", 0.01, 6),
+        Real("ac2", 0.01, 6),
+        Real("w", 0.01, 2),
+        Real("rebel_fraction", 0.05, 0.8),
+        Real("rejector_fraction", 0.05, 0.8),
+    ],
+    'ContrarianPSO': [
+        Real("c1", 0.01, 6),
+        Real("c2", 0.01, 6),
+        Real("ac2", 0.01, 6),
+        Real("w", 0.01, 2),
+        Real("contrarian_fraction", 0.05, 0.8),
+    ],
+    'DefeatistPSO': [
+        Real("c1", 0.01, 6),
+        Real("c2", 0.01, 6),
+        Real("ac1", 0.01, 6),
+        Real("w", 0.01, 2),
+        Real("defeatist_fraction", 0.05, 0.8),
+    ],
+    'ContrarianDefeatistPSO': [
+        Real("c1", 0.01, 6),
+        Real("c2", 0.01, 6),
+        Real("ac1", 0.01, 6),
+        Real("ac2", 0.01, 6),
+        Real("w", 0.01, 2),
+        Real("contrarian_fraction", 0.05, 0.8),
+        Real("defeatist_fraction", 0.05, 0.8),
     ],
     'EschewerPSO': [
         Real("c1", 0.01, 6),
@@ -71,12 +112,12 @@ parameter_spaces = {
         Real("w", 0.01, 2),
         Real("eschewer_fraction", 0.05, 0.8),
     ],
-    'EscapistPSO': [
+    'EscapistPSO': [ # 7
         Real("c1", 0.01, 6),
         Real("c2", 0.01, 6),
         Real("ac1", 0.01, 6),
         Real("w", 0.01, 2),
-        Real("rejector_fraction", 0.05, 0.8),
+        Real("escapist_fraction", 0.05, 0.8),
     ],
     'EschewerEscapistPSO': [ # 7
         Real("c1", 0.01, 6),
@@ -85,7 +126,7 @@ parameter_spaces = {
         Real("ac2", 0.01, 6),
         Real("w", 0.01, 2),
         Real("eschewer_fraction", 0.05, 0.8),
-        Real("rejector_fraction", 0.05, 0.8),
+        Real("escapist_fraction", 0.05, 0.8),
     ],
     'GlobalAdaptivePSO': [
         Real("c1", 0.01, 6),
@@ -93,13 +134,36 @@ parameter_spaces = {
         Real("max_c1", 4, 20),
         Real("max_c2", 4, 20),
         Real("w", 0.01, 2),
-
     ],
     'PersonalAdaptivePSO': [
         Real("c1", 0.01, 6),
         Real("c2", 0.01, 6),
         Real("max_c1", 4, 20),
         Real("max_c2", 4, 20),
+        Real("w", 0.01, 2),
+    ],
+    'ReverseLearningGlobalAttractorPSO': [
+        Real("a", 0.01, 6),
+        Real("b1", 0.01, 6),
+        Real("b2", 0.01, 6),
+        Real("w", 0.01, 2),
+    ],
+    'ReverseLearningPersonalAttractorPSO': [
+        Real("a", 0.01, 6),
+        Real("b1", 0.01, 6),
+        Real("b2", 0.01, 6),
+        Real("w", 0.01, 2),
+    ],
+    'CombinedLearningPSO': [
+        Real("c1", 0.01, 6),
+        Real("c2", 0.01, 6),
+        Real("b1", 0.01, 6),
+        Real("b2", 0.01, 6),
+        Real("w", 0.01, 2),
+    ],
+    'ReverseLearningPSO': [
+        Real("b1", 0.01, 6),
+        Real("b2", 0.01, 6),
         Real("w", 0.01, 2),
     ],
 }
