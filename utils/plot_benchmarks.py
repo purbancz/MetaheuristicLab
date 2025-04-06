@@ -177,7 +177,7 @@ def plot_all_benchmarks():
     number_of_variables = 2
 
     functions_to_plot = [
-        # Zakharov(number_of_variables),
+        Zakharov(number_of_variables),
         # Plateau(number_of_variables),
         # Rosenbrock(number_of_variables),
         # RosenbrockModified01(number_of_variables),
@@ -198,9 +198,9 @@ def plot_all_benchmarks():
         # Stochastic(number_of_variables),
         # Salomon(number_of_variables),
         # GeneralizedPenalizedN1(number_of_variables),
-        StepN1(number_of_variables),
-        StepN2(number_of_variables),
-        StepN3(number_of_variables),
+        # StepN1(number_of_variables),
+        # StepN2(number_of_variables),
+        # StepN3(number_of_variables),
         # StyblinskiTang(number_of_variables),
         # Ackley(number_of_variables),
         # Griewank(number_of_variables),

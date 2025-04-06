@@ -119,17 +119,47 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
             return clipped_position, velocity
 
 
+
         elif self.constraint_handling_mode == "bounce":
-            out_of_bounds = (position < lower_bound) | (position > upper_bound)
-            while np.any(out_of_bounds):
-                mask_lower = position < lower_bound
-                mask_upper = position > upper_bound
-                position[mask_lower] = lower_bound[mask_lower] + (lower_bound[mask_lower] - position[mask_lower])
-                velocity[mask_lower] = -velocity[mask_lower]
-                position[mask_upper] = upper_bound[mask_upper] - (position[mask_upper] - upper_bound[mask_upper])
-                velocity[mask_upper] = -velocity[mask_upper]
-                out_of_bounds = (position < lower_bound) | (position > upper_bound)
-            return position, velocity
+            new_position = position.copy()
+            new_velocity = velocity.copy()
+            r = upper_bound - lower_bound
+
+            mask_lower = new_position < lower_bound
+            if np.any(mask_lower):
+                d_lower = lower_bound[mask_lower] - new_position[mask_lower]
+                n_lower = np.floor_divide(d_lower, r[mask_lower])
+                delta_lower = np.mod(d_lower, r[mask_lower])
+                new_position[mask_lower] = np.where(
+                    n_lower % 2 == 0,
+                    lower_bound[mask_lower] + delta_lower,
+                    upper_bound[mask_lower] - delta_lower
+                )
+                new_velocity[mask_lower] = np.where(
+                    n_lower % 2 == 0,
+                    -np.abs(new_velocity[mask_lower]),
+                    np.abs(new_velocity[mask_lower])
+                )
+
+            mask_upper = new_position > upper_bound
+            if np.any(mask_upper):
+                d_upper = new_position[mask_upper] - upper_bound[mask_upper]
+                n_upper = np.floor_divide(d_upper, r[mask_upper])
+                delta_upper = np.mod(d_upper, r[mask_upper])
+                new_position[mask_upper] = np.where(
+                    n_upper % 2 == 0,
+                    upper_bound[mask_upper] - delta_upper,
+                    lower_bound[mask_upper] + delta_upper
+                )
+
+                new_velocity[mask_upper] = np.where(
+                    n_upper % 2 == 0,
+                    -np.abs(new_velocity[mask_upper]),
+                    np.abs(new_velocity[mask_upper])
+                )
+
+            return new_position, new_velocity
+
 
         elif self.constraint_handling_mode == "reinitialize":
             new_position = np.random.uniform(lower_bound, upper_bound)

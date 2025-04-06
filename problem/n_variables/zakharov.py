@@ -5,7 +5,7 @@ from jmetal.core.solution import FloatSolution
 class Zakharov(FloatProblem):
     def __init__(self, number_of_variables: int = 2):
         super(Zakharov, self).__init__()
-        self.lower_bound = [-5.0] * number_of_variables
+        self.lower_bound = [-10.0] * number_of_variables
         self.upper_bound = [10.0] * number_of_variables
 
         self.obj_directions = [self.MINIMIZE]

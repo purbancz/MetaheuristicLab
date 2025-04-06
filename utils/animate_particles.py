@@ -9,6 +9,7 @@ from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
 
 from algorithm.WAPSO import ReverseLearningGlobalAttractorPSO
+from algorithm.single_objective_PSO import SingleObjectivePSO
 from observer.swarm_animation_observer import SwarmAnimationObserver
 from problem.n_variables.plateau import Plateau
 
@@ -87,18 +88,16 @@ def animate_swarm(func, observer):
     return anim
 
 
-
 if __name__ == "__main__":
     problem = Rastrigin(number_of_variables=2)
 
     max_evaluations = 4501
 
-    algorithm = ReverseLearningGlobalAttractorPSO(
+    algorithm = SingleObjectivePSO(
         problem=problem,
         swarm_size=30,
-        a=1.7,
-        b1=0.1,
-        b2=0.1,
+        c1=4.1,
+        c2=2.1,
         w=0.1,
         termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
     )

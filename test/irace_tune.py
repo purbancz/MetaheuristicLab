@@ -2,6 +2,8 @@ import os
 import json
 import numpy as np
 from datetime import datetime
+
+from jmetal.problem import Sphere
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
 
@@ -20,10 +22,6 @@ from irace import irace, ParameterSpace, Scenario, Experiment, Real, Integer
 import rpy2.robjects as robjects
 
 from problem.n_variables.ackley import Ackley
-from problem.n_variables.alpine import AlpineN2
-from problem.n_variables.griewank import Griewank
-from problem.n_variables.step import StepN2
-from problem.n_variables.zakharov import Zakharov
 
 
 os.environ["LANG"] = "en_US.UTF-8"
@@ -48,9 +46,9 @@ budget = 60
 # budget = 750    # Total number of configurations to try per parameter
 
 problems = [
+    Sphere(number_of_variables),
     Rastrigin(number_of_variables),
-    Ackley(number_of_variables),
-    Griewank(number_of_variables)
+    Ackley(number_of_variables)
 ]
 
 parameter_spaces = {
