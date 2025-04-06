@@ -116,7 +116,7 @@ class ReverseLearningGlobalAttractorPSO(WorstAwarePSO):
         super().update_global_best(swarm)
         self.update_global_worst(swarm)
 
-class ReverseLearningLocalAttractorPSO(ReverseLearningGlobalAttractorPSO):
+class ReverseLearningPersonalAttractorPSO(ReverseLearningGlobalAttractorPSO):
     """
     Reverse Learning PSO with personal (local) attraction.
     Particles avoid their personal and global worst while being attracted to their personal best.

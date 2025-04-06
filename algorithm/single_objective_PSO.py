@@ -1,3 +1,4 @@
+import time
 from copy import deepcopy
 from typing import List, TypeVar
 import random
@@ -20,8 +21,10 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
                  c1: float,
                  c2: float,
                  w: float,
-                 termination_criterion: TerminationCriterion):
+                 termination_criterion: TerminationCriterion,
+                 constraint_handling_mode: str = "bounce"):
         super().__init__(problem, swarm_size)
+        self.constraint_handling_mode = constraint_handling_mode
         self.c1 = c1
         self.c2 = c2
         self.w = w
@@ -46,6 +49,15 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
     def run(self):
         super().run()
         return self
+
+    def observable_data(self) -> dict:
+        return {
+            "PROBLEM": self.problem,
+            "EVALUATIONS": self.evaluations,
+            "SOLUTIONS": self.result(),
+            "SWARM": self.solutions,
+            "COMPUTING_TIME": time.time() - self.start_computing_time,
+        }
 
     def evaluate(self, solution_list: List[S]) -> List[S]:
         return [self.problem.evaluate(sol) for sol in solution_list]
@@ -86,13 +98,44 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
             particle.attributes['velocity'] = new_velocity.tolist()
 
     def update_position(self, swarm: List[S]) -> None:
+        lower_bound = np.array(self.problem.lower_bound, dtype=float)
+        upper_bound = np.array(self.problem.upper_bound, dtype=float)
+
         for particle in swarm:
-            current_position = np.array(particle.variables)
-            new_position = current_position + np.array(particle.attributes['velocity'])
-            clipped_position = np.clip(new_position,
-                                       self.problem.lower_bound,
-                                       self.problem.upper_bound)
-            particle.variables = clipped_position.tolist()
+            current_position = np.array(particle.variables, dtype=float)
+            velocity = np.array(particle.attributes['velocity'], dtype=float)
+            new_position = current_position + velocity
+
+            if np.any(new_position < lower_bound) or np.any(new_position > upper_bound):
+                new_position, velocity = self.handle_constraints(new_position, velocity, lower_bound, upper_bound)
+
+            particle.variables = new_position.tolist()
+            particle.attributes['velocity'] = velocity.tolist()
+
+    def handle_constraints(self, position: np.ndarray, velocity: np.ndarray,
+                           lower_bound: np.ndarray, upper_bound: np.ndarray) -> (np.ndarray, np.ndarray):
+        if self.constraint_handling_mode == "clip":
+            clipped_position = np.clip(position, lower_bound, upper_bound)
+            return clipped_position, velocity
+
+        elif self.constraint_handling_mode == "bounce":
+            for i in range(len(position)):
+                while position[i] < lower_bound[i] or position[i] > upper_bound[i]:
+                    if position[i] < lower_bound[i]:
+                        position[i] = lower_bound[i] + (lower_bound[i] - position[i])
+                        velocity[i] = -velocity[i]
+                    elif position[i] > upper_bound[i]:
+                        position[i] = upper_bound[i] - (position[i] - upper_bound[i])
+                        velocity[i] = -velocity[i]
+            return position, velocity
+
+        elif self.constraint_handling_mode == "reinitialize":
+            new_position = np.random.uniform(lower_bound, upper_bound)
+            new_velocity = np.random.uniform(-1, 1, len(new_position))
+            return new_position, new_velocity
+
+        else:
+            raise ValueError("Unknown constraint handling mode: " + str(self.constraint_handling_mode))
 
     def update_particle_best(self, swarm: List[S]) -> None:
         for particle in swarm:
@@ -124,7 +167,7 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
         return self.best_global
 
     def get_name(self) -> str:
-        return "SingleObjectivePSO"
+        return "PSO"
 
 
 # class RebelPSO(SingleObjectivePSO):

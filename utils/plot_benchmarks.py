@@ -18,7 +18,7 @@ from problem.n_variables.CEC import RotatedHighConditionedElliptic, RotatedBentC
     CompositionFunction3, CompositionFunction4, CompositionFunction5, CompositionFunction6, CompositionFunction7, \
     CompositionFunction8, ShiftedRotatedSchafferF7
 from problem.n_variables.ackley import Ackley
-from problem.n_variables.alpine import AlpineN1
+from problem.n_variables.alpine import AlpineN1, AlpineN2
 from problem.n_variables.bent_cigar import BentCigar
 from problem.n_variables.discus import Discus
 from problem.n_variables.dixon import DixonPrice, GeneralizedDixonPriceRosenbrock
@@ -184,6 +184,7 @@ def plot_all_benchmarks():
         Sphere(number_of_variables),
         Quartic(number_of_variables),
         AlpineN1(number_of_variables),
+        AlpineN2(number_of_variables),
         EggHolder(number_of_variables),
         DixonPrice(number_of_variables),
         GeneralizedDixonPriceRosenbrock(number_of_variables),
@@ -254,5 +255,3 @@ def plot_all_benchmarks():
 
 if __name__ == "__main__":
     plot_all_benchmarks()
-    # problem = SchafferF7(2)
-    # plot_search_space_cuts(problem)
