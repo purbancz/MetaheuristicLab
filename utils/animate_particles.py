@@ -8,9 +8,9 @@ from copy import deepcopy
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
 
-from algorithm.single_objective_PSO import SingleObjectivePSO
+from algorithm.WAPSO import ReverseLearningGlobalAttractorPSO
 from observer.swarm_animation_observer import SwarmAnimationObserver
-
+from problem.n_variables.plateau import Plateau
 
 OUTPUT_DIR = "frames"
 
@@ -46,14 +46,14 @@ def animate_swarm(func, observer):
     fig, ax = plt.subplots(figsize=(12, 10))
     heatmap = ax.contourf(X, Y, Z, levels=50, cmap='viridis')
     plt.colorbar(heatmap, ax=ax)
-    scatter = ax.scatter([], [], c='orange', s=30)
+    scatter = ax.scatter([], [], c='white', s=30)
     ax.set_title(f"Swarm Animation of {algorithm.get_name()} on {func.name()}")
     ax.set_xlabel("x")
     ax.set_ylabel("y")
     plt.tight_layout()
     func_name = func.name().replace(' ', '_').replace('-', '_')
 
-    should_save_frames = None
+    should_save_frames = False
 
     def init():
         animation_dir = os.path.join(OUTPUT_DIR, f"{algorithm.get_name()}_{func_name}")
@@ -82,8 +82,8 @@ def animate_swarm(func, observer):
     )
     should_save_frames = True
     anim.save(f"{algorithm.get_name()}_{func_name}_swarm_animation.mp4", writer='ffmpeg', fps=10)
-    should_save_frames = False
-    anim.save(f"{algorithm.get_name()}_{func_name}_swarm_animation.gif", writer='imagemagick', fps=10)
+    # should_save_frames = False
+    # anim.save(f"{algorithm.get_name()}_{func_name}_swarm_animation.gif", writer='imagemagick', fps=10)
     return anim
 
 
@@ -93,12 +93,13 @@ if __name__ == "__main__":
 
     max_evaluations = 4501
 
-    algorithm = SingleObjectivePSO(
+    algorithm = ReverseLearningGlobalAttractorPSO(
         problem=problem,
         swarm_size=30,
-        c1=2.0,
-        c2=2.0,
-        w=0.5,
+        a=1.7,
+        b1=0.1,
+        b2=0.1,
+        w=0.1,
         termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
     )
 

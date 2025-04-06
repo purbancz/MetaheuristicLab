@@ -48,9 +48,9 @@ budget = 60
 # budget = 750    # Total number of configurations to try per parameter
 
 problems = [
-    AlpineN2(number_of_variables),
-    StepN2(number_of_variables),
-    Zakharov(number_of_variables)
+    Rastrigin(number_of_variables),
+    Ackley(number_of_variables),
+    Griewank(number_of_variables)
 ]
 
 parameter_spaces = {

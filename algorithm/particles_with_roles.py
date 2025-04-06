@@ -73,6 +73,9 @@ class RebelPSO(SingleObjectivePSO, RoleMixin):
                         + social_vec)
             particle.attributes['velocity'] = velocity.tolist()
 
+    def get_name(self) -> str:
+        return "RebelPSO"
+
 
 class RejectorPSO(SingleObjectivePSO, RoleMixin):
     """PSO with rejector particles opposing personal best"""
@@ -107,6 +110,9 @@ class RejectorPSO(SingleObjectivePSO, RoleMixin):
                         + cognitive_vec
                         + social_vec)
             particle.attributes['velocity'] = velocity.tolist()
+
+    def get_name(self) -> str:
+        return "RejectorPSO"
 
 
 class RebelRejectorPSO(SingleObjectivePSO, RoleMixin):
@@ -159,6 +165,9 @@ class RebelRejectorPSO(SingleObjectivePSO, RoleMixin):
                         + social_vec
                         + cognitive_vec)
             particle.attributes['velocity'] = velocity.tolist()
+
+    def get_name(self) -> str:
+        return "RebelRejectorPSO"
 
 
 class RRAPSO(RebelRejectorPSO):
@@ -372,6 +381,9 @@ class ContrarianPSO(WorstAwarePSO, RoleMixin):
         super().update_global_best(swarm)
         self.update_global_worst(swarm)
 
+    def get_name(self) -> str:
+        return "ContrarianPSO"
+
 
 class DefeatistPSO(WorstAwarePSO, RoleMixin):
     """
@@ -419,6 +431,9 @@ class DefeatistPSO(WorstAwarePSO, RoleMixin):
     def update_global_best(self, swarm: List[FloatSolution]) -> None:
         super().update_global_best(swarm)
         self.update_global_worst(swarm)
+
+    def get_name(self) -> str:
+        return "DefeatistPSO"
 
 
 class ContrarianDefeatistPSO(WorstAwarePSO, RoleMixin):
@@ -478,6 +493,9 @@ class ContrarianDefeatistPSO(WorstAwarePSO, RoleMixin):
         super().update_global_best(swarm)
         self.update_global_worst(swarm)
 
+    def get_name(self) -> str:
+        return "ContrarianDefeatistPSO"
+
 
 #####################################
 # Worst aware roles
@@ -531,6 +549,9 @@ class EschewerPSO(WorstAwarePSO, RoleMixin):
         super().update_global_best(swarm)
         self.update_global_worst(swarm)
 
+    def get_name(self) -> str:
+        return "EschewerPSO"
+
 
 class EscapistPSO(WorstAwarePSO, RoleMixin):
     """
@@ -578,6 +599,9 @@ class EscapistPSO(WorstAwarePSO, RoleMixin):
     def update_global_best(self, swarm: List[FloatSolution]) -> None:
         super().update_global_best(swarm)
         self.update_global_worst(swarm)
+
+    def get_name(self) -> str:
+        return "EscapistPSO"
 
 
 class EschewerEscapistPSO(WorstAwarePSO, RoleMixin):
@@ -637,3 +661,6 @@ class EschewerEscapistPSO(WorstAwarePSO, RoleMixin):
     def update_global_best(self, swarm: List[FloatSolution]) -> None:
         super().update_global_best(swarm)
         self.update_global_worst(swarm)
+
+    def get_name(self) -> str:
+        return "EschewerEscapistPSO"

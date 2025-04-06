@@ -38,6 +38,9 @@ class GlobalAdaptivePSO(SingleObjectivePSO):
         self.update_coefficient()
         super().step()
 
+    def get_name(self) -> str:
+        return "GlobalAdaptivePSO"
+
 
 class PersonalAdaptivePSO(SingleObjectivePSO):
     """
@@ -87,3 +90,6 @@ class PersonalAdaptivePSO(SingleObjectivePSO):
     def step(self):
         self.update_coefficient()
         super().step()
+
+    def get_name(self) -> str:
+        return "PersonalAdaptivePSO"

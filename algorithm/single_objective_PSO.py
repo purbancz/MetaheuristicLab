@@ -118,15 +118,17 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
             clipped_position = np.clip(position, lower_bound, upper_bound)
             return clipped_position, velocity
 
+
         elif self.constraint_handling_mode == "bounce":
-            for i in range(len(position)):
-                while position[i] < lower_bound[i] or position[i] > upper_bound[i]:
-                    if position[i] < lower_bound[i]:
-                        position[i] = lower_bound[i] + (lower_bound[i] - position[i])
-                        velocity[i] = -velocity[i]
-                    elif position[i] > upper_bound[i]:
-                        position[i] = upper_bound[i] - (position[i] - upper_bound[i])
-                        velocity[i] = -velocity[i]
+            out_of_bounds = (position < lower_bound) | (position > upper_bound)
+            while np.any(out_of_bounds):
+                mask_lower = position < lower_bound
+                mask_upper = position > upper_bound
+                position[mask_lower] = lower_bound[mask_lower] + (lower_bound[mask_lower] - position[mask_lower])
+                velocity[mask_lower] = -velocity[mask_lower]
+                position[mask_upper] = upper_bound[mask_upper] - (position[mask_upper] - upper_bound[mask_upper])
+                velocity[mask_upper] = -velocity[mask_upper]
+                out_of_bounds = (position < lower_bound) | (position > upper_bound)
             return position, velocity
 
         elif self.constraint_handling_mode == "reinitialize":

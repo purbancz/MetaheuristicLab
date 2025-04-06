@@ -77,6 +77,9 @@ class ReverseLearningPSO(WorstAwarePSO):
     def update_global_best(self, swarm: List[FloatSolution]) -> None:
         self.update_global_worst(swarm)
 
+    def get_name(self) -> str:
+        return "ReverseLearningPSO"
+
 class ReverseLearningGlobalAttractorPSO(WorstAwarePSO):
     """
     Reverse Learning PSO with global attraction.
@@ -116,6 +119,9 @@ class ReverseLearningGlobalAttractorPSO(WorstAwarePSO):
         super().update_global_best(swarm)
         self.update_global_worst(swarm)
 
+    def get_name(self) -> str:
+        return "ReverseLearningGlobalAttractorPSO"
+
 class ReverseLearningPersonalAttractorPSO(ReverseLearningGlobalAttractorPSO):
     """
     Reverse Learning PSO with personal (local) attraction.
@@ -137,6 +143,8 @@ class ReverseLearningPersonalAttractorPSO(ReverseLearningGlobalAttractorPSO):
             particle.attributes['velocity'] = new_velocity.tolist()
 
 
+    def get_name(self) -> str:
+        return "ReverseLearningPersonalAttractorPSO"
 
 
 class CombinedLearningPSO(WorstAwarePSO):
@@ -192,4 +200,7 @@ class CombinedLearningPSO(WorstAwarePSO):
     def update_global_best(self, swarm: List[FloatSolution]) -> None:
         super().update_global_best(swarm)
         self.update_global_worst(swarm)
+
+    def get_name(self) -> str:
+        return "CombinedLearningPSO"
 
