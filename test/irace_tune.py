@@ -43,7 +43,7 @@ number_of_variables = 100
 solutions_size = 100
 max_evaluations = 25000
 num_runs = 5   # Number of independent runs per problem
-budget = 333    # Total number of configurations to try per parameter
+budget = 1000    # Total number of configurations to try per parameter
 
 problems = [
     Sphere(number_of_variables),

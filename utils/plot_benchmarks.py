@@ -35,8 +35,10 @@ from problem.n_variables.plateau import Plateau
 from problem.n_variables.quartic import Quartic
 from problem.n_variables.rosenbrock import Rosenbrock, RosenbrockModified01, RosenbrockModified02
 from problem.n_variables.salomon import Salomon
-from problem.n_variables.schaffer_f7 import SchafferF7
-from problem.n_variables.schwefel import Schwefel
+from problem.n_variables.schaffer import GeneralizedSchafferN7, GeneralizedSchafferN1, GeneralizedSchafferN2, GeneralizedSchafferN3, GeneralizedSchafferN4
+from problem.n_variables.schmidt_vetters import GeneralizedSchmidtVetters
+from problem.n_variables.schwefel import SchwefelN26, SchwefelN21, SchwefelN22, SchwefelN6, SchwefelN20, \
+    SchwefelN36
 from problem.n_variables.step import StepN1, StepN2, StepN3
 from problem.n_variables.stochastic import Stochastic
 from problem.n_variables.styblinski import StyblinskiTang
@@ -177,7 +179,7 @@ def plot_all_benchmarks():
     number_of_variables = 2
 
     functions_to_plot = [
-        Zakharov(number_of_variables),
+        # Zakharov(number_of_variables),
         # Plateau(number_of_variables),
         # Rosenbrock(number_of_variables),
         # RosenbrockModified01(number_of_variables),
@@ -194,7 +196,12 @@ def plot_all_benchmarks():
         # ExpandedKatsuura(number_of_variables),
         # HappyCat(number_of_variables),
         # HGBat(number_of_variables),
-        # SchafferF7(number_of_variables),
+        # GeneralizedSchafferN7(number_of_variables),
+        # GeneralizedSchafferN1(number_of_variables),
+        # GeneralizedSchafferN2(number_of_variables),
+        # GeneralizedSchafferN3(number_of_variables),
+        # GeneralizedSchafferN4(number_of_variables),
+        # GeneralizedSchmidtVetters(number_of_variables),
         # Stochastic(number_of_variables),
         # Salomon(number_of_variables),
         # GeneralizedPenalizedN1(number_of_variables),
@@ -206,7 +213,12 @@ def plot_all_benchmarks():
         # Griewank(number_of_variables),
         # Levy(number_of_variables),
         # Michalewicz(number_of_variables),
-        # Schwefel(number_of_variables),
+        # SchwefelN26(number_of_variables),
+        # SchwefelN21(number_of_variables),
+        # SchwefelN22(number_of_variables),
+        # SchwefelN6(number_of_variables),
+        # SchwefelN20(number_of_variables),
+        # SchwefelN36(number_of_variables),
         # LennardJonesMinimumEnergyCluster(number_of_variables),
         # BentCigar(number_of_variables),
         # ExpandedShaffer(number_of_variables),

@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 from algorithm.single_objective_PSO import RebelPSO, EscapistPSO, RebelEscapistPSO, REAPSO, SingleObjectivePSO
 from problem.n_variables.ackley import Ackley
 from problem.n_variables.michalewicz import Michalewicz
-from problem.n_variables.schwefel import Schwefel
+from problem.n_variables.schwefel import SchwefelN26
 
 # Configure logging and output
 logging.basicConfig(level=logging.INFO)
@@ -32,7 +32,7 @@ BENCHMARK_PROBLEMS = {
     "Rastrigin": Rastrigin(100),
     "Michalewicz": Michalewicz(100),
     "Ackley": Ackley(100),
-    "Schwefel": Schwefel(100),
+    "Schwefel": SchwefelN26(100),
 }
 PROBLEM_WEIGHTS = {
     "Rastrigin": 0.4,
