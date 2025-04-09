@@ -279,12 +279,12 @@ class RRAPSO(RebelRejectorPSO):
         # Role adaptation: update ratios based on improvement rate
         improvement_rate = self.calculate_improvement_rate()
         if improvement_rate < self.improvement_threshold:
-            self.rebel_fraction = min(self.max_rebel_fraction, self.rebel_fraction + 1 / super().swarm_size)
-            self.rejector_fraction = min(self.max_rejector_fraction, self.rejector_fraction + 1 / super().swarm_size)
+            self.rebel_fraction = min(self.max_rebel_fraction, self.rebel_fraction + 1 / self.swarm_size)
+            self.rejector_fraction = min(self.max_rejector_fraction, self.rejector_fraction + 1 / self.swarm_size)
         else:
-            self.rebel_fraction = max(self.original_rebel_fraction, self.rebel_fraction - 1 / super().swarm_size)
+            self.rebel_fraction = max(self.original_rebel_fraction, self.rebel_fraction - 1 / self.swarm_size)
             self.rejector_fraction = max(self.original_rejector_fraction,
-                                         self.rejector_fraction - 1 / super().swarm_size)
+                                         self.rejector_fraction - 1 / self.swarm_size)
 
         self.update_special_particles(swarm)
 
