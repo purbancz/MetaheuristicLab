@@ -10,6 +10,7 @@ from jmetal.problem.singleobjective.unconstrained import Rastrigin
 
 from algorithm.hgbat import HGBat
 from experiment.setup import make_dir
+from problem.fixed_varaibles.quantum_speed import QSLTimeBoundProblem
 from problem.n_variables.CEC import RotatedHighConditionedElliptic, RotatedBentCigar, RotatedDiscus, \
     ShiftedRotatedRosenbrock, ShiftedRotatedAckley, ShiftedRastrigin, ShiftedRotatedRastrigin, ShiftedSchwefel, \
     ShiftedRotatedSchwefel, ShiftedRotatedKatsuura, ShiftedRotatedHappyCat, ShiftedRotatedHGBat, \
@@ -32,6 +33,7 @@ from problem.n_variables.levy import Levy
 from problem.n_variables.michalewicz import Michalewicz
 from problem.n_variables.penalized import GeneralizedPenalizedN1
 from problem.n_variables.plateau import Plateau
+from problem.n_variables.quantum_speed import QuantumSpeedLimit2D, GeneralizedQuantumSpeedLimit
 from problem.n_variables.quartic import Quartic
 from problem.n_variables.rosenbrock import Rosenbrock, RosenbrockModified01, RosenbrockModified02
 from problem.n_variables.salomon import Salomon
@@ -259,6 +261,9 @@ def plot_all_benchmarks():
         # CompositionFunction6(30),
         # CompositionFunction7(30),
         # CompositionFunction8(30)
+        # QSLTimeBoundProblem(),
+        QuantumSpeedLimit2D(),
+        # GeneralizedQuantumSpeedLimit(2)
     ]
 
     for func in functions_to_plot:
