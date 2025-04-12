@@ -52,7 +52,7 @@ problems = [
 ]
 
 parameter_spaces = {
-    'GlobalAdaptivePSO': [
+    'FAPSO': [
         Real("c1", 0.01, 6),
         Real("c2", 0.01, 6),
         Real("w", 0.01, 2),

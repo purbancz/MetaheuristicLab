@@ -6,7 +6,8 @@ from scipy.stats import kruskal, f_oneway, shapiro
 from statsmodels.stats.multicomp import pairwise_tukeyhsd
 from scikit_posthocs import posthoc_dunn
 
-from experiment.plotting_utilities import plot_results, plot_results_with_std, plot_box_at_intervals, plot_final_box
+from experiment.plotting_utilities import plot_results, plot_results_with_std, plot_box_at_intervals, plot_final_box, \
+    plot_final_raincloud
 from experiment.setup import setup_experiment, make_dir
 
 # Setup experiment to retrieve settings like algorithm_colors, max_evaluations, etc.
@@ -62,6 +63,7 @@ def plot_all_from_pickle(file_path):
 
         # Plotting final box plot comparing all algorithms
         plot_final_box(results, matched_problem, dimensions_dir, algorithm_colors)
+        plot_final_raincloud(results, matched_problem, dimensions_dir, algorithm_colors)
 
 
 def combine_data(data_list):
@@ -135,13 +137,14 @@ def plot_combined_data_from_pickles(pickle_files):
                                   results_dir=dimensions_dir, algorithm_colors=algorithm_colors)
 
         # Plotting box plots comparing PGxHEA algorithms with GA and PSO
-        for algorithm in ['PGSHEA', 'PGPHEA', 'PGCHEA']:
-            plot_box_at_intervals(results, matched_problem, max_evaluations=max_evaluations,
-                                  no_of_runs=total_runs, algorithms_to_compare=[algorithm, 'GA', 'PSO'],
-                                  results_dir=dimensions_dir, algorithm_colors=algorithm_colors)
+        # for algorithm in ['PGSHEA', 'PGPHEA', 'PGCHEA']:
+        #     plot_box_at_intervals(results, matched_problem, max_evaluations=max_evaluations,
+        #                           no_of_runs=total_runs, algorithms_to_compare=[algorithm, 'GA', 'PSO'],
+        #                           results_dir=dimensions_dir, algorithm_colors=algorithm_colors)
 
         # Plotting final box plot comparing all algorithms
         plot_final_box(results, matched_problem, dimensions_dir, algorithm_colors)
+        plot_final_raincloud(results, matched_problem, dimensions_dir, algorithm_colors)
 
 
 def extract_best_algorithms_from_experiment_data(experiment_data):

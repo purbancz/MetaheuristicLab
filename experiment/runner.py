@@ -5,7 +5,8 @@ from datetime import datetime
 
 import numpy as np
 
-from experiment.plotting_utilities import plot_results, plot_results_with_std, plot_box_at_intervals, plot_final_box
+from experiment.plotting_utilities import plot_results, plot_results_with_std, plot_box_at_intervals, plot_final_box, \
+    plot_final_raincloud
 from experiment.setup import setup_experiment, initialize_algorithms, make_dir
 from observer.fitness_observer import FitnessObserver
 
@@ -63,6 +64,7 @@ def run_all_experiments():
             #                           results_dir=dimensions_dir,
             #                           algorithm_colors=algorithm_colors)
             plot_final_box(problem_data['results'], problem, dimensions_dir, algorithm_colors)
+            plot_final_raincloud(problem_data['results'], problem, dimensions_dir, algorithm_colors)
 
             for group_name, algorithm_list in group_of_algorithms.items():
                 filtered_results = {algo: problem_data['results'][algo] for algo in algorithm_list if
@@ -80,6 +82,7 @@ def run_all_experiments():
                                       algorithms_to_compare=list(filtered_results.keys()), results_dir=dimensions_dir,
                                       algorithm_colors=algorithm_colors, group_name=group_name)
                 plot_final_box(filtered_results, problem, dimensions_dir, algorithm_colors, group_name)
+                plot_final_raincloud(filtered_results, problem, dimensions_dir, algorithm_colors, group_name)
 
     with open(f'{dimensions_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_experiment_data.pkl', 'wb') as f:
         pickle.dump(all_data, f)

@@ -2,6 +2,8 @@ from datetime import datetime
 
 import numpy as np
 from matplotlib import pyplot as plt
+import matplotlib.colors as mcolors
+
 
 # from experiment.setup import setup_experiment
 
@@ -152,5 +154,132 @@ def plot_final_box(data_dict, problem, results_dir, algorithm_colors, group_name
     plt.tick_params(axis='x', which='both', bottom=False, top=False)
     safe_group_name = group_name.replace(' ', '_').replace('-', '_')
     filename = f'{results_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{problem.name()}_{safe_group_name}_final_box.png'
+    plt.savefig(filename, dpi=300)
+    plt.show()
+
+
+def lighten_color(color, amount=0.5):
+    """
+    Lightens the given color by blending it with white.
+
+    Parameters:
+        color (str or tuple): Matplotlib color string, hex string, or RGB tuple.
+        amount (float): Factor by which to lighten the color (0 gives original color,
+                        1 gives white). Typical values are between 0 and 1.
+
+    Returns:
+        tuple: The lightened color as an RGB tuple.
+    """
+    try:
+        # In case the input is a named color, get its hex value.
+        c = mcolors.cnames[color]
+    except KeyError:
+        c = color
+    c = np.array(mcolors.to_rgb(c))
+    white = np.array([1, 1, 1])
+    return tuple(white - (white - c) * amount)
+
+
+def plot_final_raincloud(data_dict, problem, results_dir, algorithm_colors,
+                         group_name="all", scatter_mode="systematic_spread"):
+    """
+    Create a raincloud plot (half-violin, box, and scatter) for the final fitness data.
+
+    The scatter points are arranged with one of three modes:
+      - "jitter": random vertical perturbation around a center line
+      - "organized": all points share the same vertical position
+      - "systematic_spread": points are evenly distributed in a vertical band
+
+    Parameters:
+        data_dict (dict): Dictionary with keys as algorithm names and each value being a dict
+                          that includes a key 'data' containing an array whose last column is the
+                          final fitness.
+        problem: An object with methods .name() and .number_of_variables() to describe the problem.
+        results_dir (str): Directory where the plot image should be saved.
+        algorithm_colors (dict): Mapping from algorithm names to their respective colors.
+        group_name (str): Label to help name the saved file.
+        scatter_mode (str): How to arrange the scatter points; one of
+                            "jitter", "organized", or "systematic_spread".
+    """
+    # Extract final fitness values for each algorithm
+    rain_data = [fitness_data['data'][:, -1] for fitness_data in data_dict.values()]
+    labels = list(data_dict.keys())
+    num_groups = len(labels)
+
+    # Determine colors: use provided colors for boxes and scatter; lighten for the violins.
+    box_colors = [algorithm_colors.get(label, 'black') for label in labels]
+    violin_colors = [lighten_color(color, 0.5) for color in box_colors]
+    scatter_colors = box_colors
+
+    # Define positions for each group on the categorical (vertical) axis.
+    positions = np.arange(1, num_groups + 1)
+
+    # Define parameters for the box/violin and scatter placements.
+    box_width = 0.2  # thinner boxes
+    scatter_offset = 0.25  # moves scatter points below the violin and box
+    halfwidth = 0.05  # half the vertical range for systematic scatter distribution
+
+    # Create figure and axis.
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    # ----------- Plot the boxplots (horizontal) -----------
+    bp = ax.boxplot(rain_data, patch_artist=True, vert=False, positions=positions, widths=box_width)
+    for patch, color in zip(bp['boxes'], box_colors):
+        patch.set_facecolor(color)
+        patch.set_alpha(0.4)
+
+    # ----------- Plot the half-violin plots (horizontal) -----------
+    vp = ax.violinplot(rain_data, positions=positions, points=500, showmeans=False,
+                       showextrema=False, showmedians=False, vert=False)
+    for idx, body in enumerate(vp['bodies']):
+        vertices = body.get_paths()[0].vertices
+        # We clip the violin to show only the upper half:
+        lower_bound = positions[idx]
+        upper_bound = positions[idx] + 0.5
+        vertices[:, 1] = np.clip(vertices[:, 1], lower_bound, upper_bound)
+        body.set_color(violin_colors[idx])
+        body.set_alpha(0.7)
+
+    # ----------- Plot the scatter points -----------
+    # For each group, define a base vertical position.
+    for idx, data in enumerate(rain_data):
+        # Base y is computed from the group position and an offset to position the scatter below the main elements.
+        base_y = positions[idx] - scatter_offset
+        n_points = len(data)
+
+        if scatter_mode == "jitter":
+            # Add a small random noise (jitter) to the base_y.
+            y_values = np.full(n_points, base_y) + np.random.uniform(-0.02, 0.02, size=n_points)
+        elif scatter_mode == "organized":
+            # All points share exactly the same y-coordinate.
+            y_values = np.full(n_points, base_y)
+        elif scatter_mode == "systematic_spread":
+            # Evenly spread the points over a small vertical interval.
+            # If more than one point exists, spread them evenly around base_y;
+            # if a single point, keep it centered.
+            if n_points > 1:
+                offsets = np.linspace(-halfwidth, halfwidth, n_points)
+            else:
+                offsets = np.array([0.0])
+            y_values = np.full(n_points, base_y) + offsets
+        else:
+            raise ValueError("scatter_mode must be 'jitter', 'organized', or 'systematic_spread'")
+
+        ax.scatter(data, y_values, s=10, c=scatter_colors[idx], alpha=0.9, edgecolor='none')
+
+    # ----------- Finishing touches -----------
+    ax.set_yticks(positions)
+    ax.set_yticklabels(labels)
+    ax.set_title(f'{problem.name()} ({problem.number_of_variables()} dimensions)')
+    ax.set_xlabel('Final Fitness Distribution')
+
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+
+    plt.tight_layout()
+
+    # Save the figure with a filename incorporating the current timestamp and group name.
+    safe_group_name = group_name.replace(' ', '_').replace('-', '_')
+    filename = f'{results_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{problem.name()}_{safe_group_name}_raincloud.png'
     plt.savefig(filename, dpi=300)
     plt.show()
