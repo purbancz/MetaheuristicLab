@@ -18,11 +18,9 @@ class GradientEnhancedPSO(SingleObjectivePSO):
                  c3: float,  # New gradient coefficient
                  w: float,
                  termination_criterion: TerminationCriterion,
-                 gradient_weight: float = 0.5,
                  use_analytical_grad: bool = True):
         super().__init__(problem, swarm_size, c1, c2, w, termination_criterion)
         self.c3 = c3
-        self.gradient_weight = gradient_weight
         self.use_analytical_grad = use_analytical_grad
 
     def compute_gradient(self, particle: FloatSolution) -> np.ndarray:
@@ -61,8 +59,7 @@ class GradientEnhancedPSO(SingleObjectivePSO):
     def update_velocity(self, swarm: List[FloatSolution]) -> None:
         for particle in swarm:
             # Standard PSO components
-            r1 = random.random()
-            r2 = random.random()
+            r1, r2, r3 = [random.random() for _ in range(3)]
             velocity = np.array(particle.attributes['velocity'])
             pbest = np.array(particle.attributes['best_position'])
             gbest = np.array(self.best_global.variables)
@@ -72,8 +69,7 @@ class GradientEnhancedPSO(SingleObjectivePSO):
             gradient_norm = np.linalg.norm(gradient)
 
             if gradient_norm > 0:
-                gradient = gradient / gradient_norm  # Normalize
-                gradient_component = self.c3 * self.gradient_weight * gradient
+                gradient_component = gradient / gradient_norm  # Normalize
             else:
                 gradient_component = 0
 
@@ -81,6 +77,6 @@ class GradientEnhancedPSO(SingleObjectivePSO):
             new_velocity = (self.w * velocity +
                             self.c1 * r1 * (pbest - particle.variables) +
                             self.c2 * r2 * (gbest - particle.variables) +
-                            gradient_component)
+                            self.c3 * r3 * gradient_component)
 
             particle.attributes['velocity'] = new_velocity.tolist()

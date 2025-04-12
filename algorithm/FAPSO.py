@@ -2,9 +2,7 @@ import numpy as np
 from jmetal.core.problem import FloatProblem
 from jmetal.core.solution import FloatSolution
 from jmetal.util.termination_criterion import TerminationCriterion
-
 from algorithm.single_objective_PSO import SingleObjectivePSO
-
 
 class FAPSO(SingleObjectivePSO):
     """
@@ -16,11 +14,14 @@ class FAPSO(SingleObjectivePSO):
       - Adaptive Focus: Automatically concentrates particles near promising regions
     """
     def __init__(self, problem: FloatProblem, swarm_size: int, c1: float, c2: float, w: float,
-                 termination_criterion: TerminationCriterion, fractal_depth=3):
+                 termination_criterion: TerminationCriterion, fractal_depth=3, convergence_threshold = 1e-3):
         super().__init__(problem, swarm_size, c1, c2, w, termination_criterion)
         self.fractal_depth = fractal_depth
+        self.convergence_threshold = convergence_threshold
         self.current_depth = 0
-        self.convergence_threshold = 1e-3
+        # Instead of altering the problem bounds, store a copy that defines the current search region.
+        self.current_lower_bound = np.array(self.problem.lower_bound, dtype=float)
+        self.current_upper_bound = np.array(self.problem.upper_bound, dtype=float)
 
     def converged(self) -> bool:
         positions = np.array([p.variables for p in self.solutions])
@@ -30,31 +31,43 @@ class FAPSO(SingleObjectivePSO):
 
     def reinitialize_swarm(self):
         for particle in self.solutions:
+            # Use the current search region instead of the original problem bounds.
             particle.variables = np.random.uniform(
-                self.problem.lower_bound,
-                self.problem.upper_bound
+                self.current_lower_bound,
+                self.current_upper_bound
             ).tolist()
-            particle.attributes['velocity'] = np.random.uniform(-1, 1, self.problem.number_of_variables()).tolist()
+            particle.attributes['velocity'] = np.random.uniform(
+                -1, 1, self.problem.number_of_variables()
+            ).tolist()
             particle.attributes['best_position'] = particle.variables.copy()
             particle.attributes['best_objective'] = particle.objectives[0]
 
     def calculate_subregion(self, best_particle: FloatSolution):
-        lower = np.array(self.problem.lower_bound, dtype=float)
-        upper = np.array(self.problem.upper_bound, dtype=float)
+        # Use the current search region as the starting point.
+        lower = self.current_lower_bound
+        upper = self.current_upper_bound
         range_size = upper - lower
         new_range = range_size / (2 ** (self.current_depth + 1))
         best_vars = np.array(best_particle.variables, dtype=float)
         new_lower = best_vars - new_range / 2
         new_upper = best_vars + new_range / 2
-        return new_lower.tolist(), new_upper.tolist()
+        # Ensure the new bounds do not exceed the original search space (optional safeguard).
+        new_lower = np.maximum(new_lower, np.array(self.problem.lower_bound, dtype=float))
+        new_upper = np.minimum(new_upper, np.array(self.problem.upper_bound, dtype=float))
+        return new_lower, new_upper
 
     def fractal_decomposition(self):
         if self.converged() and self.current_depth < self.fractal_depth:
             self.current_depth += 1
-            new_bounds = self.calculate_subregion(self.best_global)
-            self.problem.lower_bound, self.problem.upper_bound = new_bounds
+            new_lower, new_upper = self.calculate_subregion(self.best_global)
+            # Update current search region; do not modify problem.lower_bound/upper_bound.
+            self.current_lower_bound = new_lower
+            self.current_upper_bound = new_upper
             self.reinitialize_swarm()
 
     def step(self):
         self.fractal_decomposition()
         super().step()
+
+    def get_name(self) -> str:
+        return "FAPSO"

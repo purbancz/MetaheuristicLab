@@ -8,6 +8,7 @@ from copy import deepcopy
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
 
+from algorithm.FAPSO import FAPSO
 from algorithm.WAPSO import ReverseLearningGlobalAttractorPSO
 from algorithm.single_objective_PSO import SingleObjectivePSO
 from observer.swarm_animation_observer import SwarmAnimationObserver
@@ -93,12 +94,13 @@ if __name__ == "__main__":
 
     max_evaluations = 4501
 
-    algorithm = SingleObjectivePSO(
+    algorithm = FAPSO(
         problem=problem,
         swarm_size=30,
         c1=2,
         c2=2,
         w=0.5,
+        fractal_depth=3,
         termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
     )
 

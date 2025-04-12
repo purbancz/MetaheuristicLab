@@ -21,28 +21,37 @@ from problem.n_variables.CEC import RotatedHighConditionedElliptic, RotatedBentC
 from problem.n_variables.ackley import Ackley
 from problem.n_variables.alpine import AlpineN1, AlpineN2
 from problem.n_variables.bent_cigar import BentCigar
+from problem.n_variables.bird import Bird
+from problem.n_variables.cross import GeneralizedCrossInTray, CrownedCross, Cross, CrossLeggedTable
 from problem.n_variables.discus import Discus
 from problem.n_variables.dixon import DixonPrice, GeneralizedDixonPriceRosenbrock
 from problem.n_variables.eggholder import EggHolder
 from problem.n_variables.expanded_schaffer import ExpandedShaffer
 from problem.n_variables.griewank import Griewank
 from problem.n_variables.happy_cat import HappyCat
+from problem.n_variables.holders import GeneralizedHolderTable, CarromTable, TestTubeHolder, PenHolder
 from problem.n_variables.katsuura import Katsuura, ExpandedKatsuura
 from problem.n_variables.lenard_johnes_minimum_energy_cluster import LennardJonesMinimumEnergyCluster
 from problem.n_variables.levy import Levy
 from problem.n_variables.michalewicz import Michalewicz
+from problem.n_variables.mishra import Mishra01, Mishra02, Mishra03, Mishra04, Mishra05, Mishra06, Mishra07, Mishra08, \
+    Mishra10, Mishra11
 from problem.n_variables.penalized import GeneralizedPenalizedN1
 from problem.n_variables.plateau import Plateau
 from problem.n_variables.quantum_speed import QuantumSpeedLimit2D, GeneralizedQuantumSpeedLimit
 from problem.n_variables.quartic import Quartic
 from problem.n_variables.rosenbrock import Rosenbrock, RosenbrockModified01, RosenbrockModified02
 from problem.n_variables.salomon import Salomon
-from problem.n_variables.schaffer import GeneralizedSchafferN7, GeneralizedSchafferN1, GeneralizedSchafferN2, GeneralizedSchafferN3, GeneralizedSchafferN4
+from problem.n_variables.schaffer import GeneralizedSchafferN7, GeneralizedSchafferN1, GeneralizedSchafferN2, \
+    GeneralizedSchafferN3, GeneralizedSchafferN4
 from problem.n_variables.schmidt_vetters import GeneralizedSchmidtVetters
 from problem.n_variables.schwefel import SchwefelN26, SchwefelN21, SchwefelN22, SchwefelN6, SchwefelN20, \
     SchwefelN36
+from problem.n_variables.shubert import ShubertN1, ShubertN3, ShubertN4
+from problem.n_variables.sine_envelope import SineEnvelope
 from problem.n_variables.step import StepN1, StepN2, StepN3
 from problem.n_variables.stochastic import Stochastic
+from problem.n_variables.strechedv import StretchedV
 from problem.n_variables.styblinski import StyblinskiTang
 from problem.n_variables.weierstrass import ShiftedRotatedWeierstrass
 from problem.n_variables.zakharov import Zakharov
@@ -151,7 +160,7 @@ def plot_benchmark_plots(func, resolution=100):
 
     # Wykres 1: Level sets – konturowy
     cs = axs[0].contourf(X, Y, Z, cmap='viridis', levels=50)
-    axs[0].set_title("Isovalue Heatmap") # Scalar Field Map, Level Sets
+    axs[0].set_title("Isovalue Heatmap")  # Scalar Field Map, Level Sets
     axs[0].set_xlabel("x")
     axs[0].set_ylabel("y")
     fig.colorbar(cs, ax=axs[0])
@@ -173,8 +182,6 @@ def plot_benchmark_plots(func, resolution=100):
 
     plt.savefig(filename, dpi=300)
     plt.show()
-
-
 
 
 def plot_all_benchmarks():
@@ -261,15 +268,41 @@ def plot_all_benchmarks():
         # CompositionFunction6(30),
         # CompositionFunction7(30),
         # CompositionFunction8(30)
+
         # QSLTimeBoundProblem(),
-        QuantumSpeedLimit2D(),
-        # GeneralizedQuantumSpeedLimit(2)
+        # QuantumSpeedLimit2D(),
+        # GeneralizedQuantumSpeedLimit(2),
+
+        # ShubertN1(2),
+        # ShubertN3(2),
+        # ShubertN4(2),
+        # SineEnvelope(2),
+        # StretchedV(2),
+        Mishra01(2),
+        Mishra02(2),
+        Mishra03(2),
+        Mishra04(2),
+        Mishra05(2),
+        Mishra06(2),
+        Mishra07(2),
+        Mishra08(2),
+        Mishra10(2),
+        Mishra11(2),
+        TestTubeHolder(2),
+        GeneralizedHolderTable(2),
+        CarromTable(2),
+        GeneralizedCrossInTray(2),
+        CrownedCross(2),
+        Cross(2),
+        CrossLeggedTable(2),
+        PenHolder(2),
+        Bird(2),
+
     ]
 
     for func in functions_to_plot:
         plot_benchmark_function(func)
         plot_benchmark_plots(func)
-
 
 
 if __name__ == "__main__":
