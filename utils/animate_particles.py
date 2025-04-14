@@ -97,10 +97,11 @@ if __name__ == "__main__":
     algorithm = FAPSO(
         problem=problem,
         swarm_size=30,
-        c1=2,
-        c2=2,
-        w=0.5,
-        fractal_depth=3,
+        c1=0.2400,
+        c2=5.3089,
+        w=0.0818,
+        fractal_depth=4,
+        convergence_threshold=0.0266,
         termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
     )
 

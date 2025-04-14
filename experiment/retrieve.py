@@ -7,7 +7,7 @@ from statsmodels.stats.multicomp import pairwise_tukeyhsd
 from scikit_posthocs import posthoc_dunn
 
 from experiment.plotting_utilities import plot_results, plot_results_with_std, plot_box_at_intervals, plot_final_box, \
-    plot_final_raincloud
+    plot_final_raincloud, plot_final_petit_prince, plot_results_with_annotations
 from experiment.setup import setup_experiment, make_dir
 
 # Setup experiment to retrieve settings like algorithm_colors, max_evaluations, etc.
@@ -55,15 +55,16 @@ def plot_all_from_pickle(file_path):
                                   no_of_runs=no_of_runs, algorithms_to_compare=[algorithm],
                                   results_dir=dimensions_dir, algorithm_colors=algorithm_colors)
 
-        # Plotting box plots comparing PGxHEA algorithms with GA and PSO
-        for algorithm in ['PGSHEA', 'PGPHEA', 'PGCHEA']:
-            plot_box_at_intervals(results, matched_problem, max_evaluations=max_evaluations,
-                                  no_of_runs=no_of_runs, algorithms_to_compare=[algorithm, 'GA', 'PSO'],
-                                  results_dir=dimensions_dir, algorithm_colors=algorithm_colors)
+        # # Plotting box plots comparing PGxHEA algorithms with GA and PSO
+        # for algorithm in ['PGSHEA', 'PGPHEA', 'PGCHEA']:
+        #     plot_box_at_intervals(results, matched_problem, max_evaluations=max_evaluations,
+        #                           no_of_runs=no_of_runs, algorithms_to_compare=[algorithm, 'GA', 'PSO'],
+        #                           results_dir=dimensions_dir, algorithm_colors=algorithm_colors)
 
         # Plotting final box plot comparing all algorithms
         plot_final_box(results, matched_problem, dimensions_dir, algorithm_colors)
         plot_final_raincloud(results, matched_problem, dimensions_dir, algorithm_colors)
+        plot_final_petit_prince(results, matched_problem, dimensions_dir, algorithm_colors)
 
 
 def combine_data(data_list):
@@ -72,7 +73,8 @@ def combine_data(data_list):
 
     for data in data_list:
         # Accumulate the number of runs from each data set
-        total_runs += data[0]['results']['PSO']['data'].shape[0]  # You can change 'GA' to any consistently run algorithm
+        total_runs += data[0]['results']['PSO']['data'].shape[
+            0]  # You can change 'GA' to any consistently run algorithm
 
         for problem_data in data:
             problem_name = problem_data['problem']
@@ -125,6 +127,8 @@ def plot_combined_data_from_pickles(pickle_files):
 
         # Plotting all required graphs
         plot_results(results, matched_problem, dimensions_dir, max_evaluations, total_runs, algorithm_colors)
+        plot_results_with_annotations(results, matched_problem, dimensions_dir, max_evaluations, total_runs,
+                                      algorithm_colors)
         plot_results_with_std(results, matched_problem, dimensions_dir, max_evaluations, total_runs, algorithm_colors)
         plot_box_at_intervals(results, matched_problem, max_evaluations=max_evaluations,
                               no_of_runs=total_runs, algorithms_to_compare=algorithms.keys(),
@@ -137,14 +141,43 @@ def plot_combined_data_from_pickles(pickle_files):
                                   results_dir=dimensions_dir, algorithm_colors=algorithm_colors)
 
         # Plotting box plots comparing PGxHEA algorithms with GA and PSO
-        # for algorithm in ['PGSHEA', 'PGPHEA', 'PGCHEA']:
-        #     plot_box_at_intervals(results, matched_problem, max_evaluations=max_evaluations,
-        #                           no_of_runs=total_runs, algorithms_to_compare=[algorithm, 'GA', 'PSO'],
-        #                           results_dir=dimensions_dir, algorithm_colors=algorithm_colors)
+        for algorithm in ['PGSHEA', 'PGPHEA', 'PGCHEA']:
+            plot_box_at_intervals(results, matched_problem, max_evaluations=max_evaluations,
+                                  no_of_runs=total_runs, algorithms_to_compare=[algorithm, 'GA', 'PSO'],
+                                  results_dir=dimensions_dir, algorithm_colors=algorithm_colors)
 
         # Plotting final box plot comparing all algorithms
         plot_final_box(results, matched_problem, dimensions_dir, algorithm_colors)
         plot_final_raincloud(results, matched_problem, dimensions_dir, algorithm_colors)
+        plot_final_raincloud(results, matched_problem, dimensions_dir, algorithm_colors, adaptive_height=True)
+        plot_final_petit_prince(results, matched_problem, dimensions_dir, algorithm_colors)
+        plot_final_petit_prince(results, matched_problem, dimensions_dir, algorithm_colors, adaptive_width=True)
+
+        for group_name, algorithm_list in group_of_algorithms.items():
+            filtered_results = {algo: problem_data['results'][algo] for algo in algorithm_list if
+                                algo in problem_data['results']}
+
+            if not filtered_results or set(filtered_results.keys()) == {'PSO'}:
+                print(f"Skipping {group_name}, no valid algorithms found (only 'PSO' or empty).")
+                continue
+
+            plot_results(filtered_results, matched_problem, dimensions_dir, max_evaluations, total_runs,
+                         algorithm_colors, group_name)
+            plot_results_with_annotations(filtered_results, matched_problem, dimensions_dir, max_evaluations,
+                                          total_runs, algorithm_colors, group_name)
+            plot_results_with_std(filtered_results, matched_problem, dimensions_dir, max_evaluations, total_runs,
+                                  algorithm_colors, group_name)
+            plot_box_at_intervals(filtered_results, matched_problem, max_evaluations=max_evaluations,
+                                  no_of_runs=total_runs,
+                                  algorithms_to_compare=list(filtered_results.keys()), results_dir=dimensions_dir,
+                                  algorithm_colors=algorithm_colors, group_name=group_name)
+            plot_final_box(filtered_results, matched_problem, dimensions_dir, algorithm_colors, group_name)
+            plot_final_raincloud(filtered_results, matched_problem, dimensions_dir, algorithm_colors, group_name)
+            plot_final_raincloud(filtered_results, matched_problem, dimensions_dir, algorithm_colors, group_name,
+                                 adaptive_height=True)
+            plot_final_petit_prince(filtered_results, matched_problem, dimensions_dir, algorithm_colors)
+            plot_final_petit_prince(filtered_results, matched_problem, dimensions_dir, algorithm_colors,
+                                    adaptive_width=True)
 
 
 def extract_best_algorithms_from_experiment_data(experiment_data):

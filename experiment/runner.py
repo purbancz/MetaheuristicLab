@@ -6,7 +6,7 @@ from datetime import datetime
 import numpy as np
 
 from experiment.plotting_utilities import plot_results, plot_results_with_std, plot_box_at_intervals, plot_final_box, \
-    plot_final_raincloud
+    plot_final_raincloud, plot_final_petit_prince, plot_results_with_annotations
 from experiment.setup import setup_experiment, initialize_algorithms, make_dir
 from observer.fitness_observer import FitnessObserver
 
@@ -46,6 +46,8 @@ def run_all_experiments():
             # plot results
             plot_results(problem_data['results'], problem, dimensions_dir, max_evaluations, no_of_runs,
                          algorithm_colors)
+            plot_results_with_annotations(problem_data['results'], problem, dimensions_dir, max_evaluations, no_of_runs,
+                                          algorithm_colors)
             plot_results_with_std(problem_data['results'], problem, dimensions_dir, max_evaluations,
                                   no_of_runs, algorithm_colors)
             plot_box_at_intervals(problem_data['results'], problem, max_evaluations=max_evaluations,
@@ -65,6 +67,11 @@ def run_all_experiments():
             #                           algorithm_colors=algorithm_colors)
             plot_final_box(problem_data['results'], problem, dimensions_dir, algorithm_colors)
             plot_final_raincloud(problem_data['results'], problem, dimensions_dir, algorithm_colors)
+            plot_final_raincloud(problem_data['results'], problem, dimensions_dir, algorithm_colors,
+                                 adaptive_height=True)
+            plot_final_petit_prince(problem_data['results'], problem, dimensions_dir, algorithm_colors)
+            plot_final_petit_prince(problem_data['results'], problem, dimensions_dir, algorithm_colors,
+                                    adaptive_width=True)
 
             for group_name, algorithm_list in group_of_algorithms.items():
                 filtered_results = {algo: problem_data['results'][algo] for algo in algorithm_list if
@@ -76,6 +83,8 @@ def run_all_experiments():
 
                 plot_results(filtered_results, problem, dimensions_dir, max_evaluations, no_of_runs, algorithm_colors,
                              group_name)
+                plot_results_with_annotations(filtered_results, problem, dimensions_dir, max_evaluations, no_of_runs,
+                                              algorithm_colors, group_name)
                 plot_results_with_std(filtered_results, problem, dimensions_dir, max_evaluations, no_of_runs,
                                       algorithm_colors, group_name)
                 plot_box_at_intervals(filtered_results, problem, max_evaluations=max_evaluations, no_of_runs=no_of_runs,
@@ -83,6 +92,11 @@ def run_all_experiments():
                                       algorithm_colors=algorithm_colors, group_name=group_name)
                 plot_final_box(filtered_results, problem, dimensions_dir, algorithm_colors, group_name)
                 plot_final_raincloud(filtered_results, problem, dimensions_dir, algorithm_colors, group_name)
+                plot_final_raincloud(filtered_results, problem, dimensions_dir, algorithm_colors, group_name,
+                                     adaptive_height=True)
+                plot_final_petit_prince(filtered_results, problem, dimensions_dir, algorithm_colors)
+                plot_final_petit_prince(filtered_results, problem, dimensions_dir, algorithm_colors,
+                                        adaptive_width=True)
 
     with open(f'{dimensions_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_experiment_data.pkl', 'wb') as f:
         pickle.dump(all_data, f)
