@@ -2,8 +2,8 @@
 #SBATCH --job-name=irace-optimisation
 #SBATCH --output=%x_%j.out
 #SBATCH --error=%x_%j.err
-#SBATCH --time=8:00:00
-#SBATCH --partition=plgrid
+#SBATCH --time=1:00:00
+#SBATCH --partition=plgrid-testing
 #SBATCH --account=plglscclass24-cpu
 #SBATCH --nodes=1
 #SBATCH --ntasks=4
@@ -24,7 +24,7 @@ echo "Job started at: $(date -d @$START_TIME)"
 # Run the Python script
 echo "PYTHON SCRIPT IS BEING EXECUTED"
 export PYTHONPATH="$HOME/GA-PSO_Hybrid:$PYTHONPATH"
-python -u $HOME/GA-PSO_Hybrid/optimization/irace_tune.py
+python -u $HOME/GA-PSO_Hybrid/main.py
 #python -u $HOME/GA-PSO_Hybrid/utils/plot_benchmarks.py
 echo "Plotting completed successfully."
 

@@ -14,7 +14,8 @@ from algorithm.single_objective_PSO import SingleObjectivePSO
 from observer.swarm_animation_observer import SwarmAnimationObserver
 from problem.n_variables.plateau import Plateau
 
-OUTPUT_DIR = "frames"
+FRAMES_DIR = "frames"
+OUTPUT_DIR = "animations"
 
 
 def get_heatmap_data(func, resolution=100):
@@ -58,7 +59,7 @@ def animate_swarm(func, observer):
     should_save_frames = False
 
     def init():
-        animation_dir = os.path.join(OUTPUT_DIR, f"{algorithm.get_name()}_{func_name}")
+        animation_dir = os.path.join(OUTPUT_DIR, FRAMES_DIR, f"{algorithm.get_name()}_{func_name}")
         os.makedirs(animation_dir, exist_ok=True)
         scatter.set_offsets(np.empty((0, 2)))
         return scatter,
@@ -69,7 +70,8 @@ def animate_swarm(func, observer):
         ax.set_title(f"{algorithm.get_name()} on {func.name()}: Iteration {frame_idx * observer.capture_interval:03d}")
         if should_save_frames:
             if frame_idx == 0 or frame_idx % 10 == 0 or frame_idx == len(observer.frames) - 1:
-                filename = os.path.join(OUTPUT_DIR, f"{algorithm.get_name()}_{func_name}", f"frame_{frame_idx:04d}.png")
+                filename = os.path.join(OUTPUT_DIR, FRAMES_DIR, f"{algorithm.get_name()}_{func_name}",
+                                        f"frame_{frame_idx:04d}.png")
                 plt.savefig(filename, dpi=300)
                 print(f"Saved {filename}")
         return scatter,
@@ -83,7 +85,11 @@ def animate_swarm(func, observer):
         blit=True
     )
     should_save_frames = True
-    anim.save(f"{algorithm.get_name()}_{func_name}_swarm_animation.mp4", writer='ffmpeg', fps=10)
+    anim.save(
+        os.path.join(OUTPUT_DIR, f"{algorithm.get_name()}_{func_name}_swarm_animation.mp4"),
+        writer='ffmpeg',
+        fps=10
+    )
     # should_save_frames = False
     # anim.save(f"{algorithm.get_name()}_{func_name}_swarm_animation.gif", writer='imagemagick', fps=10)
     return anim
