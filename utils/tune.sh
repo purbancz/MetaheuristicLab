@@ -1,14 +1,14 @@
 #!/bin/bash
-#SBATCH --job-name=irace-optimisation
+#SBATCH --job-name=PSO_hybrid
 #SBATCH --output=%x_%j.out
 #SBATCH --error=%x_%j.err
-#SBATCH --time=1:00:00
+#SBATCH --time=72:00:00
 #SBATCH --partition=plgrid-testing
 #SBATCH --account=plglscclass24-cpu
 #SBATCH --nodes=1
-#SBATCH --ntasks=4
+#SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
-#SBATCH --mem=16G
+#SBATCH --mem=32G
 
 
 # Load modules and activate the conda environment
@@ -26,7 +26,7 @@ echo "PYTHON SCRIPT IS BEING EXECUTED"
 export PYTHONPATH="$HOME/GA-PSO_Hybrid:$PYTHONPATH"
 python -u $HOME/GA-PSO_Hybrid/main.py
 #python -u $HOME/GA-PSO_Hybrid/utils/plot_benchmarks.py
-echo "Plotting completed successfully."
+echo "Swarming completed successfully."
 
 # Log end time
 END_TIME=$(date +%s)

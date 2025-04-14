@@ -50,28 +50,28 @@ def run_all_experiments():
                                           algorithm_colors)
             plot_results_with_std(problem_data['results'], problem, dimensions_dir, max_evaluations,
                                   no_of_runs, algorithm_colors)
-            plot_box_at_intervals(problem_data['results'], problem, max_evaluations=max_evaluations,
-                                  no_of_runs=no_of_runs, algorithms_to_compare=algorithms.keys(),
-                                  results_dir=dimensions_dir,
-                                  algorithm_colors=algorithm_colors)
-
-            for algorithm in algorithms.keys():
-                plot_box_at_intervals(problem_data['results'], problem, max_evaluations=max_evaluations,
-                                      no_of_runs=no_of_runs, algorithms_to_compare=[algorithm],
-                                      results_dir=dimensions_dir,
-                                      algorithm_colors=algorithm_colors)
-            # for algorithm in ['PGSHEA', 'PGPHEA', 'PGCHEA']:
+            # plot_box_at_intervals(problem_data['results'], problem, max_evaluations=max_evaluations,
+            #                       no_of_runs=no_of_runs, algorithms_to_compare=algorithms.keys(),
+            #                       results_dir=dimensions_dir,
+            #                       algorithm_colors=algorithm_colors)
+            #
+            # for algorithm in algorithms.keys():
             #     plot_box_at_intervals(problem_data['results'], problem, max_evaluations=max_evaluations,
-            #                           no_of_runs=no_of_runs, algorithms_to_compare=[algorithm] + ['GA', 'PSO'],
+            #                           no_of_runs=no_of_runs, algorithms_to_compare=[algorithm],
             #                           results_dir=dimensions_dir,
             #                           algorithm_colors=algorithm_colors)
-            plot_final_box(problem_data['results'], problem, dimensions_dir, algorithm_colors)
-            plot_final_raincloud(problem_data['results'], problem, dimensions_dir, algorithm_colors)
-            plot_final_raincloud(problem_data['results'], problem, dimensions_dir, algorithm_colors,
-                                 adaptive_height=True)
-            plot_final_petit_prince(problem_data['results'], problem, dimensions_dir, algorithm_colors)
-            plot_final_petit_prince(problem_data['results'], problem, dimensions_dir, algorithm_colors,
-                                    adaptive_width=True)
+            # # for algorithm in ['PGSHEA', 'PGPHEA', 'PGCHEA']:
+            # #     plot_box_at_intervals(problem_data['results'], problem, max_evaluations=max_evaluations,
+            # #                           no_of_runs=no_of_runs, algorithms_to_compare=[algorithm] + ['GA', 'PSO'],
+            # #                           results_dir=dimensions_dir,
+            # #                           algorithm_colors=algorithm_colors)
+            # plot_final_box(problem_data['results'], problem, dimensions_dir, algorithm_colors)
+            # plot_final_raincloud(problem_data['results'], problem, dimensions_dir, algorithm_colors)
+            # plot_final_raincloud(problem_data['results'], problem, dimensions_dir, algorithm_colors,
+            #                      adaptive_height=True)
+            # plot_final_petit_prince(problem_data['results'], problem, dimensions_dir, algorithm_colors)
+            # plot_final_petit_prince(problem_data['results'], problem, dimensions_dir, algorithm_colors,
+            #                         adaptive_width=True)
 
             for group_name, algorithm_list in group_of_algorithms.items():
                 filtered_results = {algo: problem_data['results'][algo] for algo in algorithm_list if
@@ -87,9 +87,9 @@ def run_all_experiments():
                                               algorithm_colors, group_name)
                 plot_results_with_std(filtered_results, problem, dimensions_dir, max_evaluations, no_of_runs,
                                       algorithm_colors, group_name)
-                plot_box_at_intervals(filtered_results, problem, max_evaluations=max_evaluations, no_of_runs=no_of_runs,
-                                      algorithms_to_compare=list(filtered_results.keys()), results_dir=dimensions_dir,
-                                      algorithm_colors=algorithm_colors, group_name=group_name)
+                # plot_box_at_intervals(filtered_results, problem, max_evaluations=max_evaluations, no_of_runs=no_of_runs,
+                #                       algorithms_to_compare=list(filtered_results.keys()), results_dir=dimensions_dir,
+                #                       algorithm_colors=algorithm_colors, group_name=group_name)
                 plot_final_box(filtered_results, problem, dimensions_dir, algorithm_colors, group_name)
                 plot_final_raincloud(filtered_results, problem, dimensions_dir, algorithm_colors, group_name)
                 plot_final_raincloud(filtered_results, problem, dimensions_dir, algorithm_colors, group_name,
