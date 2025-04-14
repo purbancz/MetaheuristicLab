@@ -25,7 +25,8 @@ def plot_results(data_dict, problem, results_dir, max_evaluations, no_of_runs, a
     plt.grid()
     plt.tight_layout()
     safe_group_name = group_name.replace(' ', '_').replace('-', '_')
-    filename = f"{results_dir}/{datetime.now().strftime('%Y%m%d_%H%M%S')}_{problem.name()}_{safe_group_name}.png"
+    safe_problem_name = problem.name().replace(' ', '_').replace('-', '_')
+    filename = f"{results_dir}/{datetime.now().strftime('%Y%m%d_%H%M%S')}_{safe_problem_name}_{safe_group_name}.png"
     plt.savefig(filename, dpi=300)
     plt.show()
 
@@ -108,7 +109,8 @@ def plot_results_with_annotations(data_dict, problem, results_dir, max_evaluatio
     # Final layout & saving
     plt.tight_layout()
     safe_group_name = group_name.replace(' ', '_').replace('-', '_')
-    filename = f"{results_dir}/{datetime.now().strftime('%Y%m%d_%H%M%S')}_{problem.name()}_{safe_group_name}.png"
+    safe_problem_name = problem.name().replace(' ', '_').replace('-', '_')
+    filename = f"{results_dir}/{datetime.now().strftime('%Y%m%d_%H%M%S')}_{safe_problem_name}_{safe_group_name}.png"
     plt.savefig(filename, dpi=300)
     plt.show()
 
@@ -133,7 +135,8 @@ def plot_results_with_std(data_dict, problem, results_dir, max_evaluations, no_o
     plt.grid()
     plt.tight_layout()
     safe_group_name = group_name.replace(' ', '_').replace('-', '_')
-    filename = f'{results_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{problem.name()}_{safe_group_name}_with_stddev.png'
+    safe_problem_name = problem.name().replace(' ', '_').replace('-', '_')
+    filename = f'{results_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{safe_problem_name}_{safe_group_name}_with_stddev.png'
     plt.savefig(filename, dpi=300)
     plt.show()
 
@@ -225,7 +228,8 @@ def plot_box_at_intervals(data_dict, problem, interval=10, max_evaluations=25000
     plt.tight_layout()
 
     # Build the filename.
-    base_filename = f"{results_dir}/{datetime.now().strftime('%Y%m%d_%H%M%S')}_{problem.name()}"
+    safe_problem_name = problem.name().replace(' ', '_').replace('-', '_')
+    base_filename = f"{results_dir}/{datetime.now().strftime('%Y%m%d_%H%M%S')}_{safe_problem_name}"
     algorithm_names = '_'.join(algo.replace(' ', '_').replace('-', '_') for algo in algorithms_to_compare)
     max_length = 255 - len(base_filename) - len("_etc") - len("_box_intervals.png")
 
@@ -262,7 +266,8 @@ def plot_final_box(data_dict, problem, results_dir, algorithm_colors, group_name
 
     plt.tick_params(axis='x', which='both', bottom=False, top=False)
     safe_group_name = group_name.replace(' ', '_').replace('-', '_')
-    filename = f'{results_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{problem.name()}_{safe_group_name}_final_box.png'
+    safe_problem_name = problem.name().replace(' ', '_').replace('-', '_')
+    filename = f'{results_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{safe_problem_name}_{safe_group_name}_final_box.png'
     plt.savefig(filename, dpi=300)
     plt.show()
 
@@ -398,7 +403,8 @@ def plot_final_raincloud(data_dict, problem, results_dir, algorithm_colors,
 
     # Save the figure with a filename incorporating the current timestamp and group name.
     safe_group_name = group_name.replace(' ', '_').replace('-', '_')
-    filename = f'{results_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{problem.name()}_{safe_group_name}_raincloud.png'
+    safe_problem_name = problem.name().replace(' ', '_').replace('-', '_')
+    filename = f'{results_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{safe_problem_name}_{safe_group_name}_raincloud.png'
     plt.savefig(filename, dpi=300)
     plt.show()
 
@@ -516,6 +522,7 @@ def plot_final_petit_prince(data_dict, problem, results_dir, algorithm_colors,
 
     plt.tight_layout()
     safe_group_name = group_name.replace(' ', '_').replace('-', '_')
-    filename = f'{results_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{problem.name()}_{safe_group_name}_raincloud_vertical.png'
+    safe_problem_name = problem.name().replace(' ', '_').replace('-', '_')
+    filename = f'{results_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{safe_problem_name}_{safe_group_name}_raincloud_vertical.png'
     plt.savefig(filename, dpi=300)
     plt.show()
