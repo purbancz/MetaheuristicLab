@@ -140,7 +140,7 @@ def setup_experiment():
         Discus(number_of_variables),
         DixonPrice(number_of_variables),
         EggHolder(number_of_variables),
-        ExpandedKatsuura(number_of_variables),
+        # ExpandedKatsuura(number_of_variables),
         ExpandedShaffer(number_of_variables),
         GeneralizedCrossInTray(number_of_variables),
         GeneralizedDixonPriceRosenbrock(number_of_variables),
@@ -155,7 +155,7 @@ def setup_experiment():
         Griewank(number_of_variables),
         HappyCat(number_of_variables),
         HGBat(number_of_variables),
-        Katsuura(number_of_variables),  # careful
+        # Katsuura(number_of_variables),  # careful
         LennardJonesMinimumEnergyCluster(number_of_variables),
         Levy(number_of_variables),
         Michalewicz(number_of_variables),
