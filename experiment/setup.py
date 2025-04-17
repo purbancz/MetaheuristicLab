@@ -128,6 +128,24 @@ def setup_experiment():
 
     # Define problems
     n_variables_problems = [
+        ##
+        RotatedHighConditionedElliptic(number_of_variables),
+        RotatedBentCigar(number_of_variables),
+        RotatedDiscus(number_of_variables),
+        ShiftedRotatedRosenbrock(number_of_variables),
+        ShiftedRotatedAckley(number_of_variables),
+        ShiftedRastrigin(number_of_variables),
+        ShiftedRotatedRastrigin(number_of_variables),
+        ShiftedSchwefel(number_of_variables),
+        ShiftedRotatedSchwefel(number_of_variables),
+        ShiftedRotatedKatsuura(number_of_variables),
+        ShiftedRotatedHappyCat(number_of_variables),
+        ShiftedRotatedHGBat(number_of_variables),
+        ShiftedRotatedSchafferF7(number_of_variables),
+        ShiftedRotatedWeierstrass(number_of_variables),
+        ShiftedRotatedExpandedGriewankPlusRosenbrock(number_of_variables),
+        ShiftedRotatedExpandedScafferF6(number_of_variables),
+        ##
         Ackley(number_of_variables),
         AlpineN1(number_of_variables),
         AlpineN2(number_of_variables),
@@ -142,7 +160,7 @@ def setup_experiment():
         EggHolder(number_of_variables),
         # ExpandedKatsuura(number_of_variables),
         ExpandedShaffer(number_of_variables),
-        GeneralizedCrossInTray(number_of_variables),
+        GeneralizedCrossInTray(number_of_variables), # 5:15
         GeneralizedDixonPriceRosenbrock(number_of_variables),
         GeneralizedHolderTable(number_of_variables),
         GeneralizedPenalizedN1(number_of_variables),
@@ -194,24 +212,7 @@ def setup_experiment():
         StyblinskiTang(number_of_variables),
         TestTubeHolder(number_of_variables),
         Zakharov(number_of_variables),
-        ##
-        RotatedHighConditionedElliptic(number_of_variables),
-        RotatedBentCigar(number_of_variables),
-        RotatedDiscus(number_of_variables),
-        ShiftedRotatedRosenbrock(number_of_variables),
-        ShiftedRotatedAckley(number_of_variables),
-        ShiftedRastrigin(number_of_variables),
-        ShiftedRotatedRastrigin(number_of_variables),
-        ShiftedSchwefel(number_of_variables),
-        ShiftedRotatedSchwefel(number_of_variables),
-        ShiftedRotatedKatsuura(number_of_variables),
-        ShiftedRotatedHappyCat(number_of_variables),
-        ShiftedRotatedHGBat(number_of_variables),
-        ShiftedRotatedSchafferF7(number_of_variables),
-        ShiftedRotatedWeierstrass(number_of_variables),
-        ShiftedRotatedExpandedGriewankPlusRosenbrock(number_of_variables),
-        ShiftedRotatedExpandedScafferF6(number_of_variables),
-        ##
+
         # HybridFunction1(number_of_variables),
         # HybridFunction2(number_of_variables),
         # HybridFunction3(number_of_variables),

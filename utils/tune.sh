@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=PSO_hybrid
+#SBATCH --job-name=PSO_hybrid_100dim
 #SBATCH --output=%x_%j.out
 #SBATCH --error=%x_%j.err
 #SBATCH --time=72:00:00
