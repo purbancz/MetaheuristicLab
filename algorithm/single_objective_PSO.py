@@ -22,7 +22,7 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
                  c2: float,
                  w: float,
                  termination_criterion: TerminationCriterion,
-                 constraint_handling_mode: str = "clip"):
+                 constraint_handling_mode: str = "bounce"):
         super().__init__(problem, swarm_size)
         self.constraint_handling_mode = constraint_handling_mode
         self.c1 = c1

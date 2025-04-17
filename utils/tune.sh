@@ -1,9 +1,9 @@
 #!/bin/bash
-#SBATCH --job-name=irace_tune_PSO_hybird
+#SBATCH --job-name=bounce_irace_tune_PSO_hybird
 #SBATCH --output=%x_%j.out
 #SBATCH --error=%x_%j.err
-#SBATCH --time=16:00:00
-#SBATCH --partition=plgrid
+#SBATCH --time=12:00:00
+#SBATCH --partition=plgrid-now
 #SBATCH --account=plglscclass24-cpu
 #SBATCH --nodes=1
 #SBATCH --ntasks=4

@@ -252,14 +252,7 @@ def setup_experiment():
 
     # Initialize the algorithms
     algorithms = {
-        # 'GA': lambda p: GeneticAlgorithm(
-        #     problem=p,
-        #     population_size=solutions_size,
-        #     offspring_population_size=solutions_size,
-        #     mutation=PolynomialMutation(1.0 / p.number_of_variables(), 20.0),
-        #     crossover=SBXCrossover(0.75, 5.0),
-        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations),
-        # ),
+        # clip rough tuning
         'PSO': lambda p: SingleObjectivePSO(  # clip rough tuning
             problem=p,
             swarm_size=solutions_size,
@@ -268,58 +261,6 @@ def setup_experiment():
             w=0.0632,
             termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
         ),
-        # 'DE': lambda p: DifferentialEvolution(
-        #     problem=p,
-        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations),
-        #     swarm_size = solutions_size,
-        #     crossover_operator = DifferentialEvolutionCrossover(CR=0.9, F=0.5),
-        # ),
-        # 'HybridPSODE': lambda p: HybridPSODE(
-        #     problem=p,
-        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations),
-        #     swarm_size=solutions_size,
-        #     b1=1.132464,
-        #     b2=4.489647,
-        #     w=0.110646,
-        #     de_probability = 0.5,
-        #     crossover_operator=DifferentialEvolutionCrossover(CR=0.9, F=0.5),
-        # ),
-        # 'PGSHEA': lambda p: PGSHEA(
-        #     problem=p,
-        #     solutions_size=solutions_size,
-        #     mutation=PolynomialMutation(0.38 / p.number_of_variables(), 20.0),
-        #     crossover=SBXCrossover(1, 5.0),
-        #     swap_interval=13,  # int(max_evaluations/(2 * solutions_size))
-        #     b1=2.63,
-        #     b2=0.21,
-        #     w=0.01,
-        #     starting_algorithm='PSO',
-        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        # ),
-        # 'PGPHEA': lambda p: PGPHEA(
-        #     problem=p,
-        #     solutions_size=solutions_size,
-        #     mutation=PolynomialMutation(0.37 / p.number_of_variables(), 20.0),
-        #     crossover=SBXCrossover(1, 5.0),
-        #     exchange_interval=13,
-        #     exchange_number=7,  # 11
-        #     b1=0.00001,
-        #     b2=0.26,
-        #     w=0.17,
-        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        # ),
-        # 'PGCHEA': lambda p: PGCHEA(
-        #     problem=p,
-        #     solutions_size=solutions_size,
-        #     mutation=PolynomialMutation(0.61 / p.number_of_variables(), 20.0),
-        #     crossover=SBXCrossover(1, 5.0),
-        #     b1=1.85,
-        #     b2=0.5,
-        #     w=1.53,
-        #     starting_algorithm='PSO',
-        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        # ),
-        ## New PSO variants
         'RebelPSO': lambda p: RebelPSO(  # clip rough tuning
             problem=p,
             swarm_size=solutions_size,
@@ -473,96 +414,28 @@ def setup_experiment():
             termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
         ),
         ## Other
-        'RRAPSO': lambda p: RRAPSO(
+        'RRAPSO': lambda p: RRAPSO(  # clip rough tuning
             problem=p,
             swarm_size=solutions_size,
-            c1=1.5510184332980186,
-            c2=4.935325731217671,
-            ac1=1.5510184332980186,
-            ac2=4.935325731217671,
-            base_inertia=0.214141581688782,
-            min_inertia=0.11093829549932,
-            max_inertia=0.935915518894973,
-            rebel_fraction=0.2,
-            rejector_fraction=0.43,
-            window_size=20,
-            # perturbation_probability=0.460269994559271,
-            # perturbation_scale=0.709878890732096,
-            max_rebel_fraction=0.79,
-            max_rejector_fraction=0.56,
-            diversity_threshold=0.058518962214864,
-            improvement_threshold=0.008656759607128,
+            c1=3.8678,
+            c2=2.0252,
+            ac1=1.2260,
+            ac2=3.6460,
+            base_inertia=0.1524,
+            min_inertia=0.0560,
+            max_inertia=0.7840,
+            rebel_fraction=0.0577,
+            rejector_fraction=0.2277,
+            window_size=30,
+            # perturbation_probability=0.4752,
+            # perturbation_scale=0.9648,
+            max_rebel_fraction=0.7748,
+            max_rejector_fraction=0.5171,
+            diversity_threshold=0.2417,
+            improvement_threshold=0.0213,
             termination_criterion=StoppingByEvaluations(max_evaluations)
         ),
-        # "GradientEnhancedPSO": lambda p: GradientEnhancedPSO(
-        #     problem=p,
-        #     swarm_size=solutions_size,
-        #     c1=1.97,
-        #     c2=0.94,
-        #     c3=1.97,
-        #     w=0.56,
-        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        # ),
-        # "LightningPSO": lambda p: LightningPSO(
-        #     problem=p,
-        #     swarm_size=solutions_size,
-        #     c1=2.5,
-        #     c2=2.5,
-        #     c3=0.3,
-        #     w=0.1,
-        #     dim_sample=0.5,
-        #     grad_sample=0.1,
-        #     active_ratio=0.3,
-        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations),
-        # ),
-        # 'QTPSO': lambda p: QTPSO(
-        #     problem=p,
-        #     swarm_size=solutions_size,
-        #     c1=0.9441842367886241,
-        #     c2=5.4875414623505385,
-        #     w=0.08830337945791762,
-        #     quantum_prob=0.1,
-        #     chaos_strength=0.05,
-        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        # ),
-        # 'SPPPSO': lambda p: SPPPSO(
-        #     problem=p,
-        #     swarm_size=solutions_size,
-        #     c1=0.9441842367886241,
-        #     c2=5.4875414623505385,
-        #     w=0.08830337945791762,
-        #     predator_ratio=0.05,
-        #     scavenger_ratio=0.2,
-        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        # ),
-        # 'TDPSO': lambda p: TDPSO(
-        #     problem=p,
-        #     swarm_size=solutions_size,
-        #     c1=2.4,
-        #     c2=2.4,
-        #     w=0.1,
-        #     temperature = 1.0,
-        #     cooling_rate = 0.99,
-        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        # ),
-        # 'LangevinPSO': lambda p: TDPSO(
-        #     problem=p,
-        #     swarm_size=solutions_size,
-        #     c1=2.4,
-        #     c2=2.4,
-        #     w=0.1,
-        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        # ),
-        # 'NPSO': lambda p: NPSO(
-        #     problem=p,
-        #     swarm_size=solutions_size,
-        #     c1=0.025515929851215,
-        #     c2=2.251249703372387,
-        #     w=0.056059595444136,
-        #     spike_threshold = 0.963856605654984,
-        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        # ),
-        'FAPSO': lambda p: FAPSO(
+        'FAPSO': lambda p: FAPSO(  # clip rough tuning
             problem=p,
             swarm_size=solutions_size,
             c1=0.2400,
