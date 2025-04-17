@@ -98,7 +98,12 @@ def run_all_experiments():
                 plot_final_petit_prince(filtered_results, problem, dimensions_dir, algorithm_colors,
                                         adaptive_width=True)
 
-    with open(f'{dimensions_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_experiment_data.pkl', 'wb') as f:
+        with open(
+                f'{dimensions_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{problem.name()}_dim{number_of_variables}_runs{no_of_runs}_experiment_data.pkl',
+                'wb') as f:
+            pickle.dump(all_data, f)
+
+    with open(f'{dimensions_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_all_dim{number_of_variables}_runs{no_of_runs}_experiment_data.pkl', 'wb') as f:
         pickle.dump(all_data, f)
 
 

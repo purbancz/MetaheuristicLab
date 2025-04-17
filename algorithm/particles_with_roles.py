@@ -187,8 +187,8 @@ class RRAPSO(RebelRejectorPSO):
                  rebel_fraction: float,
                  rejector_fraction: float,
                  window_size: int = 10,
-                 perturbation_probability: float = 0.1,
-                 perturbation_scale: float = 0.1,
+                 # perturbation_probability: float = 0.1,
+                 # perturbation_scale: float = 0.1,
                  max_rebel_fraction: float = 0.8,
                  max_rejector_fraction: float = 0.8,
                  diversity_threshold: float = 0.1,
@@ -207,8 +207,8 @@ class RRAPSO(RebelRejectorPSO):
         self.original_rejector_fraction = rejector_fraction
         self.diversity_threshold = diversity_threshold
         self.improvement_threshold = improvement_threshold
-        self.perturbation_probability = perturbation_probability
-        self.perturbation_scale = perturbation_scale
+        # self.perturbation_probability = perturbation_probability
+        # self.perturbation_scale = perturbation_scale
         self.window_size = window_size
         self.convergence_window = deque(maxlen=self.window_size)
 
@@ -312,18 +312,18 @@ class RRAPSO(RebelRejectorPSO):
         improvement_rate = (initial - latest) / abs(initial)
         return improvement_rate
 
-    def perturbation(self, swarm: List[S]) -> None:
-        """Chaotic perturbation for diversity maintenance with parameterized probability and scale."""
-        best = self.best_global.variables
-        for particle in swarm:
-            if random.random() < self.perturbation_probability * (1 - self.w):
-                noise = self.perturbation_scale * (self.max_inertia - self.w) * (np.random.rand() - 0.5)
-                particle.variables = [
-                    np.clip(x + noise * (x - best[i]),
-                            self.problem.lower_bound[i],
-                            self.problem.upper_bound[i])
-                    for i, x in enumerate(particle.variables)
-                ]
+    # def perturbation(self, swarm: List[S]) -> None:
+    #     """Chaotic perturbation for diversity maintenance with parameterized probability and scale."""
+    #     best = self.best_global.variables
+    #     for particle in swarm:
+    #         if random.random() < self.perturbation_probability * (1 - self.w):
+    #             noise = self.perturbation_scale * (self.max_inertia - self.w) * (np.random.rand() - 0.5)
+    #             particle.variables = [
+    #                 np.clip(x + noise * (x - best[i]),
+    #                         self.problem.lower_bound[i],
+    #                         self.problem.upper_bound[i])
+    #                 for i, x in enumerate(particle.variables)
+    #             ]
 
     def get_name(self) -> str:
         return "RRAPSO"

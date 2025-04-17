@@ -63,10 +63,10 @@ parameter_spaces = {
     Real("rebel_fraction", 0.05, 0.8),  # Fraction of rebel particles
     Real("rejector_fraction", 0.05, 0.8),  # Fraction of rejector particles
     Integer("window_size", 10, 30),  # Window size for convergence
-    Real("perturbation_probability", 0.01, 1),  # Probability of perturbation
-    Real("perturbation_scale", 0.01, 1),  # Scale of perturbation
+    # Real("perturbation_probability", 0.01, 1),  # Probability of perturbation
+    # Real("perturbation_scale", 0.01, 1),  # Scale of perturbation
     Real("max_rebel_fraction", 0.1, 0.98),  # Max limit for rebel fraction
-    Real("max_rejector_fraction", 0.1, 0.98),  # Max limit for rejector fraction
+    Real("max_rejector_fraction", 0.1, 0.98),  # Max limit for a rejector fraction
     Real("diversity_threshold", 0.001, 0.3),  # Threshold for diversity
     Real("improvement_threshold", 0.0001, 0.1),  # Threshold for improvement rate
 ],
