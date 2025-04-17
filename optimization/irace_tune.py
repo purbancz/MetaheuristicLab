@@ -52,13 +52,25 @@ problems = [
 ]
 
 parameter_spaces = {
-    'FAPSO': [
-        Real("c1", 0.01, 6),
-        Real("c2", 0.01, 6),
-        Real("w", 0.01, 2),
-        Integer("fractal_depth", 2, 5),
-        Real("convergence_threshold", 0.0001, 0.1),
-    ],
+    'RRAPSO': [
+    Real("c1", 0.01, 6),  # Cognitive coefficient
+    Real("c2", 0.01, 6),  # Social coefficient
+    Real("ac1", 0.01, 6),  # Adaptive cognitive coefficient
+    Real("ac2", 0.01, 6),  # Adaptive social coefficient
+    Real("base_inertia", 0.01, 1),  # Base inertia weight
+    Real("min_inertia", 0.01, 1),  # Minimum inertia weight
+    Real("max_inertia", 0.01, 1),  # Maximum inertia weight
+    Real("rebel_fraction", 0.05, 0.8),  # Fraction of rebel particles
+    Real("rejector_fraction", 0.05, 0.8),  # Fraction of rejector particles
+    Integer("window_size", 10, 30),  # Window size for convergence
+    Real("perturbation_probability", 0.01, 1),  # Probability of perturbation
+    Real("perturbation_scale", 0.01, 1),  # Scale of perturbation
+    Real("max_rebel_fraction", 0.1, 0.98),  # Max limit for rebel fraction
+    Real("max_rejector_fraction", 0.1, 0.98),  # Max limit for rejector fraction
+    Real("diversity_threshold", 0.001, 0.3),  # Threshold for diversity
+    Real("improvement_threshold", 0.0001, 0.1),  # Threshold for improvement rate
+],
+
 }
 
 current_algorithm = None
@@ -66,6 +78,20 @@ current_algorithm = None
 def target_runner(experiment: Experiment, scenario: Scenario) -> float:
     print(f"Running experiment with configuration: {experiment.configuration}")
     config = experiment.configuration
+
+    # Constraints check
+    if not (config["min_inertia"] < config["base_inertia"] < config["max_inertia"]):
+        print("Inertia constraints violated; applying penalty.")
+        return 3973
+
+    if config["max_rebel_fraction"] < config["rebel_fraction"]:
+        print("Rebel fraction constraint violated; applying penalty.")
+        return 3973
+
+    if config["max_rejector_fraction"] < config["rejector_fraction"]:
+        print("Rejector fraction constraint violated; applying penalty.")
+        return 3973
+
     results = []
     AlgorithmClass = globals()[current_algorithm]
     for problem in problems:

@@ -1,14 +1,14 @@
 #!/bin/bash
-#SBATCH --job-name=irace_tune_PSO_hybird
+#SBATCH --job-name=PSO_hybrid_100dim
 #SBATCH --output=%x_%j.out
 #SBATCH --error=%x_%j.err
 #SBATCH --time=72:00:00
 #SBATCH --partition=plgrid
 #SBATCH --account=plglscclass24-cpu
 #SBATCH --nodes=1
-#SBATCH --ntasks=4
-#SBATCH --cpus-per-task=4
-#SBATCH --mem=16G
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=4G
 
 
 # Load modules and activate the conda environment
@@ -24,9 +24,9 @@ echo "Job started at: $(date -d @$START_TIME)"
 # Run the Python script
 echo "PYTHON SCRIPT IS BEING EXECUTED"
 export PYTHONPATH="$HOME/GA-PSO_Hybrid:$PYTHONPATH"
-#python -u $HOME/GA-PSO_Hybrid/main.py
-python -u $HOME/GA-PSO_Hybrid/optimization/irace_tune.py
-echo "Tuning completed successfully."
+python -u $HOME/GA-PSO_Hybrid/main.py
+#python -u $HOME/GA-PSO_Hybrid/utils/plot_benchmarks.py
+echo "Swarming completed successfully."
 
 # Log end time
 END_TIME=$(date +%s)
