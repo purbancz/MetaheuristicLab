@@ -206,11 +206,11 @@ def target_runner(experiment: Experiment, scenario: Scenario) -> float:
         print("Inertia constraints violated; applying penalty.")
         return 3973
 
-    if config["max_rebel_fraction"] < config["rebel_fraction"]:
+    if config["max_contrarian_fraction"] < config["contrarian_fraction"]:
         print("Rebel fraction constraint violated; applying penalty.")
         return 3973
 
-    if config["max_rejector_fraction"] < config["rejector_fraction"]:
+    if config["max_defeatist_fraction"] < config["defeatist_fraction"]:
         print("Rejector fraction constraint violated; applying penalty.")
         return 3973
 
