@@ -52,24 +52,148 @@ problems = [
 ]
 
 parameter_spaces = {
-    'RRAPSO': [
-    Real("c1", 0.01, 6),  # Cognitive coefficient
-    Real("c2", 0.01, 6),  # Social coefficient
-    Real("ac1", 0.01, 6),  # Adaptive cognitive coefficient
-    Real("ac2", 0.01, 6),  # Adaptive social coefficient
-    Real("base_inertia", 0.01, 1),  # Base inertia weight
-    Real("min_inertia", 0.01, 1),  # Minimum inertia weight
-    Real("max_inertia", 0.01, 1),  # Maximum inertia weight
-    Real("rebel_fraction", 0.05, 0.8),  # Fraction of rebel particles
-    Real("rejector_fraction", 0.05, 0.8),  # Fraction of rejector particles
-    Integer("window_size", 10, 50),  # Window size for convergence
-    # Real("perturbation_probability", 0.01, 1),  # Probability of perturbation
-    # Real("perturbation_scale", 0.01, 1),  # Scale of perturbation
-    Real("max_rebel_fraction", 0.1, 0.98),  # Max limit for rebel fraction
-    Real("max_rejector_fraction", 0.1, 0.98),  # Max limit for a rejector fraction
-    Real("diversity_threshold", 0.001, 0.3),  # Threshold for diversity
-    Real("improvement_threshold", 0.0001, 0.1),  # Threshold for improvement rate
-],
+    # first batch
+    'RebelPSO': [
+        Real("c1", 0.01, 6),
+        Real("c2", 0.01, 6),
+        Real("ac2", 0.01, 6),
+        Real("w", 0.01, 2),
+        Real("rebel_fraction", 0.05, 0.8),
+    ],
+    'RejectorPSO': [
+        Real("c1", 0.01, 6),
+        Real("c2", 0.01, 6),
+        Real("ac1", 0.01, 6),
+        Real("w", 0.01, 2),
+        Real("rejector_fraction", 0.05, 0.8),
+    ],
+    'RebelRejectorPSO': [
+        Real("c1", 0.01, 6),
+        Real("c2", 0.01, 6),
+        Real("ac1", 0.01, 6),
+        Real("ac2", 0.01, 6),
+        Real("w", 0.01, 2),
+        Real("rebel_fraction", 0.05, 0.8),
+        Real("rejector_fraction", 0.05, 0.8),
+    ],
+    'ContrarianPSO': [
+        Real("c1", 0.01, 6),
+        Real("c2", 0.01, 6),
+        Real("ac2", 0.01, 6),
+        Real("w", 0.01, 2),
+        Real("contrarian_fraction", 0.05, 0.8),
+    ],
+    'DefeatistPSO': [
+        Real("c1", 0.01, 6),
+        Real("c2", 0.01, 6),
+        Real("ac1", 0.01, 6),
+        Real("w", 0.01, 2),
+        Real("defeatist_fraction", 0.05, 0.8),
+    ],
+    'ContrarianDefeatistPSO': [
+        Real("c1", 0.01, 6),
+        Real("c2", 0.01, 6),
+        Real("ac1", 0.01, 6),
+        Real("ac2", 0.01, 6),
+        Real("w", 0.01, 2),
+        Real("contrarian_fraction", 0.05, 0.8),
+        Real("defeatist_fraction", 0.05, 0.8),
+    ],
+    'EschewerPSO': [
+        Real("c1", 0.01, 6),
+        Real("c2", 0.01, 6),
+        Real("ac2", 0.01, 6),
+        Real("w", 0.01, 2),
+        Real("eschewer_fraction", 0.05, 0.8),
+    ],
+
+    # # second batch
+    # 'EscapistPSO': [
+    #     Real("c1", 0.01, 6),
+    #     Real("c2", 0.01, 6),
+    #     Real("ac1", 0.01, 6),
+    #     Real("w", 0.01, 2),
+    #     Real("escapist_fraction", 0.05, 0.8),
+    # ],
+    # 'EschewerEscapistPSO': [
+    #     Real("c1", 0.01, 6),
+    #     Real("c2", 0.01, 6),
+    #     Real("ac1", 0.01, 6),
+    #     Real("ac2", 0.01, 6),
+    #     Real("w", 0.01, 2),
+    #     Real("eschewer_fraction", 0.05, 0.8),
+    #     Real("escapist_fraction", 0.05, 0.8),
+    # ],
+    # 'SingleObjectivePSO': [
+    #     Real("c1", 0.01, 6),
+    #     Real("c2", 0.01, 6),
+    #     Real("w", 0.01, 2),
+    # ],
+    # 'GlobalAdaptivePSO': [
+    #     Real("c1", 0.01, 6),
+    #     Real("c2", 0.01, 6),
+    #     Real("max_c1", 4, 20),
+    #     Real("max_c2", 4, 20),
+    #     Real("w", 0.01, 2),
+    # ],
+    # 'PersonalAdaptivePSO': [
+    #     Real("c1", 0.01, 6),
+    #     Real("c2", 0.01, 6),
+    #     Real("max_c1", 4, 20),
+    #     Real("max_c2", 4, 20),
+    #     Real("w", 0.01, 2),
+    # ],
+    # 'ReverseLearningGlobalAttractorPSO': [
+    #     Real("a", 0.01, 6),
+    #     Real("b1", 0.01, 6),
+    #     Real("b2", 0.01, 6),
+    #     Real("w", 0.01, 2),
+    # ],
+    # 'ReverseLearningPersonalAttractorPSO': [
+    #     Real("a", 0.01, 6),
+    #     Real("b1", 0.01, 6),
+    #     Real("b2", 0.01, 6),
+    #     Real("w", 0.01, 2),
+    # ],
+    # 'CombinedLearningPSO': [
+    #     Real("c1", 0.01, 6),
+    #     Real("c2", 0.01, 6),
+    #     Real("b1", 0.01, 6),
+    #     Real("b2", 0.01, 6),
+    #     Real("w", 0.01, 2),
+    # ],
+    # 'ReverseLearningPSO': [
+    #     Real("b1", 0.01, 6),
+    #     Real("b2", 0.01, 6),
+    #     Real("w", 0.01, 2),
+    # ],
+    # 'FAPSO': [
+    #     Real("c1", 0.01, 10),
+    #     Real("c2", 0.01, 10),
+    #     Real("w", 0.01, 10),
+    #     Integer("fractal_depth", 1, 5),
+    #     Real("convergence_threshold", 0.0001, 0.2),
+    # ],
+
+#     # Separate run
+#     'RRAPSO': [
+#     Real("c1", 0.01, 6),  # Cognitive coefficient
+#     Real("c2", 0.01, 6),  # Social coefficient
+#     Real("ac1", 0.01, 6),  # Adaptive cognitive coefficient
+#     Real("ac2", 0.01, 6),  # Adaptive social coefficient
+#     Real("base_inertia", 0.01, 1),  # Base inertia weight
+#     Real("min_inertia", 0.01, 1),  # Minimum inertia weight
+#     Real("max_inertia", 0.01, 1),  # Maximum inertia weight
+#     Real("rebel_fraction", 0.05, 0.8),  # Fraction of rebel particles
+#     Real("rejector_fraction", 0.05, 0.8),  # Fraction of rejector particles
+#     Integer("window_size", 10, 50),  # Window size for convergence
+#     # Real("perturbation_probability", 0.01, 1),  # Probability of perturbation
+#     # Real("perturbation_scale", 0.01, 1),  # Scale of perturbation
+#     Real("max_rebel_fraction", 0.1, 0.98),  # Max limit for rebel fraction
+#     Real("max_rejector_fraction", 0.1, 0.98),  # Max limit for a rejector fraction
+#     Real("diversity_threshold", 0.001, 0.3),  # Threshold for diversity
+#     Real("improvement_threshold", 0.0001, 0.1),  # Threshold for improvement rate
+# ],
 
 }
 
@@ -79,18 +203,27 @@ def target_runner(experiment: Experiment, scenario: Scenario) -> float:
     print(f"Running experiment with configuration: {experiment.configuration}")
     config = experiment.configuration
 
-    # Constraints check
-    if not (config["min_inertia"] < config["base_inertia"] < config["max_inertia"]):
-        print("Inertia constraints violated; applying penalty.")
-        return 3973
+    # # Constraints check
+    # if not (config["min_inertia"] < config["base_inertia"] < config["max_inertia"]):
+    #     print("Inertia constraints violated; applying penalty.")
+    #     return 3973
+    #
+    # if config["max_rebel_fraction"] < config["rebel_fraction"]:
+    #     print("Rebel fraction constraint violated; applying penalty.")
+    #     return 3973
+    #
+    # if config["max_rejector_fraction"] < config["rejector_fraction"]:
+    #     print("Rejector fraction constraint violated; applying penalty.")
+    #     return 3973
 
-    if config["max_rebel_fraction"] < config["rebel_fraction"]:
-        print("Rebel fraction constraint violated; applying penalty.")
-        return 3973
-
-    if config["max_rejector_fraction"] < config["rejector_fraction"]:
-        print("Rejector fraction constraint violated; applying penalty.")
-        return 3973
+    # if config["max_c1"]:
+    #     if config["max_c1"] < config["c1"]:
+    #         print("Rebel fraction constraint violated; applying penalty.")
+    #         return 3973
+    #
+    #     if config["max_c2"] < config["c2"]:
+    #         print("Rejector fraction constraint violated; applying penalty.")
+    #         return 3973
 
     results = []
     AlgorithmClass = globals()[current_algorithm]
