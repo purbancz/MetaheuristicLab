@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=bounce_irace_tune_PSO_hybird_batch1
+#SBATCH --job-name=bounce_irace_tune_PSO_hybird_batch2
 #SBATCH --output=%x_%j.out
 #SBATCH --error=%x_%j.err
 #SBATCH --time=72:00:00
@@ -25,7 +25,7 @@ echo "Job started at: $(date -d @$START_TIME)"
 echo "PYTHON SCRIPT IS BEING EXECUTED"
 export PYTHONPATH="$HOME/GA-PSO_Hybrid:$PYTHONPATH"
 #python -u $HOME/GA-PSO_Hybrid/main.py
-python -u $HOME/GA-PSO_Hybrid/optimization/irace_tune.py
+python -u $HOME/GA-PSO_Hybrid/optimization/irace_tune2.py
 echo "Tuning completed successfully."
 
 # Log end time
