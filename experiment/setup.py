@@ -23,7 +23,7 @@ from algorithm.SPPPSO import SPPPSO
 from algorithm.TDPSO import TDPSO
 from algorithm.hgbat import HGBat
 from algorithm.particles_with_roles import RebelPSO, RejectorPSO, RebelRejectorPSO, RRAPSO, ContrarianPSO, DefeatistPSO, \
-    ContrarianDefeatistPSO, EschewerPSO, EscapistPSO, EschewerEscapistPSO
+    ContrarianDefeatistPSO, EschewerPSO, EscapistPSO, EschewerEscapistPSO, CDAPSO, EEAPSO
 from algorithm.single_objective_PSO import SingleObjectivePSO
 
 from problem.fixed_varaibles.branin import BraninRCOC
@@ -100,6 +100,8 @@ def setup_experiment():
         'RejectorPSO': 'xkcd:dark indigo',
         'RebelRejectorPSO': 'xkcd:sienna',
         'RRAPSO': 'xkcd:violet',
+        'CDAPSO': 'xkcd:burgundy',
+        'EEAPSO': 'xkcd:orange',
         # 'GradientEnhancedPSO': 'xkcd:sunflower yellow',
         # 'LightningPSO': 'xkcd:grey blue',
         # 'QTPSO': 'xkcd:olive green',
@@ -431,6 +433,44 @@ def setup_experiment():
             # perturbation_scale=0.9648,
             max_rebel_fraction=0.9201,
             max_rejector_fraction=0.5860,
+            diversity_threshold=0.1205,
+            improvement_threshold=0.0567,
+            termination_criterion=StoppingByEvaluations(max_evaluations)
+        ),
+        'CDAPSO': lambda p: CDAPSO(  # clip rough tuning
+            problem=p,
+            swarm_size=solutions_size,
+            c1=0.5695,
+            c2=5.4892,
+            ac1=4.2746,
+            ac2=0.5587,
+            base_inertia=0.1050,
+            min_inertia=0.1220,
+            max_inertia=0.3423,
+            contrarian_fraction=0.0533,
+            defeatist_fraction=0.0799,
+            window_size=30,
+            max_contrarian_fraction=0.9201,
+            max_defeatist_fraction=0.5860,
+            diversity_threshold=0.1205,
+            improvement_threshold=0.0567,
+            termination_criterion=StoppingByEvaluations(max_evaluations)
+        ),
+        'EEAPSO': lambda p: EEAPSO(  # clip rough tuning
+            problem=p,
+            swarm_size=solutions_size,
+            c1=0.5695,
+            c2=5.4892,
+            ac1=4.2746,
+            ac2=0.5587,
+            base_inertia=0.1050,
+            min_inertia=0.1220,
+            max_inertia=0.3423,
+            eschewer_fraction=0.0533,
+            escapist_fraction=0.0799,
+            window_size=30,
+            max_eschewer_fraction=0.9201,
+            max_escapist_fraction=0.5860,
             diversity_threshold=0.1205,
             improvement_threshold=0.0567,
             termination_criterion=StoppingByEvaluations(max_evaluations)

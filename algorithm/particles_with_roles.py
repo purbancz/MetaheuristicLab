@@ -1,6 +1,6 @@
 import random
 from collections import deque
-from typing import List, TypeVar
+from typing import List, TypeVar, Dict
 
 import numpy as np
 from jmetal.core.problem import FloatProblem
@@ -37,6 +37,118 @@ class RoleMixin:
             return r * role_coefficient * (current - target)
         else:
             return r * normal_coefficient * (target - current)
+
+
+class AdaptiveRoleMixin:
+    def _init_adaptive(self,
+                       swarm_size: int,
+                       base_inertia: float,
+                       min_inertia: float,
+                       max_inertia: float,
+                       role_fractions: Dict[str, float],
+                       max_role_fractions: Dict[str, float],
+                       diversity_threshold: float,
+                       improvement_threshold: float,
+                       window_size: int):
+        # inertia params
+        self.base_inertia = base_inertia
+        self.min_inertia = min_inertia
+        self.max_inertia = max_inertia
+        self.w = base_inertia
+
+        # role fraction params
+        self.original_fractions = role_fractions.copy()
+        self.role_fractions = role_fractions
+        self.max_role_fractions = max_role_fractions
+
+        # scheduling thresholds
+        self.diversity_threshold = diversity_threshold
+        self.improvement_threshold = improvement_threshold
+        self.convergence_window = deque(maxlen=window_size)
+        self.window_size = window_size
+
+    def calculate_swarm_diversity(self, swarm: List) -> float:
+        pos = np.array([p.variables for p in swarm])
+        cen = pos.mean(axis=0)
+        return np.linalg.norm(pos - cen, axis=1).mean()
+
+    def calculate_improvement_rate(self) -> float:
+        val = self.best_global.objectives[0]
+        self.convergence_window.append(val)
+        if len(self.convergence_window) < 2:
+            return 0.0
+        initial, latest = self.convergence_window[0], self.convergence_window[-1]
+        return (initial - latest) / abs(initial) if abs(initial) > 1e-8 else 0.0
+
+    def adapt_parameters(self, swarm: List) -> None:
+        # adjust inertia
+        div = self.calculate_swarm_diversity(swarm)
+        if div < self.diversity_threshold:
+            self.w = min(self.max_inertia, self.w * 1.01)
+        else:
+            self.w = max(self.min_inertia, self.w * 0.99)
+
+        # adjust each role fraction
+        rate = self.calculate_improvement_rate()
+        for flag, orig in self.original_fractions.items():
+            maxf = self.max_role_fractions[flag]
+            if rate < self.improvement_threshold:
+                self.role_fractions[flag] = min(maxf,
+                                                self.role_fractions[flag] + 1 / self.swarm_size)
+            else:
+                self.role_fractions[flag] = max(orig,
+                                                self.role_fractions[flag] - 1 / self.swarm_size)
+
+        # re-mark the swarm according to new fractions
+        self._update_special_particles(swarm)
+
+    def _update_special_particles(self, swarm: List) -> None:
+        # ensure each role exactly matches its fraction
+        total = len(swarm)
+        for flag, frac in self.role_fractions.items():
+            desired = max(1, int(total * frac))
+            current = [p for p in swarm if p.attributes.get(flag, False)]
+            if len(current) < desired:
+                candidates = [p for p in swarm if not p.attributes.get(flag, False)]
+                for p in random.sample(candidates, desired - len(current)):
+                    p.attributes[flag] = True
+            elif len(current) > desired:
+                for p in random.sample(current, len(current) - desired):
+                    p.attributes[flag] = False
+
+
+class AdaptiveRolePSO(SingleObjectivePSO, AdaptiveRoleMixin, RoleMixin):
+    def __init__(self,
+                 problem, swarm_size,
+                 c1, c2, w,
+                 termination_criterion,
+                 base_inertia, min_inertia, max_inertia,
+                 role_fractions: Dict[str,float],
+                 max_role_fractions: Dict[str,float],
+                 diversity_threshold, improvement_threshold,
+                 window_size):
+        super().__init__(problem, swarm_size, c1, c2, w, termination_criterion)
+        self._init_adaptive(swarm_size,
+                            base_inertia, min_inertia, max_inertia,
+                            role_fractions, max_role_fractions,
+                            diversity_threshold, improvement_threshold,
+                            window_size)
+
+    def create_initial_solutions(self):
+        solutions = super().create_initial_solutions()
+        # initial marking from original fractions
+        for flag, frac in self.original_fractions.items():
+            self.mark(solutions, frac, flag)
+        return solutions
+
+    def update_velocity(self, swarm: List):
+        # adapt before updating
+        self.adapt_parameters(swarm)
+        # now call the standard velocity update of the parent
+        super().update_velocity(swarm)
+
+
+#######################################################
 
 
 class RebelPSO(SingleObjectivePSO, RoleMixin):
@@ -170,163 +282,63 @@ class RebelRejectorPSO(SingleObjectivePSO, RoleMixin):
         return "RebelRejectorPSO"
 
 
-class RRAPSO(RebelRejectorPSO):
-    """PSO with rebel and rejector particles and adaptive parameters"""
-
+class RRAPSO(RebelRejectorPSO, AdaptiveRoleMixin):
     def __init__(self,
                  problem: FloatProblem,
                  termination_criterion: TerminationCriterion,
                  swarm_size: int,
-                 c1: float,
-                 c2: float,
-                 ac1: float,
-                 ac2: float,
+                 c1: float, c2: float,
+                 ac1: float, ac2: float,
                  base_inertia: float,
                  min_inertia: float,
                  max_inertia: float,
                  rebel_fraction: float,
                  rejector_fraction: float,
                  window_size: int = 10,
-                 # perturbation_probability: float = 0.1,
-                 # perturbation_scale: float = 0.1,
                  max_rebel_fraction: float = 0.8,
                  max_rejector_fraction: float = 0.8,
                  diversity_threshold: float = 0.1,
                  improvement_threshold: float = 0.01):
-        # Initialize base using rebel and rejector fractions.
-        super().__init__(problem, swarm_size, c1, c2, ac1, ac2, base_inertia, rebel_fraction, rejector_fraction,
-                         termination_criterion)
-        # Adaptive parameters
-        self.base_inertia = base_inertia
-        self.min_inertia = min_inertia
-        self.max_inertia = max_inertia
-        self.w = base_inertia
-        self.max_rebel_fraction = max_rebel_fraction
-        self.max_rejector_fraction = max_rejector_fraction
-        self.original_rebel_fraction = rebel_fraction
-        self.original_rejector_fraction = rejector_fraction
-        self.diversity_threshold = diversity_threshold
-        self.improvement_threshold = improvement_threshold
-        # self.perturbation_probability = perturbation_probability
-        # self.perturbation_scale = perturbation_scale
-        self.window_size = window_size
-        self.convergence_window = deque(maxlen=self.window_size)
 
-    def _mark_special_particles(self, swarm: List[S]) -> None:
-        self.mark_particles(swarm, self.rebel_fraction, 'is_rebel')
-        self.mark_particles(swarm, self.rejector_fraction, 'is_rejector')
+        # 1) Initialize Rebel+Rejector behavior
+        RebelRejectorPSO.__init__(
+            self,
+            problem=problem,
+            swarm_size=swarm_size,
+            c1=c1,
+            c2=c2,
+            ac1=ac1,
+            ac2=ac2,
+            w=base_inertia,
+            rebel_fraction=rebel_fraction,
+            rejector_fraction=rejector_fraction,
+            termination_criterion=termination_criterion
+        )
 
-    def update_special_particles(self, swarm: List[S]) -> None:
-        """
-        Adjust the rebel and rejector properties for the swarm based on
-        self.rebel_fraction and self.rejector_fraction.
-        """
-        total_particles = len(swarm)
-
-        # Determine desired counts (ensuring at least one particle per type)
-        desired_num_rebels = max(1, int(total_particles * self.rebel_fraction))
-        desired_num_rejectors = max(1, int(total_particles * self.rejector_fraction))
-
-        # Get current particles with these properties
-        current_rebels = [p for p in swarm if p.attributes.get('is_rebel', False)]
-        current_rejectors = [p for p in swarm if p.attributes.get('is_rejector', False)]
-
-        # --- Adjust Rebel Particles ---
-        if len(current_rebels) < desired_num_rebels:
-            # Increase: Only assign to those that are not yet rebels.
-            non_rebels = [p for p in swarm if not p.attributes.get('is_rebel', False)]
-            num_to_assign = desired_num_rebels - len(current_rebels)
-            if non_rebels and num_to_assign > 0:
-                selected = random.sample(non_rebels, min(num_to_assign, len(non_rebels)))
-                for particle in selected:
-                    particle.attributes['is_rebel'] = True
-        elif len(current_rebels) > desired_num_rebels:
-            # Decrease: Remove rebel property randomly from those that currently are rebels.
-            num_to_remove = len(current_rebels) - desired_num_rebels
-            if current_rebels and num_to_remove > 0:
-                selected = random.sample(current_rebels, num_to_remove)
-                for particle in selected:
-                    particle.attributes['is_rebel'] = False
-
-        # --- Adjust Rejector Particles ---
-        if len(current_rejectors) < desired_num_rejectors:
-            # Increase: Only assign to those that are not yet rejectors.
-            non_rejectors = [p for p in swarm if not p.attributes.get('is_rejector', False)]
-            num_to_assign = desired_num_rejectors - len(current_rejectors)
-            if non_rejectors and num_to_assign > 0:
-                selected = random.sample(non_rejectors, min(num_to_assign, len(non_rejectors)))
-                for particle in selected:
-                    particle.attributes['is_rejector'] = True
-        elif len(current_rejectors) > desired_num_rejectors:
-            # Decrease: Remove rejector property randomly.
-            num_to_remove = len(current_rejectors) - desired_num_rejectors
-            if current_rejectors and num_to_remove > 0:
-                selected = random.sample(current_rejectors, num_to_remove)
-                for particle in selected:
-                    particle.attributes['is_rejector'] = False
-
-    def update_velocity(self, swarm: List[S]) -> None:
-        diversity = self.calculate_swarm_diversity(swarm)
-        self.adapt_parameters(diversity, swarm)
-        super().update_velocity(swarm)
-
-    def adapt_parameters(self, diversity: float, swarm: List[FloatSolution]) -> None:
-        if diversity < self.diversity_threshold:
-            self.w = min(self.max_inertia, self.w * 1.01)
-        else:
-            self.w = max(self.min_inertia, self.w * 0.99)
-
-        # Role adaptation: update ratios based on improvement rate
-        improvement_rate = self.calculate_improvement_rate()
-        if improvement_rate < self.improvement_threshold:
-            self.rebel_fraction = min(self.max_rebel_fraction, self.rebel_fraction + 1 / self.swarm_size)
-            self.rejector_fraction = min(self.max_rejector_fraction, self.rejector_fraction + 1 / self.swarm_size)
-        else:
-            self.rebel_fraction = max(self.original_rebel_fraction, self.rebel_fraction - 1 / self.swarm_size)
-            self.rejector_fraction = max(self.original_rejector_fraction,
-                                         self.rejector_fraction - 1 / self.swarm_size)
-
-        self.update_special_particles(swarm)
-
-    @staticmethod
-    def calculate_swarm_diversity(swarm) -> float:
-        """Measure population spread using mean pairwise distance"""
-        positions = np.array([p.variables for p in swarm])
-        centroid = np.mean(positions, axis=0)
-        return np.mean(np.linalg.norm(positions - centroid, axis=1))
-
-    def calculate_improvement_rate(self) -> float:
-        """Calculate relative fitness improvement over the last window_size iterations."""
-        self.convergence_window.append(self.best_global.objectives[0])
-
-        if len(self.convergence_window) < 2:
-            return 0.0
-
-        initial = self.convergence_window[0]
-        latest = self.convergence_window[-1]
-
-        epsilon = 1e-8
-        if abs(initial) < epsilon:
-            return 0.0
-
-        improvement_rate = (initial - latest) / abs(initial)
-        return improvement_rate
-
-    # def perturbation(self, swarm: List[S]) -> None:
-    #     """Chaotic perturbation for diversity maintenance with parameterized probability and scale."""
-    #     best = self.best_global.variables
-    #     for particle in swarm:
-    #         if random.random() < self.perturbation_probability * (1 - self.w):
-    #             noise = self.perturbation_scale * (self.max_inertia - self.w) * (np.random.rand() - 0.5)
-    #             particle.variables = [
-    #                 np.clip(x + noise * (x - best[i]),
-    #                         self.problem.lower_bound[i],
-    #                         self.problem.upper_bound[i])
-    #                 for i, x in enumerate(particle.variables)
-    #             ]
+        # 2) Initialize only the adaptive‐scheduler state
+        AdaptiveRoleMixin._init_adaptive(
+            self,
+            swarm_size=swarm_size,
+            base_inertia=base_inertia,
+            min_inertia=min_inertia,
+            max_inertia=max_inertia,
+            role_fractions={
+                'is_rebel':    rebel_fraction,
+                'is_rejector': rejector_fraction,
+            },
+            max_role_fractions={
+                'is_rebel':    max_rebel_fraction,
+                'is_rejector': max_rejector_fraction,
+            },
+            diversity_threshold=diversity_threshold,
+            improvement_threshold=improvement_threshold,
+            window_size=window_size
+        )
 
     def get_name(self) -> str:
         return "RRAPSO"
+
+
 
 
 #####################################
@@ -497,6 +509,66 @@ class ContrarianDefeatistPSO(WorstAwarePSO, RoleMixin):
         return "ContrarianDefeatistPSO"
 
 
+class CDAPSO(ContrarianDefeatistPSO, AdaptiveRoleMixin):
+    def __init__(self,
+                 problem: FloatProblem,
+                 termination_criterion: TerminationCriterion,
+                 swarm_size: int,
+                 c1: float,
+                 c2: float,
+                 ac1: float,
+                 ac2: float,
+                 base_inertia: float,
+                 min_inertia: float,
+                 max_inertia: float,
+                 contrarian_fraction: float,
+                 defeatist_fraction: float,
+                 window_size: int = 10,
+                 max_contrarian_fraction: float = 0.8,
+                 max_defeatist_fraction: float = 0.8,
+                 diversity_threshold: float = 0.1,
+                 improvement_threshold: float = 0.01):
+
+        # 1) Initialize the Contrarian+Defeatist behavior
+        ContrarianDefeatistPSO.__init__(
+            self,
+            problem=problem,
+            swarm_size=swarm_size,
+            c1=c1,
+            c2=c2,
+            ac1=ac1,
+            ac2=ac2,
+            w=base_inertia,
+            contrarian_fraction=contrarian_fraction,
+            defeatist_fraction=defeatist_fraction,
+            termination_criterion=termination_criterion
+        )
+
+        # 2) Initialize only the adaptive‑scheduler state
+        AdaptiveRoleMixin._init_adaptive(
+            self,
+            swarm_size=swarm_size,
+            base_inertia=base_inertia,
+            min_inertia=min_inertia,
+            max_inertia=max_inertia,
+            role_fractions={
+                'is_contrarian': contrarian_fraction,
+                'is_defeatist': defeatist_fraction,
+            },
+            max_role_fractions={
+                'is_contrarian': max_contrarian_fraction,
+                'is_defeatist': max_defeatist_fraction,
+            },
+            diversity_threshold=diversity_threshold,
+            improvement_threshold=improvement_threshold,
+            window_size=window_size
+        )
+
+    def get_name(self) -> str:
+        return "CDAPSO"
+
+
+
 #####################################
 # Worst aware roles
 # Positive
@@ -664,3 +736,62 @@ class EschewerEscapistPSO(WorstAwarePSO, RoleMixin):
 
     def get_name(self) -> str:
         return "EschewerEscapistPSO"
+
+
+class EEAPSO(EschewerEscapistPSO, AdaptiveRoleMixin):
+    def __init__(self,
+                 problem: FloatProblem,
+                 termination_criterion: TerminationCriterion,
+                 swarm_size: int,
+                 c1: float,
+                 c2: float,
+                 ac1: float,
+                 ac2: float,
+                 base_inertia: float,
+                 min_inertia: float,
+                 max_inertia: float,
+                 eschewer_fraction: float,
+                 escapist_fraction: float,
+                 window_size: int = 10,
+                 max_eschewer_fraction: float = 0.8,
+                 max_escapist_fraction: float = 0.8,
+                 diversity_threshold: float = 0.1,
+                 improvement_threshold: float = 0.01):
+
+        # 1) Initialize the Eschewer+Escapist behavior
+        EschewerEscapistPSO.__init__(
+            self,
+            problem=problem,
+            swarm_size=swarm_size,
+            c1=c1,
+            c2=c2,
+            ac1=ac1,
+            ac2=ac2,
+            w=base_inertia,
+            eschewer_fraction=eschewer_fraction,
+            escapist_fraction=escapist_fraction,
+            termination_criterion=termination_criterion
+        )
+
+        # 2) Initialize only the adaptive‑scheduler state
+        AdaptiveRoleMixin._init_adaptive(
+            self,
+            swarm_size=swarm_size,
+            base_inertia=base_inertia,
+            min_inertia=min_inertia,
+            max_inertia=max_inertia,
+            role_fractions={
+                'is_eschewer':  eschewer_fraction,
+                'is_escapist': escapist_fraction,
+            },
+            max_role_fractions={
+                'is_eschewer':  max_eschewer_fraction,
+                'is_escapist': max_escapist_fraction,
+            },
+            diversity_threshold=diversity_threshold,
+            improvement_threshold=improvement_threshold,
+            window_size=window_size
+        )
+
+    def get_name(self) -> str:
+        return "EEAPSO"
