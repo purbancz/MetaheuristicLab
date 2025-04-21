@@ -21,8 +21,9 @@ class WorstAwarePSO(SingleObjectivePSO):
                  c1: float,
                  c2: float,
                  w: float,
-                 termination_criterion: TerminationCriterion):
-        super().__init__(problem, swarm_size, c1, c2, w, termination_criterion)
+                 termination_criterion: TerminationCriterion,
+                 constraint_handling_mode: str = "clip"):
+        super().__init__(problem, swarm_size, c1, c2, w, termination_criterion, constraint_handling_mode)
         self.global_worst = None
 
     def create_initial_solutions(self) -> List[S]:
@@ -56,8 +57,9 @@ class ReverseLearningPSO(WorstAwarePSO):
                  b1: float,
                  b2: float,
                  w: float,
-                 termination_criterion: TerminationCriterion):
-        super().__init__(problem, swarm_size, b1, b2, w, termination_criterion)
+                 termination_criterion: TerminationCriterion,
+                 constraint_handling_mode: str = "clip"):
+        super().__init__(problem, swarm_size, b1, b2, w, termination_criterion, constraint_handling_mode)
 
     def update_velocity(self, swarm: List[S]) -> None:
         worst_global = np.array(self.global_worst.variables)

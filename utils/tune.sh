@@ -9,6 +9,7 @@
 #SBATCH --ntasks=4
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=1G
+#SBATCH --mail-type=END
 
 
 # Load modules and activate the conda environment
