@@ -191,36 +191,6 @@ class Mishra06(FloatProblem):
         return "Mishra N6"
 
 
-class Mishra07(FloatProblem):
-    """
-    Mishra 7 test objective function.
-    """
-    def __init__(self, dimensions=3):
-        super().__init__()
-        self.obj_directions = [self.MINIMIZE]
-        self.obj_labels = ["f(x)"]
-        self.lower_bound = np.full(dimensions, -10)
-        self.upper_bound = np.full(dimensions, 10)
-
-    def number_of_objectives(self) -> int:
-        return 1
-
-    def number_of_constraints(self) -> int:
-        return 0
-
-    def evaluate(self, solution: FloatSolution) -> FloatSolution:
-        try:
-            product_val = np.prod(solution.variables)
-            n_factorial = math.factorial(self.number_of_variables())
-            result = (product_val - n_factorial) ** 2
-        except OverflowError:
-            result = float('inf')
-        solution.objectives[0] = result
-        return solution
-
-    def name(self) -> str:
-        return "Mishra N7"
-
 
 class Mishra11(FloatProblem):
     """
