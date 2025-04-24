@@ -25,9 +25,7 @@ echo "Job started at: $(date -d @$START_TIME)"
 # Run the Python script
 echo "PYTHON SCRIPT IS BEING EXECUTED"
 export PYTHONPATH="$HOME/GA-PSO_Hybrid:$PYTHONPATH"
-#python -u $HOME/GA-PSO_Hybrid/main.py
 python -u $HOME/GA-PSO_Hybrid/optimization/irace_tune.py
-#python -u $HOME/GA-PSO_Hybrid/optimization/irace_tune2.py
 echo "Tuning completed successfully."
 
 # Log end time

@@ -11,9 +11,10 @@ from algorithm.single_objective_PSO import SingleObjectivePSO
 S = TypeVar('S')
 
 
-class GlobalAdaptivePSO(SingleObjectivePSO):
+class CoAdaptativePSO(SingleObjectivePSO):
     """
-    PSO with adaptive coefficients
+    CoAdaptativePSO
+    Common, Collective,
     """
 
     def __init__(self, problem: FloatProblem, swarm_size: int, c1: float, c2: float, max_c1: float, max_c2: float,
@@ -39,12 +40,13 @@ class GlobalAdaptivePSO(SingleObjectivePSO):
         super().step()
 
     def get_name(self) -> str:
-        return "GlobalAdaptivePSO"
+        return "CAPSO"
 
 
-class PersonalAdaptivePSO(SingleObjectivePSO):
+class IndividualAdaptivePSO(SingleObjectivePSO):
     """
-    PSO with adaptive coefficients
+    IndividualAdaptivePSO
+    Independently
     """
 
     def __init__(self, problem: FloatProblem, swarm_size: int, c1: float, c2: float, max_c1: float, max_c2: float,
@@ -92,4 +94,4 @@ class PersonalAdaptivePSO(SingleObjectivePSO):
         super().step()
 
     def get_name(self) -> str:
-        return "PersonalAdaptivePSO"
+        return "IAPSO"

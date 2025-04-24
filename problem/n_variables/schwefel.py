@@ -122,7 +122,7 @@ class SchwefelN22(FloatProblem):
         return solution
 
     def name(self) -> str:
-        return "Schwefel N2"
+        return "Schwefel N22"
 
 
 class SchwefelN6(FloatProblem):

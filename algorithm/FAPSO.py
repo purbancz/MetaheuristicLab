@@ -7,6 +7,7 @@ from algorithm.single_objective_PSO import SingleObjectivePSO
 class FAPSO(SingleObjectivePSO):
     """
     Fractal Adaptive PSO (FAPSO)
+    Fractal, Focus
     Concept: Uses fractal decomposition for hierarchical search
     Key Features:
       - Fractal Space Partitioning: Recursively divides search space

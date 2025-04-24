@@ -6,7 +6,7 @@ from jmetal.problem import Sphere, Srinivas
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
 
-from algorithm.AdaptivePSO import GlobalAdaptivePSO, PersonalAdaptivePSO
+from algorithm.AdaptivePSO import CoAdaptativePSO, IndividualAdaptivePSO
 from algorithm.DifferentialEvolution import DifferentialEvolution
 from algorithm.FAPSO import FAPSO
 from algorithm.GradientEnhancedPSO import GradientEnhancedPSO
@@ -48,7 +48,7 @@ from problem.n_variables.CEC import RotatedHighConditionedElliptic, RotatedBentC
     CompositionFunction3, CompositionFunction4, CompositionFunction5, CompositionFunction6, CompositionFunction7, \
     CompositionFunction8, ShiftedRotatedSchafferF7
 from problem.n_variables.ackley import Ackley
-from problem.n_variables.alpine import AlpineN1, AlpineN2
+from problem.n_variables.alpine import AlpineN1, AlpineN2, AlpineN2Max
 from problem.n_variables.bent_cigar import BentCigar
 from problem.n_variables.bird import Bird
 from problem.n_variables.cross import CrownedCross, CrossLeggedTable, Cross, GeneralizedCrossInTray
@@ -86,7 +86,7 @@ from problem.n_variables.zakharov import Zakharov
 
 def setup_experiment():
     no_of_runs = 50
-    number_of_variables = 100
+    number_of_variables = 1000
     solutions_size = 100
     max_evaluations = 25000
     frequency = solutions_size  # Snapshot each generation
@@ -120,8 +120,8 @@ def setup_experiment():
         'ContrarianDefeatistPSO': 'xkcd:dark navy',
         # 'DE': 'xkcd:goldenrod',
         # 'HybridPSODE': 'xkcd:turquoise',
-        'GlobalAdaptivePSO': 'xkcd:goldenrod',
-        'PersonalAdaptivePSO': 'xkcd:charcoal',
+        'CAPSO': 'xkcd:goldenrod',
+        'IAPSO': 'xkcd:charcoal',
         'EschewerPSO': 'xkcd:pea green',
         'EscapistPSO': 'xkcd:marine',
         'EschewerEscapistPSO': 'xkcd:dark magenta',
@@ -147,12 +147,13 @@ def setup_experiment():
         # ShiftedRotatedHappyCat(number_of_variables),
         # ShiftedRotatedHGBat(number_of_variables),
         # ShiftedRotatedSchafferF7(number_of_variables),
-        # ShiftedRotatedWeierstrass(number_of_variables),
+        ShiftedRotatedWeierstrass(number_of_variables), # too long
         # ShiftedRotatedExpandedGriewankPlusRosenbrock(number_of_variables),
         # ShiftedRotatedExpandedScafferF6(number_of_variables), #15
         # ##
         # AlpineN1(number_of_variables),
         # AlpineN2(number_of_variables),
+        # AlpineN2Max(number_of_variables),
         # BentCigar(number_of_variables),
         # Bird(number_of_variables),
         # CarromTable(number_of_variables),
@@ -185,32 +186,32 @@ def setup_experiment():
         # Mishra04(number_of_variables),
         # Mishra05(number_of_variables),
         # Mishra06(number_of_variables),
-        Mishra11(number_of_variables),
-        PenHolder(number_of_variables),
-        Plateau(number_of_variables),
-        Quartic(number_of_variables),
-        Rosenbrock(number_of_variables),
-        RosenbrockModified01(number_of_variables),
-        RosenbrockModified02(number_of_variables),
-        Salomon(number_of_variables),
-        SchwefelN20(number_of_variables),
-        SchwefelN21(number_of_variables),
-        SchwefelN22(number_of_variables),
-        SchwefelN26(number_of_variables),
-        SchwefelN36(number_of_variables),
-        SchwefelN6(number_of_variables),
-        ShubertN1(number_of_variables),
-        ShubertN3(number_of_variables),
-        ShubertN4(number_of_variables),
-        SineEnvelope(number_of_variables),
-        StepN1(number_of_variables),
-        StepN2(number_of_variables),
-        StepN3(number_of_variables),
-        Stochastic(number_of_variables),
-        StretchedV(number_of_variables),
-        StyblinskiTang(number_of_variables),
-        TestTubeHolder(number_of_variables),
-        Zakharov(number_of_variables),
+        # Mishra11(number_of_variables),
+        # PenHolder(number_of_variables),
+        # Plateau(number_of_variables),
+        # Quartic(number_of_variables),
+        # Rosenbrock(number_of_variables),
+        # RosenbrockModified01(number_of_variables),
+        # RosenbrockModified02(number_of_variables),
+        # Salomon(number_of_variables),
+        # SchwefelN20(number_of_variables),
+        # SchwefelN21(number_of_variables),
+        # SchwefelN22(number_of_variables),
+        # SchwefelN26(number_of_variables),
+        # SchwefelN36(number_of_variables),
+        # SchwefelN6(number_of_variables),
+        # ShubertN1(number_of_variables),
+        # ShubertN3(number_of_variables),
+        # ShubertN4(number_of_variables),
+        # SineEnvelope(number_of_variables),
+        # StepN1(number_of_variables),
+        # StepN2(number_of_variables),
+        # StepN3(number_of_variables),
+        # Stochastic(number_of_variables),
+        # StretchedV(number_of_variables),
+        # StyblinskiTang(number_of_variables),
+        # TestTubeHolder(number_of_variables),
+        # Zakharov(number_of_variables),
 
         # HybridFunction1(number_of_variables),
         # HybridFunction2(number_of_variables),
@@ -492,7 +493,7 @@ def setup_experiment():
             termination_criterion=StoppingByEvaluations(max_evaluations)
         ),
         ## Adaptive algorithms
-        'GlobalAdaptivePSO': lambda p: GlobalAdaptivePSO(  # clip rough tuning
+        'CAPSO': lambda p: CoAdaptativePSO(  # clip rough tuning
             problem=p,
             swarm_size=solutions_size,
             c1=0.2853,
@@ -502,7 +503,7 @@ def setup_experiment():
             w=0.0355,
             termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
         ),
-        'PersonalAdaptivePSO': lambda p: PersonalAdaptivePSO(  # clip rough tuning
+        'IAPSO': lambda p: IndividualAdaptivePSO(  # clip rough tuning
             problem=p,
             swarm_size=solutions_size,
             c1=0.2412,

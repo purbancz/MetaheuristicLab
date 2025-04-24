@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=PSO_hybrid_100dim_bonus_benchmarks
+#SBATCH --job-name=PSO_Shifted_Rotated_Weierstrass_1000dim
 #SBATCH --output=%x_%j.out
 #SBATCH --error=%x_%j.err
 #SBATCH --time=72:00:00
