@@ -492,38 +492,38 @@ def setup_experiment():
             improvement_threshold=0.0733,
             termination_criterion=StoppingByEvaluations(max_evaluations)
         ),
-        ## Adaptive algorithms
-        'CAPSO': lambda p: CoAdaptativePSO(  # clip rough tuning
-            problem=p,
-            swarm_size=solutions_size,
-            c1=0.2853,
-            c2=4.6565,
-            max_c1=5.8463,
-            max_c2=9.5588,
-            w=0.0355,
-            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        ),
-        'IAPSO': lambda p: IndividualAdaptivePSO(  # clip rough tuning
-            problem=p,
-            swarm_size=solutions_size,
-            c1=0.2412,
-            c2=3.9367,
-            max_c1=4.8349,
-            max_c2=6.4719,
-            w=0.0983,
-            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        ),
-        ### Other
-        'FAPSO': lambda p: FAPSO(  # clip rough tuning
-            problem=p,
-            swarm_size=solutions_size,
-            c1=0.2400,
-            c2=5.3089,
-            w=0.0818,
-            fractal_depth=4,
-            convergence_threshold=0.0266,
-            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        ),
+        # ## Adaptive algorithms
+        # 'CAPSO': lambda p: CoAdaptativePSO(  # clip rough tuning
+        #     problem=p,
+        #     swarm_size=solutions_size,
+        #     c1=0.2853,
+        #     c2=4.6565,
+        #     max_c1=5.8463,
+        #     max_c2=9.5588,
+        #     w=0.0355,
+        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        # ),
+        # 'IAPSO': lambda p: IndividualAdaptivePSO(  # clip rough tuning
+        #     problem=p,
+        #     swarm_size=solutions_size,
+        #     c1=0.2412,
+        #     c2=3.9367,
+        #     max_c1=4.8349,
+        #     max_c2=6.4719,
+        #     w=0.0983,
+        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        # ),
+        # ### Other
+        # 'FAPSO': lambda p: FAPSO(  # clip rough tuning
+        #     problem=p,
+        #     swarm_size=solutions_size,
+        #     c1=0.2400,
+        #     c2=5.3089,
+        #     w=0.0818,
+        #     fractal_depth=4,
+        #     convergence_threshold=0.0266,
+        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        # ),
         ## Not mine
         # 'DCS-PSO': lambda p: DCSPSO(  # clip rough tuning
         #     problem=p,
@@ -579,7 +579,8 @@ def setup_experiment():
         'All without all reverse learning': ['RebelPSO', 'RejectorPSO', 'RebelRejectorPSO', 'RRAPSO',
                                              'ContrarianPSO', 'DefeatistPSO', 'ContrarianDefeatistPSO', 'CDAPSO',
                                              'EschewerPSO', 'EscapistPSO', 'EschewerEscapistPSO', 'EEAPSO',
-                                             'CAPSO', 'IAPSO', 'FAPSO'],
+                                             # 'CAPSO', 'IAPSO', 'FAPSO'
+                                             ],
         # 'All without all reverse learning, FAPSO and RRAPSO': ['RebelPSO', 'RejectorPSO', 'RebelRejectorPSO',
         #                                                 'ContrarianPSO', 'DefeatistPSO', 'ContrarianDefeatistPSO',
         #                                                 'EschewerPSO', 'EscapistPSO', 'EschewerEscapistPSO',

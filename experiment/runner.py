@@ -41,6 +41,11 @@ def run_all_experiments():
                 writer.writerow([name, problem.name(), problem.number_of_variables(), no_of_runs, avg_fitness,
                                  std_dev, avg_time])
 
+                with open(
+                        f'{dimensions_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{name}_{problem.name()}_dim{number_of_variables}_runs{no_of_runs}_experiment_data.pkl',
+                        'wb') as f:
+                    pickle.dump(problem_data, f)
+
             all_data.append(problem_data)
 
             # plot results
