@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=PSO_Shifted_Rotated_Weierstrass_1000dim_without_adaptive
+#SBATCH --job-name=PSO_Shifted_Rotated_Weierstrass_1000dim_adaptive
 #SBATCH --output=%x_%j.out
 #SBATCH --error=%x_%j.err
 #SBATCH --time=72:00:00
