@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=HybridFullDisjointPSO_irace_tune
+#SBATCH --job-name=HybridAdditivePSO_irace_tune
 #SBATCH --output=%x_%j.out
 #SBATCH --error=%x_%j.err
 #SBATCH --time=12:00:00
