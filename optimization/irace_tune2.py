@@ -200,7 +200,7 @@ parameter_spaces = {
         Real("eschewer_fraction", 0.01, 0.78),
         # --- Social sum constraint handled in runner ---
         # Behavior Flags
-        Bool("assign_roles_every_iteration"),
+        # Bool("assign_roles_every_iteration"),
     ],
     'HybridFullDisjointPSO': [  # Assuming the version with individual fraction parameters
         # Core PSO Params
@@ -224,7 +224,7 @@ parameter_spaces = {
         Real("eschewer_fraction", 0.01, 0.75),
         # --- Sum constraint (sum <= 1.0) handled in runner ---
         # Behavior Flags
-        Bool("assign_roles_every_iteration"),
+        # Bool("assign_roles_every_iteration"),
     ],
     # 'HybridAdditivePSO': [ # Assuming the version with default-to-standard logic
     #     # Core PSO Params
