@@ -44,16 +44,28 @@ def process_file(filepath):
 
             df_top10 = df.head(10)
             param_columns = [col for col in df_top10.columns if col != "average_objective"]
-            txt_lines = []
-            txt_lines.append(f"'{alg_name}': [")
+            txt_lines = [f"'{alg_name}': ["]
+
             for param in param_columns:
-                values = df_top10[param]
-                p_min = values.min()
-                p_max = values.max()
-                p_range = p_max - p_min
-                new_lower = p_min - 0.1 * p_range
-                new_upper = p_max + 0.1 * p_range
-                txt_lines.append(f'    Real("{param}", {new_lower:.5f}, {new_upper:.5f}),')
+                if df_top10[param].dtype == bool:
+                    # For boolean parameters, just declare as Bool without range
+                    txt_lines.append(f'    Bool("{param}"),')
+                else:
+                    values = df_top10[param]
+                    p_min = values.min()
+                    p_max = values.max()
+                    p_range = p_max - p_min
+                    new_lower = p_min - 0.1 * p_range
+                    new_upper = p_max + 0.1 * p_range
+
+                    # Handle integer values separately
+                    if pd.api.types.is_integer_dtype(values):
+                        new_lower = int(max(round(new_lower), values.min()))
+                        new_upper = int(min(round(new_upper), values.max()))
+                        txt_lines.append(f'    Integer("{param}", {new_lower}, {new_upper}),')
+                    else:
+                        txt_lines.append(f'    Real("{param}", {new_lower:.5f}, {new_upper:.5f}),')
+
             txt_lines.append("],")
             result_txt = "\n".join(txt_lines)
 

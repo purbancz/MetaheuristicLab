@@ -681,7 +681,7 @@ class HybridAdditivePSO(WorstAwarePSO, RoleMixin):
         if self.assign_flags_every_iteration:
             self._assign_role_flags_to_swarm(self.solutions)
 
-        self.update_velocity(self.solutions) # <--- Logic change is inside here
+        self.update_velocity(self.solutions)
         self.update_position(self.solutions)
         self.perturbation(self.solutions)
         self.solutions = self.evaluate(self.solutions)
@@ -726,7 +726,6 @@ class HybridAdditivePSO(WorstAwarePSO, RoleMixin):
             p_best = np.array(attrs['best_position'])
             p_worst = np.array(attrs['worst_position'])
 
-            # Initialize cumulative influence vectors
             cognitive_component = np.zeros_like(current)
             social_component = np.zeros_like(current)
             # Separate random factors per potential component
@@ -778,7 +777,6 @@ class HybridAdditivePSO(WorstAwarePSO, RoleMixin):
                 social_component += coeff * rand_factors['is_std_social'] * (g_best - current)
 
 
-            # --- Update Velocity ---
             new_velocity = self.w * velocity + cognitive_component + social_component
             particle.attributes['velocity'] = new_velocity.tolist()
 
