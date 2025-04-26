@@ -7,6 +7,7 @@ from jmetal.problem import Sphere
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
 
+from algorithm.hybrid_diverse import HybridPartialDisjointPSO, HybridFullDisjointPSO, HybridAdditivePSO
 from algorithm.AdaptivePSO import CoAdaptativePSO, IndividualAdaptivePSO
 from algorithm.WAPSO import ReverseLearningGlobalAttractorPSO, CombinedLearningPSO, ReverseLearningPersonalAttractorPSO, \
     ReverseLearningPSO
@@ -18,7 +19,7 @@ from algorithm.NPSO import NPSO
 from algorithm.QTPSO import QTPSO
 from algorithm.SPPPSO import SPPPSO
 from algorithm.TDPSO import TDPSO
-from irace import irace, ParameterSpace, Scenario, Experiment, Real, Integer
+from irace import irace, ParameterSpace, Scenario, Experiment, Real, Integer, Bool
 import rpy2.robjects as robjects
 
 from problem.n_variables.ackley import Ackley
@@ -176,22 +177,80 @@ parameter_spaces = {
     # ],
 
 #     # Separate run
-'EEAPSO': [
-    Real("c1", 0.01, 6),  # Cognitive coefficient
-    Real("c2", 0.01, 6),  # Social coefficient
-    Real("ac1", 0.01, 6),  # Adaptive cognitive coefficient
-    Real("ac2", 0.01, 6),  # Adaptive social coefficient
-    Real("base_inertia", 0.01, 1),  # Base inertia weight
-    Real("min_inertia", 0.01, 1),  # Minimum inertia weight
-    Real("max_inertia", 0.01, 1),  # Maximum inertia weight
-    Real("eschewer_fraction", 0.05, 0.8),  # Fraction of rebel particles
-    Real("escapist_fraction", 0.05, 0.8),  # Fraction of rejector particles
-    Integer("window_size", 10, 50),  # Window size for convergence
-    Real("max_eschewer_fraction", 0.1, 0.98),  # Max limit for rebel fraction
-    Real("max_escapist_fraction", 0.1, 0.98),  # Max limit for a rejector fraction
-    Real("diversity_threshold", 0.001, 0.3),  # Threshold for diversity
-    Real("improvement_threshold", 0.0001, 0.1),  # Threshold for improvement rate
-],
+    'HybridPartialDisjointPSO': [
+        # Core PSO Params
+        Real("w", 0.01, 1.0),               # Inertia weight
+        Real("c1", 0.01, 6.0),             # Standard cognitive coefficient
+        Real("c2", 0.01, 6.0),             # Standard social coefficient
+        # Special Role Coefficients
+        Real("rejector_c", 0.01, 6.0),
+        Real("defeatist_c", 0.01, 6.0),
+        Real("escapist_c", 0.01, 6.0),
+        Real("rebel_c", 0.01, 6.0),
+        Real("contrarian_c", 0.01, 6.0),
+        Real("eschewer_c", 0.01, 6.0),
+        # Special Role Fractions (Require normalization in target-runner)
+        # Range [0.0, 1.0] allows exploring full range, normalization ensures validity.
+        Real("rejector_fraction", 0.01, 0.78), # Max value should allow sum > 1 before normalization
+        Real("defeatist_fraction", 0.01, 0.78),
+        Real("escapist_fraction", 0.01, 0.78),
+        # --- Cognitive sum constraint handled in runner ---
+        Real("rebel_fraction", 0.01, 0.78),
+        Real("contrarian_fraction", 0.01, 0.78),
+        Real("eschewer_fraction", 0.01, 0.78),
+        # --- Social sum constraint handled in runner ---
+        # Behavior Flags
+        Bool("assign_roles_every_iteration"),
+    ],
+
+    # 'HybridFullDisjointPSO': [ # Assuming the version with individual fraction parameters
+    #     # Core PSO Params
+    #     Real("w", 0.1, 1.0),               # Inertia weight
+    #     Real("c1", 0.01, 5.0),             # Standard cognitive coefficient (used if role is 'std_cognitive')
+    #     Real("c2", 0.01, 5.0),             # Standard social coefficient (used if role is 'std_social')
+    #     # Special Role Coefficients
+    #     Real("rejector_c", 0.01, 5.0),
+    #     Real("defeatist_c", 0.01, 5.0),
+    #     Real("escapist_c", 0.01, 5.0),
+    #     Real("rebel_c", 0.01, 5.0),
+    #     Real("contrarian_c", 0.01, 5.0),
+    #     Real("eschewer_c", 0.01, 5.0),
+    #     # Special Role Fractions (Require normalization in target-runner)
+    #     # Range [0.0, 1.0] allows exploring full range, normalization ensures sum <= 1.
+    #     Real("rejector_fraction", 0.0, 1.0),
+    #     Real("defeatist_fraction", 0.0, 1.0),
+    #     Real("escapist_fraction", 0.0, 1.0),
+    #     Real("rebel_fraction", 0.0, 1.0),
+    #     Real("contrarian_fraction", 0.0, 1.0),
+    #     Real("eschewer_fraction", 0.0, 1.0),
+    #     # --- Sum constraint (sum <= 1.0) handled in runner ---
+    #     # Behavior Flags
+    #     Bool("assign_roles_every_iteration"),
+    # ],
+    # 'HybridAdditivePSO': [ # Assuming the version with default-to-standard logic
+    #     # Core PSO Params
+    #     Real("w", 0.1, 1.0),               # Inertia weight
+    #     Real("c1", 0.01, 5.0),             # Standard cognitive coefficient
+    #     Real("c2", 0.01, 5.0),             # Standard social coefficient
+    #     # Special Role Coefficients
+    #     Real("rejector_c", 0.01, 5.0),
+    #     Real("defeatist_c", 0.01, 5.0),
+    #     Real("escapist_c", 0.01, 5.0),
+    #     Real("rebel_c", 0.01, 5.0),
+    #     Real("contrarian_c", 0.01, 5.0),
+    #     Real("eschewer_c", 0.01, 5.0),
+    #     # Role Activation Probabilities (Independent)
+    #     Real("std_cognitive_prob", 0.01, 1.0), # Prob of activating std cognitive explicitly
+    #     Real("rejector_prob", 0.01, 1.0),
+    #     Real("defeatist_prob", 0.01, 1.0),
+    #     Real("escapist_prob", 0.01, 1.0),
+    #     Real("std_social_prob", 0.01, 1.0),    # Prob of activating std social explicitly
+    #     Real("rebel_prob", 0.01, 1.0),
+    #     Real("contrarian_prob", 0.01, 1.0),
+    #     Real("eschewer_prob", 0.01, 1.0),
+    #     # Behavior Flags
+    #     Bool("assign_flags_every_iteration"),
+    # ],
 
 }
 
@@ -201,17 +260,35 @@ def target_runner(experiment: Experiment, scenario: Scenario) -> float:
     print(f"Running experiment with configuration: {experiment.configuration}")
     config = experiment.configuration
 
+    # # --- Cognitive Normalization ---
+    # cog_fractions = {
+    #     "rejector": config["rejector_fraction"],
+    #     "defeatist": config["defeatist_fraction"],
+    #     "escapist": config["escapist_fraction"],
+    # }
+    # sum_cog = sum(cog_fractions.values())
+    # if sum_cog > 1.0:  # Normalize if sum exceeds 1.0
+    #     for role in cog_fractions: cog_fractions[role] /= sum_cog
+    # # else: use original fractions (sum <= 1.0)
+    #
+    # # --- Social Normalization ---
+    # soc_fractions = {
+    #     "rebel": config["rebel_fraction"],
+    #     "contrarian": config["contrarian_fraction"],
+    #     "eschewer": config["eschewer_fraction"],
+    # }
+    # sum_soc = sum(soc_fractions.values())
+    # if sum_soc > 1.0:  # Normalize if sum exceeds 1.0
+    #     for role in soc_fractions: soc_fractions[role] /= sum_soc
+    # # else: use original fractions (sum <= 1.0)
+
     # Constraints check
-    if not (config["min_inertia"] < config["base_inertia"] < config["max_inertia"]):
+    if config["rejector_fraction"] + config["defeatist_fraction"] + config["escapist_fraction"] > 0.8:
         print("Inertia constraints violated; applying penalty.")
         return 3973
 
-    if config["max_eschewer_fraction"] < config["eschewer_fraction"]:
-        print("Rebel fraction constraint violated; applying penalty.")
-        return 3973
-
-    if config["max_escapist_fraction"] < config["escapist_fraction"]:
-        print("Rejector fraction constraint violated; applying penalty.")
+    if config["rebel_fraction"] + config["contrarian_fraction"] + config["eschewer_fraction"] > 0.8:
+        print("Inertia constraints violated; applying penalty.")
         return 3973
 
     # if config["max_c1"]:
