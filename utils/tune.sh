@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=HybridPartialDisjointPSO_irace_tune
+#SBATCH --job-name=HybridFullDisjointPSO_irace_tune
 #SBATCH --output=%x_%j.out
 #SBATCH --error=%x_%j.err
 #SBATCH --time=12:00:00
@@ -9,7 +9,7 @@
 #SBATCH --ntasks=4
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=1G
-#SBATCH --mail-type=END
+#SBATCH --mail-type=ALL
 
 
 # Load modules and activate the conda environment

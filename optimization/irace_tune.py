@@ -24,13 +24,11 @@ import rpy2.robjects as robjects
 
 from problem.n_variables.ackley import Ackley
 
-
 os.environ["LANG"] = "en_US.UTF-8"
 os.environ["LC_ALL"] = "en_US.UTF-8"
 os.environ["R_DEFAULT_ENCODING"] = "UTF-8"
 robjects.r('Sys.setlocale("LC_ALL", "en_US.UTF-8")')
 # robjects.r('library(iraceplot)')
-
 
 
 # number_of_variables = 10
@@ -43,8 +41,8 @@ robjects.r('Sys.setlocale("LC_ALL", "en_US.UTF-8")')
 number_of_variables = 100
 solutions_size = 100
 max_evaluations = 25000
-num_runs = 5   # Number of independent runs per problem
-budget = 1000    # Total number of configurations to try per parameter
+num_runs = 5  # Number of independent runs per problem
+budget = 1000  # Total number of configurations to try per parameter
 
 problems = [
     Sphere(number_of_variables),
@@ -176,12 +174,37 @@ parameter_spaces = {
     #     Real("convergence_threshold", 0.0001, 0.2),
     # ],
 
-#     # Separate run
-    'HybridPartialDisjointPSO': [
+    #     # Separate run
+    # 'HybridPartialDisjointPSO': [
+    #     # Core PSO Params
+    #     Real("w", 0.01, 1.0),  # Inertia weight
+    #     Real("c1", 0.01, 6.0),  # Standard cognitive coefficient
+    #     Real("c2", 0.01, 6.0),  # Standard social coefficient
+    #     # Special Role Coefficients
+    #     Real("rejector_c", 0.01, 6.0),
+    #     Real("defeatist_c", 0.01, 6.0),
+    #     Real("escapist_c", 0.01, 6.0),
+    #     Real("rebel_c", 0.01, 6.0),
+    #     Real("contrarian_c", 0.01, 6.0),
+    #     Real("eschewer_c", 0.01, 6.0),
+    #     # Special Role Fractions (Require normalization in target-runner)
+    #     # Range [0.0, 1.0] allows exploring full range, normalization ensures validity.
+    #     Real("rejector_fraction", 0.01, 0.78),  # Max value should allow sum > 1 before normalization
+    #     Real("defeatist_fraction", 0.01, 0.78),
+    #     Real("escapist_fraction", 0.01, 0.78),
+    #     # --- Cognitive sum constraint handled in runner ---
+    #     Real("rebel_fraction", 0.01, 0.78),
+    #     Real("contrarian_fraction", 0.01, 0.78),
+    #     Real("eschewer_fraction", 0.01, 0.78),
+    #     # --- Social sum constraint handled in runner ---
+    #     # Behavior Flags
+    #     Bool("assign_roles_every_iteration"),
+    # ],
+    'HybridFullDisjointPSO': [  # Assuming the version with individual fraction parameters
         # Core PSO Params
-        Real("w", 0.01, 1.0),               # Inertia weight
-        Real("c1", 0.01, 6.0),             # Standard cognitive coefficient
-        Real("c2", 0.01, 6.0),             # Standard social coefficient
+        Real("w", 0.01, 1.0),  # Inertia weight
+        Real("c1", 0.01, 6.0),  # Standard cognitive coefficient (used if role is 'std_cognitive')
+        Real("c2", 0.01, 6.0),  # Standard social coefficient (used if role is 'std_social')
         # Special Role Coefficients
         Real("rejector_c", 0.01, 6.0),
         Real("defeatist_c", 0.01, 6.0),
@@ -190,43 +213,17 @@ parameter_spaces = {
         Real("contrarian_c", 0.01, 6.0),
         Real("eschewer_c", 0.01, 6.0),
         # Special Role Fractions (Require normalization in target-runner)
-        # Range [0.0, 1.0] allows exploring full range, normalization ensures validity.
-        Real("rejector_fraction", 0.01, 0.78), # Max value should allow sum > 1 before normalization
-        Real("defeatist_fraction", 0.01, 0.78),
-        Real("escapist_fraction", 0.01, 0.78),
-        # --- Cognitive sum constraint handled in runner ---
-        Real("rebel_fraction", 0.01, 0.78),
-        Real("contrarian_fraction", 0.01, 0.78),
-        Real("eschewer_fraction", 0.01, 0.78),
-        # --- Social sum constraint handled in runner ---
+        # Range [0.0, 1.0] allows exploring full range, normalization ensures sum <= 1.
+        Real("rejector_fraction", 0.01, 0.75),
+        Real("defeatist_fraction", 0.01, 0.75),
+        Real("escapist_fraction", 0.01, 0.75),
+        Real("rebel_fraction", 0.01, 0.75),
+        Real("contrarian_fraction", 0.01, 0.75),
+        Real("eschewer_fraction", 0.01, 0.75),
+        # --- Sum constraint (sum <= 1.0) handled in runner ---
         # Behavior Flags
         Bool("assign_roles_every_iteration"),
     ],
-
-    # 'HybridFullDisjointPSO': [ # Assuming the version with individual fraction parameters
-    #     # Core PSO Params
-    #     Real("w", 0.1, 1.0),               # Inertia weight
-    #     Real("c1", 0.01, 5.0),             # Standard cognitive coefficient (used if role is 'std_cognitive')
-    #     Real("c2", 0.01, 5.0),             # Standard social coefficient (used if role is 'std_social')
-    #     # Special Role Coefficients
-    #     Real("rejector_c", 0.01, 5.0),
-    #     Real("defeatist_c", 0.01, 5.0),
-    #     Real("escapist_c", 0.01, 5.0),
-    #     Real("rebel_c", 0.01, 5.0),
-    #     Real("contrarian_c", 0.01, 5.0),
-    #     Real("eschewer_c", 0.01, 5.0),
-    #     # Special Role Fractions (Require normalization in target-runner)
-    #     # Range [0.0, 1.0] allows exploring full range, normalization ensures sum <= 1.
-    #     Real("rejector_fraction", 0.0, 1.0),
-    #     Real("defeatist_fraction", 0.0, 1.0),
-    #     Real("escapist_fraction", 0.0, 1.0),
-    #     Real("rebel_fraction", 0.0, 1.0),
-    #     Real("contrarian_fraction", 0.0, 1.0),
-    #     Real("eschewer_fraction", 0.0, 1.0),
-    #     # --- Sum constraint (sum <= 1.0) handled in runner ---
-    #     # Behavior Flags
-    #     Bool("assign_roles_every_iteration"),
-    # ],
     # 'HybridAdditivePSO': [ # Assuming the version with default-to-standard logic
     #     # Core PSO Params
     #     Real("w", 0.1, 1.0),               # Inertia weight
@@ -256,6 +253,7 @@ parameter_spaces = {
 
 current_algorithm = None
 
+
 def target_runner(experiment: Experiment, scenario: Scenario) -> float:
     print(f"Running experiment with configuration: {experiment.configuration}")
     config = experiment.configuration
@@ -283,11 +281,8 @@ def target_runner(experiment: Experiment, scenario: Scenario) -> float:
     # # else: use original fractions (sum <= 1.0)
 
     # Constraints check
-    if config["rejector_fraction"] + config["defeatist_fraction"] + config["escapist_fraction"] > 0.8:
-        print("Inertia constraints violated; applying penalty.")
-        return 3973
-
-    if config["rebel_fraction"] + config["contrarian_fraction"] + config["eschewer_fraction"] > 0.8:
+    if config["rejector_fraction"] + config["defeatist_fraction"] + config["escapist_fraction"] + config[
+        "rebel_fraction"] + config["contrarian_fraction"] + config["eschewer_fraction"] > 0.8:
         print("Inertia constraints violated; applying penalty.")
         return 3973
 
@@ -316,6 +311,7 @@ def target_runner(experiment: Experiment, scenario: Scenario) -> float:
     avg_result = np.mean(results)
     print(f"Evaluated config: {config} with average objective: {avg_result}")
     return avg_result
+
 
 if __name__ == "__main__":
     best_configurations = {}
