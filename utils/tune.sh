@@ -1,9 +1,9 @@
 #!/bin/bash
-#SBATCH --job-name=HybridAdditivePSO_irace_tune
+#SBATCH --job-name=Hybrid_with_constraints_irace_tune
 #SBATCH --output=%x_%j.out
 #SBATCH --error=%x_%j.err
-#SBATCH --time=12:00:00
-#SBATCH --partition=plgrid-now
+#SBATCH --time=24:00:00
+#SBATCH --partition=plgrid
 #SBATCH --account=plglscclass24-cpu
 #SBATCH --nodes=1
 #SBATCH --ntasks=4
