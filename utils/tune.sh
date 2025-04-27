@@ -1,14 +1,14 @@
 #!/bin/bash
-#SBATCH --job-name=Hybrid_with_constraints_False_irace_tune
+#SBATCH --job-name=Plain_with_constraints_False_irace_tune
 #SBATCH --output=%x_%j.out
 #SBATCH --error=%x_%j.err
-#SBATCH --time=20:00:00
-#SBATCH --partition=plgrid
+#SBATCH --time=12:00:00
+#SBATCH --partition=plgrid-now
 #SBATCH --account=plglscclass24-cpu
 #SBATCH --nodes=1
-#SBATCH --ntasks=4
-#SBATCH --cpus-per-task=4
-#SBATCH --mem=1G
+#SBATCH --ntasks=64
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=2G
 #SBATCH --mail-type=ALL
 
 
@@ -25,7 +25,7 @@ echo "Job started at: $(date -d @$START_TIME)"
 # Run the Python script
 echo "PYTHON SCRIPT IS BEING EXECUTED"
 export PYTHONPATH="$HOME/GA-PSO_Hybrid:$PYTHONPATH"
-python -u $HOME/GA-PSO_Hybrid/optimization/irace_tune2.py
+python -u $HOME/GA-PSO_Hybrid/optimization/irace_tune3.py
 echo "Tuning completed successfully."
 
 # Log end time

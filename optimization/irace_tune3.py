@@ -54,20 +54,6 @@ problems = [
 
 parameter_spaces = {
     # constraints batch
-    'CoAdaptativePSO': [
-        Real("c1", 0.01, 6),
-        Real("c2", 0.01, 6),
-        Real("max_c1", 4, 20),
-        Real("max_c2", 4, 20),
-        Real("w", 0.01, 2),
-    ],
-    'IndividualAdaptivePSO': [
-        Real("c1", 0.01, 6),
-        Real("c2", 0.01, 6),
-        Real("max_c1", 4, 20),
-        Real("max_c2", 4, 20),
-        Real("w", 0.01, 2),
-    ],
     'EEAPSO': [
         Real("c1", 0.01, 6),  # Cognitive coefficient
         Real("c2", 0.01, 6),  # Social coefficient
@@ -115,6 +101,20 @@ parameter_spaces = {
         Real("max_rejector_fraction", 0.1, 0.98),
         Real("diversity_threshold", 0.001, 0.3),
         Real("improvement_threshold", 0.0001, 0.1),
+    ],
+    'CoAdaptativePSO': [
+        Real("c1", 0.01, 6),
+        Real("c2", 0.01, 6),
+        Real("max_c1", 4, 20),
+        Real("max_c2", 4, 20),
+        Real("w", 0.01, 2),
+    ],
+    'IndividualAdaptivePSO': [
+        Real("c1", 0.01, 6),
+        Real("c2", 0.01, 6),
+        Real("max_c1", 4, 20),
+        Real("max_c2", 4, 20),
+        Real("w", 0.01, 2),
     ],
 
     # #     # Separate run
@@ -395,7 +395,7 @@ if __name__ == "__main__":
         print(f"Optimizing parameters for {algo_name} ...")
 
         parameter_space = ParameterSpace(params=space_list)
-        scenario = Scenario(max_experiments=budget * len(space_list), seed=42, n_jobs=1)
+        scenario = Scenario(max_experiments=budget * len(space_list), seed=42, n_jobs=64)
 
         result = irace(target_runner, parameter_space, scenario, return_df=True, remove_metadata=True)
         best_configurations[algo_name] = result
