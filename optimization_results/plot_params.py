@@ -43,6 +43,10 @@ def generate_parallel_coordinates_plot(df, target_col, algo_name, plots_folder):
     # Extract algorithm name from filename
     # algo_name = Path(csv_file).stem.split("_")[0]
 
+    # Exclude constant columns
+    constant_columns = [col for col in df.columns if df[col].nunique() <= 1 and col != target_col]
+    df = df.drop(columns=constant_columns)
+
     # Automatically determine min-max values for all plotted columns
     custom_min_max = auto_normalize(df, exclude_columns=[target_col])
 
@@ -67,6 +71,7 @@ def generate_parallel_coordinates_plot(df, target_col, algo_name, plots_folder):
     title = f"Parallel coordinates plot for {algo_name} parameters"
     plt.title(title)
     plt.xlabel("Parameters")
+    plt.xticks(rotation=45, ha='right', rotation_mode='anchor')
 
     # Remove the frame around the columns (keep only vertical lines)
     for spine in ax.spines.values():
@@ -97,7 +102,16 @@ def generate_parallel_coordinates_plot(df, target_col, algo_name, plots_folder):
 # ---------------------------
 
 def generate_correlation_matrix_plot(df, algo_name, plots_folder):
-    plt.figure(figsize=(8, 6))
+    # plt.figure(figsize=(8, 6))
+
+    constant_columns = [col for col in df.columns if df[col].nunique() <= 1 and col != target_col]
+    df = df.drop(columns=constant_columns)
+
+    n_cols = len(df.columns)
+    fig_width = max(8, int(n_cols * 0.7))
+    fig_height = max(6, int(n_cols * 0.5))
+
+    plt.figure(figsize=(fig_width, fig_height))
     sns.heatmap(df.corr(), annot=True, cmap="coolwarm", fmt=".2f")
     title = f"Correlation matrix for {algo_name} parameters"
     plt.title(title)
