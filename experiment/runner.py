@@ -36,7 +36,7 @@ def run_all_experiments():
 
                 print(f"Algorithm: {name}, Problem: {problem.name()}, Variables: {problem.number_of_variables()}, "
                       f"Runs: {no_of_runs}, Average Final Fitness: {avg_fitness},"
-                      f"Standard deviation: {std_dev}, Average Time: {avg_time}")
+                      f"Standard deviation: {std_dev}, Average Time: {avg_time}, Finished at: {datetime.now()}")
 
                 writer.writerow([name, problem.name(), problem.number_of_variables(), no_of_runs, avg_fitness,
                                  std_dev, avg_time])

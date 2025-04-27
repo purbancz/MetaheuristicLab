@@ -86,8 +86,8 @@ from problem.n_variables.zakharov import Zakharov
 
 
 def setup_experiment():
-    no_of_runs = 5
-    number_of_variables = 100
+    no_of_runs = 50
+    number_of_variables = 1000
     solutions_size = 100
     max_evaluations = 25000
     frequency = solutions_size  # Snapshot each generation
@@ -126,6 +126,9 @@ def setup_experiment():
         'EschewerPSO': 'xkcd:pea green',
         'EscapistPSO': 'xkcd:marine',
         'EschewerEscapistPSO': 'xkcd:dark magenta',
+        'HybridFullDisjointPSO': 'xkcd:reddy brown',
+        'HybridPartialDisjointPSO': 'xkcd:strong blue',
+        'HybridAdditivePSO': "xkcd:forrest green",
         ###
         'DCS-PSO': 'xkcd:rich purple',
     }
@@ -148,7 +151,7 @@ def setup_experiment():
         # ShiftedRotatedHappyCat(number_of_variables),
         # ShiftedRotatedHGBat(number_of_variables),
         # ShiftedRotatedSchafferF7(number_of_variables),
-        # ShiftedRotatedWeierstrass(number_of_variables),  # too long
+        ShiftedRotatedWeierstrass(number_of_variables),  # too long
         # ShiftedRotatedExpandedGriewankPlusRosenbrock(number_of_variables),
         # ShiftedRotatedExpandedScafferF6(number_of_variables), #15
         # ##
@@ -233,7 +236,7 @@ def setup_experiment():
         # ExpandedKatsuura(number_of_variables), # too long
         # Katsuura(number_of_variables),  # too long
         # Ackley(number_of_variables), # irace
-        Rastrigin(number_of_variables), # irace
+        # Rastrigin(number_of_variables),  # irace
         # Sphere(number_of_variables), # irace
 
     ]
@@ -526,69 +529,69 @@ def setup_experiment():
         #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
         # ),
         ## Hybrid
-        'HybridPartialDisjointPSO': lambda p: HybridPartialDisjointPSO(  # clip rough tuning
-            problem=p,
-            swarm_size=solutions_size,
-            c1=0.2400,
-            c2=5.3089,
-            w=0.0818,
-            rejector_c = 1.0,
-            defeatist_c = 1.0,
-            escapist_c = 1.0,
-            rebel_c = 1.0,
-            contrarian_c = 1.0,
-            eschewer_c = 1.0,
-            rejector_fraction = 0.1,
-            defeatist_fraction = 0.1,
-            escapist_fraction = 0.1,
-            rebel_fraction = 0.1,
-            contrarian_fraction = 0.1,
-            eschewer_fraction = 0.1,
-            assign_roles_every_iteration = False,
-            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        ),
         'HybridFullDisjointPSO': lambda p: HybridFullDisjointPSO(  # clip rough tuning
             problem=p,
             swarm_size=solutions_size,
-            c1=0.2400,
-            c2=5.3089,
-            w=0.0818,
-            rejector_c=1.0,
-            defeatist_c=1.0,
-            escapist_c=1.0,
-            rebel_c=1.0,
-            contrarian_c=1.0,
-            eschewer_c=1.0,
-            rejector_fraction=0.1,
-            defeatist_fraction=0.1,
-            escapist_fraction=0.1,
-            rebel_fraction=0.1,
-            contrarian_fraction=0.1,
-            eschewer_fraction=0.1,
-            assign_roles_every_iteration=False,
+            w=0.010042627554697,
+            c1=2.5194453242490207,
+            c2=1.9589638292411289,
+            rejector_c=0.804714320807866,
+            defeatist_c=0.352715323277293,
+            escapist_c=2.2573850297429416,
+            rebel_c=1.5231697428821178,
+            contrarian_c=4.525433432281106,
+            eschewer_c=3.545177039917037,
+            rejector_fraction=0.3531898577274737,
+            defeatist_fraction=0.3882793197090974,
+            escapist_fraction=0.0160671847325481,
+            rebel_fraction=0.0710350179078033,
+            contrarian_fraction=0.0353096524802138,
+            eschewer_fraction=0.1361189674428635,
+            assign_roles_every_iteration=True,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
+        'HybridPartialDisjointPSO': lambda p: HybridPartialDisjointPSO(  # clip rough tuning
+            problem=p,
+            swarm_size=solutions_size,
+            w=0.054225916981733,
+            c1=5.250704530511119,
+            c2=1.0439559585735996,
+            rejector_c=0.108339599181597,
+            defeatist_c=0.068260451909027,
+            escapist_c=5.557822739605506,
+            rebel_c=0.444554248210547,
+            contrarian_c=0.791514380319767,
+            eschewer_c=3.7320856632713113,
+            rejector_fraction=0.39268952755304,
+            defeatist_fraction=0.5694900458309657,
+            escapist_fraction=0.0378204266159942,
+            rebel_fraction=0.114291889757625,
+            contrarian_fraction=0.364494663773207,
+            eschewer_fraction=0.171609898957229,
+            assign_roles_every_iteration=True,
             termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
         ),
         'HybridAdditivePSO': lambda p: HybridAdditivePSO(  # clip rough tuning
             problem=p,
             swarm_size=solutions_size,
-            c1=0.2400,
-            c2=5.3089,
-            w=0.0818,
-            rejector_c=1.0,
-            defeatist_c=1.0,
-            escapist_c=1.0,
-            rebel_c=1.0,
-            contrarian_c=1.0,
-            eschewer_c=1.0,
-            std_cognitive_prob = 1.0,
-            rejector_prob = 0.1,
-            defeatist_prob = 0.1,
-            escapist_prob = 0.1,
-            std_social_prob = 1.0,
-            rebel_prob = 0.1,
-            contrarian_prob = 0.1,
-            eschewer_prob = 0.1,
-            assign_flags_every_iteration=False,
+            w=0.042646428822865,
+            c1=0.253645685149182,
+            c2=2.307040589069303,
+            rejector_c=1.3034967863175075,
+            defeatist_c=0.137324173204785,
+            escapist_c=0.023227418883015,
+            rebel_c=0.040886380920212,
+            contrarian_c=2.2432839871932138,
+            eschewer_c=2.769447241515806,
+            std_cognitive_prob=0.879673273767784,
+            rejector_prob=0.535682485751952,
+            defeatist_prob=0.538526878006812,
+            escapist_prob=0.462726801113222,
+            std_social_prob=0.764228739850829,
+            rebel_prob=0.475650793954077,
+            contrarian_prob=0.46010305052283,
+            eschewer_prob=0.31480023964547,
+            assign_flags_every_iteration=True,
             termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
         ),
         ## Not mine
@@ -647,7 +650,8 @@ def setup_experiment():
         #     # 'RebelPSO', 'RejectorPSO', 'RebelRejectorPSO', 'RRAPSO',
         #     # 'ContrarianPSO', 'DefeatistPSO', 'ContrarianDefeatistPSO', 'CDAPSO',
         #     # 'EschewerPSO', 'EscapistPSO', 'EschewerEscapistPSO', 'EEAPSO',
-        #     'CAPSO', 'IAPSO', 'FAPSO'
+        #     # 'CAPSO', 'IAPSO', 'FAPSO',
+        #     'HybridFullDisjointPSO', 'HybridPartialDisjointPSO', 'HybridAdditivePSO',
         # ],
         # 'All without all reverse learning, FAPSO and RRAPSO': ['RebelPSO', 'RejectorPSO', 'RebelRejectorPSO',
         #                                                 'ContrarianPSO', 'DefeatistPSO', 'ContrarianDefeatistPSO',

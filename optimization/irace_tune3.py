@@ -395,7 +395,7 @@ if __name__ == "__main__":
         print(f"Optimizing parameters for {algo_name} ...")
 
         parameter_space = ParameterSpace(params=space_list)
-        scenario = Scenario(max_experiments=budget * len(space_list), seed=42, n_jobs=64)
+        scenario = Scenario(max_experiments=budget * len(space_list), seed=42, n_jobs=48)
 
         result = irace(target_runner, parameter_space, scenario, return_df=True, remove_metadata=True)
         best_configurations[algo_name] = result

@@ -6,9 +6,9 @@
 #SBATCH --partition=plgrid-now
 #SBATCH --account=plglscclass24-cpu
 #SBATCH --nodes=1
-#SBATCH --ntasks=64
+#SBATCH --ntasks=48
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=2G
+#SBATCH --mem=1G
 #SBATCH --mail-type=ALL
 
 

@@ -1,14 +1,14 @@
 #!/bin/bash
-#SBATCH --job-name=PSO_Shifted_Rotated_Weierstrass_1000dim_adaptive
+#SBATCH --job-name=PSO_Shifted_Rotated_Weierstrass_1000dim_hybrid
 #SBATCH --output=%x_%j.out
 #SBATCH --error=%x_%j.err
-#SBATCH --time=72:00:00
+#SBATCH --time=16:00:00
 #SBATCH --partition=plgrid
 #SBATCH --account=plglscclass24-cpu
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=4G
+#SBATCH --mem=2G
 #SBATCH --mail-type=ALL
 
 
