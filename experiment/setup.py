@@ -151,7 +151,7 @@ def setup_experiment():
         # ShiftedRotatedHappyCat(number_of_variables),
         # ShiftedRotatedHGBat(number_of_variables),
         # ShiftedRotatedSchafferF7(number_of_variables),
-        ShiftedRotatedWeierstrass(number_of_variables),  # too long
+        # ShiftedRotatedWeierstrass(number_of_variables),  # done
         # ShiftedRotatedExpandedGriewankPlusRosenbrock(number_of_variables),
         # ShiftedRotatedExpandedScafferF6(number_of_variables), #15
         # ##
@@ -181,7 +181,7 @@ def setup_experiment():
         # Griewank(number_of_variables),
         # HappyCat(number_of_variables),
         # HGBat(number_of_variables),
-        # LennardJonesMinimumEnergyCluster(number_of_variables),
+        LennardJonesMinimumEnergyCluster(number_of_variables),
         # Levy(number_of_variables),
         # Michalewicz(number_of_variables),
         # Mishra01(number_of_variables),
@@ -264,49 +264,49 @@ def setup_experiment():
 
     # Initialize the algorithms
     algorithms = {
-        # ## baseline
-        # 'PSO': lambda p: SingleObjectivePSO(  # clip rough tuning
-        #     problem=p,
-        #     swarm_size=solutions_size,
-        #     c1=4.3732,
-        #     c2=2.7552,
-        #     w=0.0632,
-        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        # ),
-        # ## Rebel algorithms
-        # 'RebelPSO': lambda p: RebelPSO(  # clip rough tuning
-        #     problem=p,
-        #     swarm_size=solutions_size,
-        #     c1=0.3077,
-        #     c2=5.5310,
-        #     ac2=3.9234,
-        #     w=0.1308,
-        #     rebel_fraction=0.18,
-        #     termination_criterion=StoppingByEvaluations(max_evaluations)
-        # ),
-        # 'RejectorPSO': lambda p: RejectorPSO(  # clip rough tuning
-        #     problem=p,
-        #     swarm_size=solutions_size,
-        #     c1=1.5453,
-        #     c2=5.9175,
-        #     ac1=0.4661,
-        #     w=0.0839,
-        #     rejector_fraction=0.68,
-        #     termination_criterion=StoppingByEvaluations(max_evaluations)
-        # ),
-        # 'RebelRejectorPSO': lambda p: RebelRejectorPSO(  # clip rough tuning
-        #     problem=p,
-        #     swarm_size=solutions_size,
-        #     c1=1.2917,
-        #     c2=4.8326,
-        #     ac1=1.4414,
-        #     ac2=3.7445,
-        #     w=0.1155,
-        #     rebel_fraction=0.19,
-        #     rejector_fraction=0.19,
-        #     termination_criterion=StoppingByEvaluations(max_evaluations)
-        # ),
-        # # 'RRAPSO': lambda p: RRAPSO(  # clip rough tuning 1st and slighteky better
+        ## baseline
+        'PSO': lambda p: SingleObjectivePSO(  # clip rough tuning
+            problem=p,
+            swarm_size=solutions_size,
+            c1=4.373186623347942,
+            c2=2.7550764085992134,
+            w=0.063200081558323,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
+        ## Rebel algorithms
+        'RebelPSO': lambda p: RebelPSO(  # clip rough tuning
+            problem=p,
+            swarm_size=solutions_size,
+            c1=0.307688161908015,
+            c2=5.530968353849125,
+            ac2=3.923395769404532,
+            w=0.130799692121227,
+            rebel_fraction=0.179677247325933,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
+        'RejectorPSO': lambda p: RejectorPSO(  # clip rough tuning
+            problem=p,
+            swarm_size=solutions_size,
+            c1=1.5453302933766626,
+            c2=5.917520827367081,
+            ac1=0.466119854194634,
+            w=0.083852078943052,
+            rejector_fraction=0.67871106256468,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
+        'RebelRejectorPSO': lambda p: RebelRejectorPSO(  # clip rough tuning
+            problem=p,
+            swarm_size=solutions_size,
+            c1=1.2917073232273844,
+            c2=4.832642324745723,
+            ac1=1.441428786452163,
+            ac2=3.7444907132412686,
+            w=0.115458375538175,
+            rebel_fraction=0.18928109655799,
+            rejector_fraction=0.193683456340565,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
+        # # 'RRAPSO': lambda p: RRAPSO(  # clip rough tuning 1st and slightely better
         # #     problem=p,
         # #     swarm_size=solutions_size,
         # #     c1=0.5695,
@@ -327,207 +327,207 @@ def setup_experiment():
         # #     improvement_threshold=0.0567,
         # #     termination_criterion=StoppingByEvaluations(max_evaluations)
         # # ),
-        # 'RRAPSO': lambda p: RRAPSO(  # clip rough tuning
+        'RRAPSO': lambda p: RRAPSO(  # clip rough tuning
+            problem=p,
+            swarm_size=solutions_size,
+            c1=0.548691568141336,
+            c2=5.907597506402747,
+            ac1=3.2624960653318853,
+            ac2=0.376736442803273,
+            base_inertia=0.109099990738931,
+            min_inertia=0.019422700188969,
+            max_inertia=0.467675367006755,
+            rebel_fraction=0.089454737167723,
+            rejector_fraction=0.10863150880624,
+            window_size=27,
+            max_rebel_fraction=0.148842504973759,
+            max_rejector_fraction=0.679700999528298,
+            diversity_threshold=0.027890990404388,
+            improvement_threshold=0.038668316988009,
+            termination_criterion=StoppingByEvaluations(max_evaluations)
+        ),
+        ## Worse aware algorithms
+        'ReverseLearningPSO': lambda p: ReverseLearningPSO(  # clip rough tuning
+            problem=p,
+            swarm_size=solutions_size,
+            b1=4.3732,
+            b2=2.7552,
+            w=0.0632,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
+        # 'ReverseLearningPSO_with_bounce': lambda p: ReverseLearningPSO(  # bounce rough tuning
         #     problem=p,
         #     swarm_size=solutions_size,
-        #     c1=0.5917,
-        #     c2=5.4661,
-        #     ac1=5.4117,
-        #     ac2=4.3553,
-        #     base_inertia=0.1171,
-        #     min_inertia=0.0592,
-        #     max_inertia=0.4416,
-        #     rebel_fraction=0.1074,
-        #     rejector_fraction=0.2688,
-        #     window_size=47,
-        #     max_rebel_fraction=0.1975,
-        #     max_rejector_fraction=0.8094,
-        #     diversity_threshold=0.2107,
-        #     improvement_threshold=0.0722,
-        #     termination_criterion=StoppingByEvaluations(max_evaluations)
-        # ),
-        # ## Worse aware algorithms
-        # 'ReverseLearningPSO': lambda p: ReverseLearningPSO(  # clip rough tuning
-        #     problem=p,
-        #     swarm_size=solutions_size,
-        #     b1=4.3732,
-        #     b2=2.7552,
-        #     w=0.0632,
+        #     b1=2.2427,
+        #     b2=4.8108,
+        #     w=1.6864,
+        #     constraint_handling_mode="bounce",
         #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
         # ),
-        # # 'ReverseLearningPSO_with_bounce': lambda p: ReverseLearningPSO(  # bounce rough tuning
-        # #     problem=p,
-        # #     swarm_size=solutions_size,
-        # #     b1=2.2427,
-        # #     b2=4.8108,
-        # #     w=1.6864,
-        # #     constraint_handling_mode="bounce",
-        # #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        # # ),
-        # 'ReverseLearningGlobalAttractorPSO': lambda p: ReverseLearningGlobalAttractorPSO(  # clip rough tuning
-        #     problem=p,
-        #     swarm_size=solutions_size,
-        #     a=3.0859,
-        #     b1=0.1083,
-        #     b2=0.8373,
-        #     w=0.0243,
-        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        # ),
-        # 'ReverseLearningPersonalAttractorPSO': lambda p: ReverseLearningPersonalAttractorPSO(  # clip rough tuning
-        #     problem=p,
-        #     swarm_size=solutions_size,
-        #     a=3.2241,
-        #     b1=1.6475,
-        #     b2=0.0101,
-        #     w=0.0355,
-        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        # ),
-        # 'CombinedLearningPSO': lambda p: CombinedLearningPSO(  # clip rough tuning
-        #     problem=p,
-        #     swarm_size=solutions_size,
-        #     c1=0.6799,
-        #     c2=3.2484,
-        #     b1=0.0445,
-        #     b2=0.3843,
-        #     w=0.2530,
-        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        # ),
-        # ### Contrarian algorithms
-        # 'ContrarianPSO': lambda p: ContrarianPSO(  # clip rough tuning
-        #     problem=p,
-        #     swarm_size=solutions_size,
-        #     c1=0.4049,
-        #     c2=5.7292,
-        #     ac2=4.5595,
-        #     w=0.1015,
-        #     contrarian_fraction=0.4802,
-        #     termination_criterion=StoppingByEvaluations(max_evaluations)
-        # ),
-        # 'DefeatistPSO': lambda p: DefeatistPSO(  # clip rough tuning
-        #     problem=p,
-        #     swarm_size=solutions_size,
-        #     c1=0.4045,
-        #     c2=5.2960,
-        #     ac1=0.9531,
-        #     w=0.0687,
-        #     defeatist_fraction=0.53,
-        #     termination_criterion=StoppingByEvaluations(max_evaluations)
-        # ),
-        # 'ContrarianDefeatistPSO': lambda p: ContrarianDefeatistPSO(  # clip rough tuning
-        #     problem=p,
-        #     swarm_size=solutions_size,
-        #     c1=0.9052,
-        #     c2=5.0633,
-        #     ac1=1.7460,
-        #     ac2=4.3333,
-        #     w=0.0665,
-        #     contrarian_fraction=0.12,
-        #     defeatist_fraction=0.19,
-        #     termination_criterion=StoppingByEvaluations(max_evaluations)
-        # ),
-        # 'CDAPSO': lambda p: CDAPSO(  # clip rough tuning
-        #     problem=p,
-        #     swarm_size=solutions_size,
-        #     c1=5.8826,
-        #     c2=0.8914,
-        #     ac1=5.5753,
-        #     ac2=3.1205,
-        #     base_inertia=0.0953,
-        #     min_inertia=0.0882,
-        #     max_inertia=0.4882,
-        #     contrarian_fraction=0.0732,
-        #     defeatist_fraction=0.1181,
-        #     window_size=42,
-        #     max_contrarian_fraction=0.8457,
-        #     max_defeatist_fraction=0.4605,
-        #     diversity_threshold=0.0745,
-        #     improvement_threshold=0.0414,
-        #     termination_criterion=StoppingByEvaluations(max_evaluations)
-        # ),
-        # ### Eschewer algortihms
-        # 'EschewerPSO': lambda p: EschewerPSO(  # clip rough tuning
-        #     problem=p,
-        #     swarm_size=solutions_size,
-        #     c1=2.1774,
-        #     c2=3.6490,
-        #     ac2=1.6576,
-        #     w=0.0908,
-        #     eschewer_fraction=0.22,
-        #     termination_criterion=StoppingByEvaluations(max_evaluations)
-        # ),
-        # 'EscapistPSO': lambda p: EscapistPSO(  # clip rough tuning
-        #     problem=p,
-        #     swarm_size=solutions_size,
-        #     c1=2.5767,
-        #     c2=5.8653,
-        #     ac1=0.0594,
-        #     w=0.0470,
-        #     escapist_fraction=0.48,
-        #     termination_criterion=StoppingByEvaluations(max_evaluations)
-        # ),
-        # 'EschewerEscapistPSO': lambda p: EschewerEscapistPSO(  # clip rough tuning
-        #     problem=p,
-        #     swarm_size=solutions_size,
-        #     c1=0.8995,
-        #     c2=5.2708,
-        #     ac1=1.5816,
-        #     ac2=4.8526,
-        #     w=0.0879,
-        #     eschewer_fraction=0.16,
-        #     escapist_fraction=0.23,
-        #     termination_criterion=StoppingByEvaluations(max_evaluations)
-        # ),
-        # 'EEAPSO': lambda p: EEAPSO(  # clip rough tuning
-        #     problem=p,
-        #     swarm_size=solutions_size,
-        #     c1=1.2897,
-        #     c2=4.9065,
-        #     ac1=0.3558,
-        #     ac2=3.6638,
-        #     base_inertia=0.1142,
-        #     min_inertia=0.0681,
-        #     max_inertia=0.4696,
-        #     eschewer_fraction=0.1033,
-        #     escapist_fraction=0.1078,
-        #     window_size=37,
-        #     max_eschewer_fraction=0.4509,
-        #     max_escapist_fraction=0.4807,
-        #     diversity_threshold=0.0888,
-        #     improvement_threshold=0.0733,
-        #     termination_criterion=StoppingByEvaluations(max_evaluations)
-        # ),
+        'ReverseLearningGlobalAttractorPSO': lambda p: ReverseLearningGlobalAttractorPSO(  # clip rough tuning
+            problem=p,
+            swarm_size=solutions_size,
+            a=3.0859235064821076,
+            b1=0.108341716970255,
+            b2=0.837282738204714,
+            w=0.024291813233742,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
+        'ReverseLearningPersonalAttractorPSO': lambda p: ReverseLearningPersonalAttractorPSO(  # clip rough tuning
+            problem=p,
+            swarm_size=solutions_size,
+            a=3.224127815247041,
+            b1=1.647589032939392,
+            b2=0.010053245887266,
+            w=0.035467244014656,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
+        'CombinedLearningPSO': lambda p: CombinedLearningPSO(  # clip rough tuning
+            problem=p,
+            swarm_size=solutions_size,
+            c1=0.679870939188416,
+            c2=3.2484486786755418,
+            b1=0.04445122849381,
+            b2=0.384275983213548,
+            w=0.252967959141965,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
+        ### Contrarian algorithms
+        'ContrarianPSO': lambda p: ContrarianPSO(  # clip rough tuning
+            problem=p,
+            swarm_size=solutions_size,
+            c1=0.404857785667593,
+            c2=5.729240158735593,
+            ac2=4.559505440999292,
+            w=0.101459174094392,
+            contrarian_fraction=0.480183592836892,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
+        'DefeatistPSO': lambda p: DefeatistPSO(  # clip rough tuning
+            problem=p,
+            swarm_size=solutions_size,
+            c1=0.404528715091359,
+            c2=5.296019337408482,
+            ac1=0.953051777442312,
+            w=0.068745315537278,
+            defeatist_fraction=0.5278118065626,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
+        'ContrarianDefeatistPSO': lambda p: ContrarianDefeatistPSO(  # clip rough tuning
+            problem=p,
+            swarm_size=solutions_size,
+            c1=0.905168830733747,
+            c2=5.06331501616116,
+            ac1=1.7459907261121894,
+            ac2=4.33333920937383,
+            w=0.066483551613745,
+            contrarian_fraction=0.121672489612598,
+            defeatist_fraction=0.192437869591703,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
+        'CDAPSO': lambda p: CDAPSO(  # clip rough tuning
+            problem=p,
+            swarm_size=solutions_size,
+            c1=5.88261581482204,
+            c2=0.89143474600207,
+            ac1=5.575331382236984,
+            ac2=3.120455009391698,
+            base_inertia=0.09531358967731,
+            min_inertia=0.088214243704632,
+            max_inertia=0.48823616972219,
+            contrarian_fraction=0.073214849836237,
+            defeatist_fraction=0.118111938088691,
+            window_size=42,
+            max_contrarian_fraction=0.845656397131062,
+            max_defeatist_fraction=0.460539231789005,
+            diversity_threshold=0.074527032625495,
+            improvement_threshold=0.04143143069345,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
+        ### Eschewer algortihms
+        'EschewerPSO': lambda p: EschewerPSO(  # clip rough tuning
+            problem=p,
+            swarm_size=solutions_size,
+            c1=2.1774001982532,
+            c2=3.64900348772787,
+            ac2=1.6575999241449189,
+            w=0.090811852472692,
+            eschewer_fraction=0.224166555700455,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
+        'EscapistPSO': lambda p: EscapistPSO(  # clip rough tuning
+            problem=p,
+            swarm_size=solutions_size,
+            c1=2.5766896424288985,
+            c2=5.86528111647695,
+            ac1=0.059418776819967,
+            w=0.047051309145994,
+            escapist_fraction=0.475506405577598,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
+        'EschewerEscapistPSO': lambda p: EschewerEscapistPSO(  # clip rough tuning
+            problem=p,
+            swarm_size=solutions_size,
+            c1=0.899537417149102,
+            c2=5.270847500954289,
+            ac1=1.5815717964732474,
+            ac2=4.852560033371143,
+            w=0.087900392693393,
+            eschewer_fraction=0.162502902369604,
+            escapist_fraction=0.230072580176876,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
+        'EEAPSO': lambda p: EEAPSO(  # clip rough tuning
+            problem=p,
+            swarm_size=solutions_size,
+            c1=1.289749876747761,
+            c2=4.9065094037838595,
+            ac1=0.355816068002949,
+            ac2=3.663822316963646,
+            base_inertia=0.114157882091415,
+            min_inertia=0.068050062417605,
+            max_inertia=0.469635443616177,
+            eschewer_fraction=0.103342982453466,
+            escapist_fraction=0.107812491024632,
+            window_size=37,
+            max_eschewer_fraction=0.450930240404732,
+            max_escapist_fraction=0.480703305275815,
+            diversity_threshold=0.088794875683937,
+            improvement_threshold=0.073341119131162,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
         # ## Adaptive algorithms
-        # 'CAPSO': lambda p: CoAdaptativePSO(  # clip rough tuning
-        #     problem=p,
-        #     swarm_size=solutions_size,
-        #     c1=0.2853,
-        #     c2=4.6565,
-        #     max_c1=5.8463,
-        #     max_c2=9.5588,
-        #     w=0.0355,
-        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        # ),
-        # 'IAPSO': lambda p: IndividualAdaptivePSO(  # clip rough tuning
-        #     problem=p,
-        #     swarm_size=solutions_size,
-        #     c1=0.2412,
-        #     c2=3.9367,
-        #     max_c1=4.8349,
-        #     max_c2=6.4719,
-        #     w=0.0983,
-        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        # ),
-        # ### Other
-        # 'FAPSO': lambda p: FAPSO(  # clip rough tuning
-        #     problem=p,
-        #     swarm_size=solutions_size,
-        #     c1=0.2400,
-        #     c2=5.3089,
-        #     w=0.0818,
-        #     fractal_depth=4,
-        #     convergence_threshold=0.0266,
-        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        # ),
+        'CAPSO': lambda p: CoAdaptativePSO(  # clip rough tuning
+            problem=p,
+            swarm_size=solutions_size,
+            c1=0.087918923584117,
+            c2=4.53542462540025,
+            max_c1=5.7549791553377325,
+            max_c2=9.587776575299161,
+            w=0.066438426371153,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
+        'IAPSO': lambda p: IndividualAdaptivePSO(  # clip rough tuning
+            problem=p,
+            swarm_size=solutions_size,
+            c1=0.364802068763345,
+            c2=5.855423966603137,
+            max_c1=10.814269144312599,
+            max_c2=7.34769908479714,
+            w=0.076308243863222,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
+        ### Other
+        'FAPSO': lambda p: FAPSO(  # clip rough tuning
+            problem=p,
+            swarm_size=solutions_size,
+            c1=0.240010838523818,
+            c2=5.308903636820276,
+            w=0.081799781060863,
+            fractal_depth=4,
+            convergence_threshold=0.026560651344854,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
         ## Hybrid
         'HybridFullDisjointPSO': lambda p: HybridFullDisjointPSO(  # clip rough tuning
             problem=p,
@@ -646,13 +646,13 @@ def setup_experiment():
         #                                             'ReverseLearningGlobalAttractorPSO',
         #                                             'ReverseLearningPersonalAttractorPSO',
         #                                             'CombinedLearningPSO', 'CAPSO', 'IAPSO'],
-        # 'All without all reverse learning': [
-        #     # 'RebelPSO', 'RejectorPSO', 'RebelRejectorPSO', 'RRAPSO',
-        #     # 'ContrarianPSO', 'DefeatistPSO', 'ContrarianDefeatistPSO', 'CDAPSO',
-        #     # 'EschewerPSO', 'EscapistPSO', 'EschewerEscapistPSO', 'EEAPSO',
-        #     # 'CAPSO', 'IAPSO', 'FAPSO',
-        #     'HybridFullDisjointPSO', 'HybridPartialDisjointPSO', 'HybridAdditivePSO',
-        # ],
+        'All without all reverse learning': [
+            'RebelPSO', 'RejectorPSO', 'RebelRejectorPSO', 'RRAPSO',
+            'ContrarianPSO', 'DefeatistPSO', 'ContrarianDefeatistPSO', 'CDAPSO',
+            'EschewerPSO', 'EscapistPSO', 'EschewerEscapistPSO', 'EEAPSO',
+            'CAPSO', 'IAPSO', 'FAPSO',
+            'HybridFullDisjointPSO', 'HybridPartialDisjointPSO', 'HybridAdditivePSO',
+        ],
         # 'All without all reverse learning, FAPSO and RRAPSO': ['RebelPSO', 'RejectorPSO', 'RebelRejectorPSO',
         #                                                 'ContrarianPSO', 'DefeatistPSO', 'ContrarianDefeatistPSO',
         #                                                 'EschewerPSO', 'EscapistPSO', 'EschewerEscapistPSO',

@@ -27,6 +27,7 @@ def run_all_experiments():
         all_data = []
         for problem in problems:
             problem = copy.deepcopy(problem)
+            safe_problem_name = problem.name().replace(' ', '_').replace('-', '_')
             initialized_algorithms = initialize_algorithms(algorithms, problem)
             problem_data = {'problem': problem.name(), 'n_vars': problem.number_of_variables(), 'results': {}}
             for name, algorithm in initialized_algorithms.items():
@@ -35,14 +36,14 @@ def run_all_experiments():
                                                  'avg_time': avg_time}
 
                 print(f"Algorithm: {name}, Problem: {problem.name()}, Variables: {problem.number_of_variables()}, "
-                      f"Runs: {no_of_runs}, Average Final Fitness: {avg_fitness},"
+                      f"Runs: {no_of_runs}, Average Final Fitness: {avg_fitness}, "
                       f"Standard deviation: {std_dev}, Average Time: {avg_time}, Finished at: {datetime.now()}")
 
                 writer.writerow([name, problem.name(), problem.number_of_variables(), no_of_runs, avg_fitness,
                                  std_dev, avg_time])
 
                 with open(
-                        f'{dimensions_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{name}_{problem.name()}_dim{number_of_variables}_runs{no_of_runs}_experiment_data.pkl',
+                        f'{dimensions_dir}/{safe_problem_name}_dim{number_of_variables}_runs{no_of_runs}_{name}_experiment_data.pkl',
                         'wb') as f:
                     pickle.dump(problem_data, f)
 
@@ -104,7 +105,7 @@ def run_all_experiments():
                                         adaptive_width=True)
 
             with open(
-                    f'{dimensions_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{problem.name()}_dim{number_of_variables}_runs{no_of_runs}_experiment_data.pkl',
+                    f'{dimensions_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{safe_problem_name}_dim{number_of_variables}_runs{no_of_runs}_all_algs_experiment_data.pkl',
                     'wb') as f:
                 pickle.dump(all_data, f)
 
