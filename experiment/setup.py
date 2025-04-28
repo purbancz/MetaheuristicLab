@@ -327,7 +327,7 @@ def setup_experiment():
         # #     improvement_threshold=0.0567,
         # #     termination_criterion=StoppingByEvaluations(max_evaluations)
         # # ),
-        # 'RRAPSO': lambda p: RRAPSO(  # clip rough tuning
+        # 'RRAPSO': lambda p: RRAPSO(  # LennardJonesMinimumEnergyCluster missing
         #     problem=p,
         #     swarm_size=solutions_size,
         #     c1=0.548691568141336,
@@ -347,94 +347,94 @@ def setup_experiment():
         #     termination_criterion=StoppingByEvaluations(max_evaluations)
         # ),
         # ## Worse aware algorithms
-        'ReverseLearningPSO': lambda p: ReverseLearningPSO(  # clip rough tuning
-            problem=p,
-            swarm_size=solutions_size,
-            b1=4.3732,
-            b2=2.7552,
-            w=0.0632,
-            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        ),
-        'ReverseLearningGlobalAttractorPSO': lambda p: ReverseLearningGlobalAttractorPSO(  # clip rough tuning
-            problem=p,
-            swarm_size=solutions_size,
-            a=3.0859235064821076,
-            b1=0.108341716970255,
-            b2=0.837282738204714,
-            w=0.024291813233742,
-            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        ),
-        'ReverseLearningPersonalAttractorPSO': lambda p: ReverseLearningPersonalAttractorPSO(  # clip rough tuning
-            problem=p,
-            swarm_size=solutions_size,
-            a=3.224127815247041,
-            b1=1.647589032939392,
-            b2=0.010053245887266,
-            w=0.035467244014656,
-            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        ),
-        'CombinedLearningPSO': lambda p: CombinedLearningPSO(  # clip rough tuning
-            problem=p,
-            swarm_size=solutions_size,
-            c1=0.679870939188416,
-            c2=3.2484486786755418,
-            b1=0.04445122849381,
-            b2=0.384275983213548,
-            w=0.252967959141965,
-            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        ),
-        # ### Contrarian algorithms
-        # 'ContrarianPSO': lambda p: ContrarianPSO(  # clip rough tuning
+        # 'ReverseLearningPSO': lambda p: ReverseLearningPSO(  # clip rough tuning
         #     problem=p,
         #     swarm_size=solutions_size,
-        #     c1=0.404857785667593,
-        #     c2=5.729240158735593,
-        #     ac2=4.559505440999292,
-        #     w=0.101459174094392,
-        #     contrarian_fraction=0.480183592836892,
+        #     b1=4.3732,
+        #     b2=2.7552,
+        #     w=0.0632,
         #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
         # ),
-        # 'DefeatistPSO': lambda p: DefeatistPSO(  # clip rough tuning
+        # 'ReverseLearningGlobalAttractorPSO': lambda p: ReverseLearningGlobalAttractorPSO(  # clip rough tuning
         #     problem=p,
         #     swarm_size=solutions_size,
-        #     c1=0.404528715091359,
-        #     c2=5.296019337408482,
-        #     ac1=0.953051777442312,
-        #     w=0.068745315537278,
-        #     defeatist_fraction=0.5278118065626,
+        #     a=3.0859235064821076,
+        #     b1=0.108341716970255,
+        #     b2=0.837282738204714,
+        #     w=0.024291813233742,
         #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
         # ),
-        # 'ContrarianDefeatistPSO': lambda p: ContrarianDefeatistPSO(  # clip rough tuning
+        # 'ReverseLearningPersonalAttractorPSO': lambda p: ReverseLearningPersonalAttractorPSO(  # clip rough tuning
         #     problem=p,
         #     swarm_size=solutions_size,
-        #     c1=0.905168830733747,
-        #     c2=5.06331501616116,
-        #     ac1=1.7459907261121894,
-        #     ac2=4.33333920937383,
-        #     w=0.066483551613745,
-        #     contrarian_fraction=0.121672489612598,
-        #     defeatist_fraction=0.192437869591703,
+        #     a=3.224127815247041,
+        #     b1=1.647589032939392,
+        #     b2=0.010053245887266,
+        #     w=0.035467244014656,
         #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
         # ),
-        # 'CDAPSO': lambda p: CDAPSO(  # clip rough tuning
+        # 'CombinedLearningPSO': lambda p: CombinedLearningPSO(  # clip rough tuning
         #     problem=p,
         #     swarm_size=solutions_size,
-        #     c1=5.88261581482204,
-        #     c2=0.89143474600207,
-        #     ac1=5.575331382236984,
-        #     ac2=3.120455009391698,
-        #     base_inertia=0.09531358967731,
-        #     min_inertia=0.088214243704632,
-        #     max_inertia=0.48823616972219,
-        #     contrarian_fraction=0.073214849836237,
-        #     defeatist_fraction=0.118111938088691,
-        #     window_size=42,
-        #     max_contrarian_fraction=0.845656397131062,
-        #     max_defeatist_fraction=0.460539231789005,
-        #     diversity_threshold=0.074527032625495,
-        #     improvement_threshold=0.04143143069345,
+        #     c1=0.679870939188416,
+        #     c2=3.2484486786755418,
+        #     b1=0.04445122849381,
+        #     b2=0.384275983213548,
+        #     w=0.252967959141965,
         #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
         # ),
+        ### Contrarian algorithms
+        'ContrarianPSO': lambda p: ContrarianPSO(  # clip rough tuning
+            problem=p,
+            swarm_size=solutions_size,
+            c1=0.404857785667593,
+            c2=5.729240158735593,
+            ac2=4.559505440999292,
+            w=0.101459174094392,
+            contrarian_fraction=0.480183592836892,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
+        'DefeatistPSO': lambda p: DefeatistPSO(  # clip rough tuning
+            problem=p,
+            swarm_size=solutions_size,
+            c1=0.404528715091359,
+            c2=5.296019337408482,
+            ac1=0.953051777442312,
+            w=0.068745315537278,
+            defeatist_fraction=0.5278118065626,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
+        'ContrarianDefeatistPSO': lambda p: ContrarianDefeatistPSO(  # clip rough tuning
+            problem=p,
+            swarm_size=solutions_size,
+            c1=0.905168830733747,
+            c2=5.06331501616116,
+            ac1=1.7459907261121894,
+            ac2=4.33333920937383,
+            w=0.066483551613745,
+            contrarian_fraction=0.121672489612598,
+            defeatist_fraction=0.192437869591703,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
+        'CDAPSO': lambda p: CDAPSO(  # clip rough tuning
+            problem=p,
+            swarm_size=solutions_size,
+            c1=5.88261581482204,
+            c2=0.89143474600207,
+            ac1=5.575331382236984,
+            ac2=3.120455009391698,
+            base_inertia=0.09531358967731,
+            min_inertia=0.088214243704632,
+            max_inertia=0.48823616972219,
+            contrarian_fraction=0.073214849836237,
+            defeatist_fraction=0.118111938088691,
+            window_size=42,
+            max_contrarian_fraction=0.845656397131062,
+            max_defeatist_fraction=0.460539231789005,
+            diversity_threshold=0.074527032625495,
+            improvement_threshold=0.04143143069345,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
         # ### Eschewer algortihms
         # 'EschewerPSO': lambda p: EschewerPSO(  # clip rough tuning
         #     problem=p,

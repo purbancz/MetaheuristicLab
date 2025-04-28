@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=LennardJonesMinimumEnergyCluster_reverse_learning_1000dim_hybrid
+#SBATCH --job-name=LennardJonesMinimumEnergyCluster_contrarian_1000dim_hybrid
 #SBATCH --output=%x_%j.out
 #SBATCH --error=%x_%j.err
 #SBATCH --time=72:00:00
