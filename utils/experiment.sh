@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=LennardJonesMinimumEnergyCluster_1000dim_hybrid
+#SBATCH --job-name=LennardJonesMinimumEnergyCluster_reverse_learning_1000dim_hybrid
 #SBATCH --output=%x_%j.out
 #SBATCH --error=%x_%j.err
 #SBATCH --time=72:00:00
@@ -8,7 +8,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=2G
+#SBATCH --mem=1G
 #SBATCH --mail-type=ALL
 
 
