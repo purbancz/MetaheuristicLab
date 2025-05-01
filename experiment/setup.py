@@ -24,7 +24,8 @@ from algorithm.TDPSO import TDPSO
 from algorithm.hgbat import HGBat
 from algorithm.hybrid_diverse import HybridPartialDisjointPSO, HybridFullDisjointPSO, HybridAdditivePSO
 from algorithm.particles_with_roles import RebelPSO, RejectorPSO, RebelRejectorPSO, RRAPSO, ContrarianPSO, DefeatistPSO, \
-    ContrarianDefeatistPSO, EschewerPSO, EscapistPSO, EschewerEscapistPSO, CDAPSO, EEAPSO
+    ContrarianDefeatistPSO, EschewerPSO, EscapistPSO, EschewerEscapistPSO, CDAPSO, EEAPSO, AnarchicPSO, AmnesiacPSO, \
+    WandererPSO
 from algorithm.ref_DCSPSO import DCSPSO
 from algorithm.single_objective_PSO import SingleObjectivePSO
 
@@ -487,6 +488,37 @@ def setup_experiment():
         #     improvement_threshold=0.073341119131162,
         #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
         # ),
+        ## Wanderer algorithms
+        'AnarchicPSO': lambda p: AnarchicPSO(
+            problem=p,
+            swarm_size=solutions_size,
+            w=0.5,
+            c1=1.5,
+            c2=1.5,
+            random_strength=1.0,
+            anarchic_fraction=0.3,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
+        'AmnesiacPSO': lambda p: AmnesiacPSO(
+            problem=p,
+            swarm_size=solutions_size,
+            w=0.4,
+            c1=2.0,
+            c2=1.8,
+            random_strength=0.8,
+            amnesiac_fraction=0.5,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
+        'WandererPSO': lambda p: WandererPSO(
+            problem=p,
+            swarm_size=solutions_size,
+            w=0.6,
+            c1=1.0,
+            c2=1.0,
+            random_strength=1.2,
+            wanderer_fraction=0.4,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
         # # ## Adaptive algorithms
         # 'CAPSO': lambda p: CoAdaptativePSO(  # clip rough tuning
         #     problem=p,

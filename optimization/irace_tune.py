@@ -12,7 +12,8 @@ from algorithm.AdaptivePSO import CoAdaptativePSO, IndividualAdaptivePSO
 from algorithm.WAPSO import ReverseLearningGlobalAttractorPSO, CombinedLearningPSO, ReverseLearningPersonalAttractorPSO, \
     ReverseLearningPSO
 from algorithm.particles_with_roles import RebelPSO, RejectorPSO, RebelRejectorPSO, RRAPSO, ContrarianPSO, DefeatistPSO, \
-    ContrarianDefeatistPSO, EschewerPSO, EscapistPSO, EschewerEscapistPSO, CDAPSO, EEAPSO
+    ContrarianDefeatistPSO, EschewerPSO, EscapistPSO, EschewerEscapistPSO, CDAPSO, EEAPSO, AnarchicPSO, AmnesiacPSO, \
+    WandererPSO
 from algorithm.single_objective_PSO import SingleObjectivePSO
 from algorithm.FAPSO import FAPSO
 from algorithm.NPSO import NPSO
@@ -224,29 +225,50 @@ parameter_spaces = {
     #     # Behavior Flags
     #     Bool("assign_roles_every_iteration"),
     # ],
-    'HybridAdditivePSO': [ # Assuming the version with default-to-standard logic
-        # Core PSO Params
-        Real("w", 0.01, 1.0),               # Inertia weight
-        Real("c1", 0.01, 6.0),             # Standard cognitive coefficient
-        Real("c2", 0.01, 6.0),             # Standard social coefficient
-        # Special Role Coefficients
-        Real("rejector_c", 0.01, 6.0),
-        Real("defeatist_c", 0.01, 6.0),
-        Real("escapist_c", 0.01, 6.0),
-        Real("rebel_c", 0.01, 6.0),
-        Real("contrarian_c", 0.01, 6.0),
-        Real("eschewer_c", 0.01, 6.0),
-        # Role Activation Probabilities (Independent)
-        Real("std_cognitive_prob", 0.01, 1.0), # Prob of activating std cognitive explicitly
-        Real("rejector_prob", 0.01, 1.0),
-        Real("defeatist_prob", 0.01, 1.0),
-        Real("escapist_prob", 0.01, 1.0),
-        Real("std_social_prob", 0.01, 1.0),    # Prob of activating std social explicitly
-        Real("rebel_prob", 0.01, 1.0),
-        Real("contrarian_prob", 0.01, 1.0),
-        Real("eschewer_prob", 0.01, 1.0),
-        # Behavior Flags
-        # Bool("assign_flags_every_iteration"),
+    # 'HybridAdditivePSO': [ # Assuming the version with default-to-standard logic
+    #     # Core PSO Params
+    #     Real("w", 0.01, 1.0),               # Inertia weight
+    #     Real("c1", 0.01, 6.0),             # Standard cognitive coefficient
+    #     Real("c2", 0.01, 6.0),             # Standard social coefficient
+    #     # Special Role Coefficients
+    #     Real("rejector_c", 0.01, 6.0),
+    #     Real("defeatist_c", 0.01, 6.0),
+    #     Real("escapist_c", 0.01, 6.0),
+    #     Real("rebel_c", 0.01, 6.0),
+    #     Real("contrarian_c", 0.01, 6.0),
+    #     Real("eschewer_c", 0.01, 6.0),
+    #     # Role Activation Probabilities (Independent)
+    #     Real("std_cognitive_prob", 0.01, 1.0), # Prob of activating std cognitive explicitly
+    #     Real("rejector_prob", 0.01, 1.0),
+    #     Real("defeatist_prob", 0.01, 1.0),
+    #     Real("escapist_prob", 0.01, 1.0),
+    #     Real("std_social_prob", 0.01, 1.0),    # Prob of activating std social explicitly
+    #     Real("rebel_prob", 0.01, 1.0),
+    #     Real("contrarian_prob", 0.01, 1.0),
+    #     Real("eschewer_prob", 0.01, 1.0),
+    #     # Behavior Flags
+    #     # Bool("assign_flags_every_iteration"),
+    # ],
+    'AnarchicPSO': [
+        Real("w", 0.01, 1),
+        Real("c1", 0.01, 6),
+        Real("c2", 0.01, 6),
+        Real("random_strength", 0.01, 3),
+        Real("anarchic_fraction", 0.01, 0.8),
+    ],
+    'AmnesiacPSO': [
+        Real("w", 0.01, 1),
+        Real("c1", 0.01, 6),
+        Real("c2", 0.01, 6),
+        Real("random_strength", 0.01, 3),
+        Real("amnesiac_fraction", 0.01, 0.8),
+    ],
+    'WandererPSO': [
+        Real("w", 0.01, 1),
+        Real("c1", 0.01, 6),
+        Real("c2", 0.01, 6),
+        Real("random_strength", 0.01, 3),
+        Real("wanderer_fraction", 0.01, 0.8),
     ],
 
 }

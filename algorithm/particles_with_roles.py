@@ -123,8 +123,8 @@ class AdaptiveRolePSO(SingleObjectivePSO, AdaptiveRoleMixin, RoleMixin):
                  c1, c2, w,
                  termination_criterion,
                  base_inertia, min_inertia, max_inertia,
-                 role_fractions: Dict[str,float],
-                 max_role_fractions: Dict[str,float],
+                 role_fractions: Dict[str, float],
+                 max_role_fractions: Dict[str, float],
                  diversity_threshold, improvement_threshold,
                  window_size):
         super().__init__(problem, swarm_size, c1, c2, w, termination_criterion)
@@ -299,7 +299,6 @@ class RRAPSO(RebelRejectorPSO, AdaptiveRoleMixin):
                  max_rejector_fraction: float = 0.8,
                  diversity_threshold: float = 0.1,
                  improvement_threshold: float = 0.01):
-
         # 1) Initialize Rebel+Rejector behavior
         RebelRejectorPSO.__init__(
             self,
@@ -323,11 +322,11 @@ class RRAPSO(RebelRejectorPSO, AdaptiveRoleMixin):
             min_inertia=min_inertia,
             max_inertia=max_inertia,
             role_fractions={
-                'is_rebel':    rebel_fraction,
+                'is_rebel': rebel_fraction,
                 'is_rejector': rejector_fraction,
             },
             max_role_fractions={
-                'is_rebel':    max_rebel_fraction,
+                'is_rebel': max_rebel_fraction,
                 'is_rejector': max_rejector_fraction,
             },
             diversity_threshold=diversity_threshold,
@@ -337,8 +336,6 @@ class RRAPSO(RebelRejectorPSO, AdaptiveRoleMixin):
 
     def get_name(self) -> str:
         return "RRAPSO"
-
-
 
 
 #####################################
@@ -528,7 +525,6 @@ class CDAPSO(ContrarianDefeatistPSO, AdaptiveRoleMixin):
                  max_defeatist_fraction: float = 0.8,
                  diversity_threshold: float = 0.1,
                  improvement_threshold: float = 0.01):
-
         # 1) Initialize the Contrarian+Defeatist behavior
         ContrarianDefeatistPSO.__init__(
             self,
@@ -566,7 +562,6 @@ class CDAPSO(ContrarianDefeatistPSO, AdaptiveRoleMixin):
 
     def get_name(self) -> str:
         return "CDAPSO"
-
 
 
 #####################################
@@ -757,7 +752,6 @@ class EEAPSO(EschewerEscapistPSO, AdaptiveRoleMixin):
                  max_escapist_fraction: float = 0.8,
                  diversity_threshold: float = 0.1,
                  improvement_threshold: float = 0.01):
-
         # 1) Initialize the Eschewer+Escapist behavior
         EschewerEscapistPSO.__init__(
             self,
@@ -781,11 +775,11 @@ class EEAPSO(EschewerEscapistPSO, AdaptiveRoleMixin):
             min_inertia=min_inertia,
             max_inertia=max_inertia,
             role_fractions={
-                'is_eschewer':  eschewer_fraction,
+                'is_eschewer': eschewer_fraction,
                 'is_escapist': escapist_fraction,
             },
             max_role_fractions={
-                'is_eschewer':  max_eschewer_fraction,
+                'is_eschewer': max_eschewer_fraction,
                 'is_escapist': max_escapist_fraction,
             },
             diversity_threshold=diversity_threshold,
@@ -795,3 +789,185 @@ class EEAPSO(EschewerEscapistPSO, AdaptiveRoleMixin):
 
     def get_name(self) -> str:
         return "EEAPSO"
+
+
+## Wanderer particles
+
+# ==============================================================================
+# Variant 1: AnarchicPSO (Random Social Component)
+# ==============================================================================
+class AnarchicPSO(SingleObjectivePSO, RoleMixin):
+    """
+    Anarchic PSO:
+    A subpopulation ('is_anarchic') preserves inertia and cognitive components
+    but replaces the social component (attraction to global best) with a
+    scaled random vector. Non-anarchic particles follow standard PSO update.
+    """
+
+    def __init__(self,
+                 problem: FloatProblem,
+                 swarm_size: int,
+                 termination_criterion: TerminationCriterion,
+                 w: float,
+                 c1: float,
+                 c2: float,
+                 random_strength: float,
+                 anarchic_fraction: float,
+                 constraint_handling_mode: str = "clip"):
+
+        super().__init__(problem, swarm_size, c1, c2, w, termination_criterion, constraint_handling_mode)
+        self.c1 = c1
+        self.c2 = c2
+        self.w = w
+        self.random_strength = random_strength
+        self.anarchic_fraction = max(0.0, min(1.0, anarchic_fraction))
+        self._num_vars = self.problem.number_of_variables()
+
+    def create_initial_solutions(self) -> List[S]:
+        solutions = super().create_initial_solutions()
+        self.mark_particles(solutions, self.anarchic_fraction, 'is_anarchic')
+        return solutions
+
+    def update_velocity(self, swarm: List[S]) -> None:
+        g_best = np.array(self.best_global.variables)
+
+        for particle in swarm:
+            current_pos = np.array(particle.variables)
+            current_vel = np.array(particle.attributes['velocity'])
+            p_best = np.array(particle.attributes['best_position'])
+
+            r1 = random.random()
+            cognitive_vec = self.c1 * r1 * (p_best - current_pos)
+
+            if particle.attributes.get('is_anarchic', False):
+                random_vec = np.random.uniform(-1.0, 1.0, self._num_vars)
+                social_vec = self.random_strength * random_vec
+            else:
+                r2 = random.random()
+                social_vec = self.c2 * r2 * (g_best - current_pos)
+
+            new_velocity = self.w * current_vel + cognitive_vec + social_vec
+            particle.attributes['velocity'] = new_velocity.tolist()
+
+    def get_name(self) -> str:
+        return "AnarchicPSO"
+
+
+# ==============================================================================
+# Variant 2: AmnesiacPSO (Random Cognitive Component)
+# ==============================================================================
+class AmnesiacPSO(SingleObjectivePSO, RoleMixin):
+    """
+    Amnesiac PSO:
+    A subpopulation ('is_amnesiac') preserves inertia and social components
+    but replaces the cognitive component (attraction to personal best) with a
+    scaled random vector. Non-amnesiac particles follow standard PSO update.
+    """
+
+    def __init__(self,
+                 problem: FloatProblem,
+                 swarm_size: int,
+                 termination_criterion: TerminationCriterion,
+                 w: float,
+                 c1: float,
+                 c2: float,
+                 random_strength: float,
+                 amnesiac_fraction: float,
+                 constraint_handling_mode: str = "clip"):
+
+        super().__init__(problem, swarm_size, c1, c2, w, termination_criterion, constraint_handling_mode)
+        self.c1 = c1
+        self.c2 = c2
+        self.w = w
+        self.random_strength = random_strength
+        self.amnesiac_fraction = max(0.0, min(1.0, amnesiac_fraction))
+        self._num_vars = self.problem.number_of_variables()
+
+    def create_initial_solutions(self) -> List[S]:
+        solutions = super().create_initial_solutions()
+        self.mark_particles(solutions, self.amnesiac_fraction, 'is_amnesiac')
+        return solutions
+
+    def update_velocity(self, swarm: List[S]) -> None:
+        g_best_pos = np.array(self.best_global.variables)
+
+        for particle in swarm:
+            current_pos = np.array(particle.variables)
+            current_vel = np.array(particle.attributes['velocity'])
+            p_best_pos = np.array(particle.attributes['best_position'])
+
+            if particle.attributes.get('is_amnesiac', False):
+                random_vec = np.random.uniform(-1.0, 1.0, self._num_vars)
+                cognitive_vec = self.random_strength * random_vec
+            else:
+                r1 = random.random()
+                cognitive_vec = self.c1 * r1 * (p_best_pos - current_pos)
+
+            r2 = random.random()
+            social_vec = self.c2 * r2 * (g_best_pos - current_pos)
+
+            new_velocity = self.w * current_vel + cognitive_vec + social_vec
+            particle.attributes['velocity'] = new_velocity.tolist()
+
+    def get_name(self) -> str:
+        return "AmnesiacPSO"
+
+
+# ==============================================================================
+# Variant 3: WandererPSO (Random Direction Only)
+# ==============================================================================
+class WandererPSO(SingleObjectivePSO, RoleMixin):
+    """
+    Wanderer PSO:
+    A subpopulation ('is_wanderer') updates its velocity based only on inertia
+    and a scaled random vector, ignoring personal and global best attractors.
+    Non-wanderer particles follow standard PSO update.
+    """
+
+    def __init__(self,
+                 problem: FloatProblem,
+                 swarm_size: int,
+                 termination_criterion: TerminationCriterion,
+                 w: float,
+                 c1: float,
+                 c2: float,
+                 random_strength: float,
+                 wanderer_fraction: float,
+                 constraint_handling_mode: str = "clip"):
+
+        super().__init__(problem, swarm_size, c1, c2, w, termination_criterion, constraint_handling_mode)
+        self.c1 = c1
+        self.c2 = c2
+        self.w = w
+        self.random_strength = random_strength
+        self.wanderer_fraction = max(0.0, min(1.0, wanderer_fraction))  # Ensure valid fraction
+        self._num_vars = self.problem.number_of_variables()
+
+    def create_initial_solutions(self) -> List[S]:
+        solutions = super().create_initial_solutions()
+        self.mark_particles(solutions, self.wanderer_fraction, 'is_wanderer')
+        return solutions
+
+    def update_velocity(self, swarm: List[S]) -> None:
+        g_best_pos = np.array(self.best_global.variables)
+
+        for particle in swarm:
+            attrs = particle.attributes
+            current_pos = np.array(particle.variables)
+            current_vel = np.array(attrs['velocity'])
+
+            if attrs.get('is_wanderer', False):
+                random_vec = np.random.uniform(-1.0, 1.0, self._num_vars)
+                new_velocity = self.w * current_vel + self.random_strength * random_vec
+            else:
+                p_best_pos = np.array(attrs['best_position'])
+                r1 = random.random()
+                r2 = random.random()
+                cognitive_vec = self.c1 * r1 * (p_best_pos - current_pos)
+                social_vec = self.c2 * r2 * (g_best_pos - current_pos)
+                new_velocity = self.w * current_vel + cognitive_vec + social_vec
+
+            particle.attributes['velocity'] = new_velocity.tolist()
+
+    def get_name(self) -> str:
+        return "WandererPSO"
