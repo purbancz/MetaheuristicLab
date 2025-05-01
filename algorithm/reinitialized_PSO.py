@@ -11,7 +11,7 @@ from algorithm.single_objective_PSO import SingleObjectivePSO
 S = TypeVar('S')
 R = TypeVar('R')
 
-class FAPSO(SingleObjectivePSO):
+class FRAPSO(SingleObjectivePSO):
     """
     Fractal Adaptive PSO (FAPSO)
     Fractal, Focus
@@ -40,7 +40,6 @@ class FAPSO(SingleObjectivePSO):
 
     def reinitialize_swarm(self):
         for particle in self.solutions:
-            # Use the current search region instead of the original problem bounds.
             particle.variables = np.random.uniform(
                 self.current_lower_bound,
                 self.current_upper_bound
@@ -77,15 +76,14 @@ class FAPSO(SingleObjectivePSO):
         super().step()
 
     def get_name(self) -> str:
-        return "FAPSO"
+        return "FRAPSO"
 
-class ConvergenceRestarterPSO(SingleObjectivePSO, RoleMixin):
+class PartialResetPSO(SingleObjectivePSO, RoleMixin):
     """
-    Convergence Restarter PSO:
     Detects swarm convergence based on diversity. When converged,
     particles marked with the 'is_restarter' role are randomly
     reinitialized within the original problem bounds. The role assignment
-    is fixed at the beginning. NO minimum iterations between restarts.
+    is fixed at the beginning.
     """
     def __init__(self,
                  problem: FloatProblem,
@@ -141,4 +139,57 @@ class ConvergenceRestarterPSO(SingleObjectivePSO, RoleMixin):
         super().step()
 
     def get_name(self) -> str:
-        return "ConvergenceRestarterPSO"
+        return "PartialResetPSO"
+
+class CollectiveResetPSO(SingleObjectivePSO):
+
+    def __init__(self,
+                 problem: FloatProblem,
+                 swarm_size: int,
+                 termination_criterion: TerminationCriterion,
+                 w: float,
+                 c1: float,
+                 c2: float,
+                 convergence_threshold: float = 1e-3,
+                 # max_refreshes: int = 5,
+                 constraint_handling_mode: str = "clip"
+                 ):
+
+        super().__init__(problem=problem, swarm_size=swarm_size, c1=c1, c2=c2, w=w,
+                         termination_criterion=termination_criterion,
+                         constraint_handling_mode=constraint_handling_mode)
+
+        self.convergence_threshold = convergence_threshold
+        # self.max_refreshes = max_refreshes
+        # self.refresh_count = 0
+
+    def converged(self) -> bool:
+        positions = np.array([p.variables for p in self.solutions])
+        centroid = np.mean(positions, axis=0)
+        diversity = np.mean(np.linalg.norm(positions - centroid, axis=1))
+        return diversity < self.convergence_threshold
+
+    def reinitialize_swarm(self):
+        for particle in self.solutions:
+            particle.variables = np.random.uniform(
+                self.problem.lower_bound,
+                self.problem.upper_bound
+            ).tolist()
+            particle.attributes['velocity'] = np.random.uniform(-1, 1, self.problem.number_of_variables()).tolist()
+            particle.attributes['best_position'] = particle.variables.copy()
+            particle.attributes['best_objective'] = particle.objectives[0]
+
+    # def swarm_decomposition(self):
+    #     if self.converged() and self.refresh_count < self.max_refreshes:
+    #         self.refresh_count += 1
+    #         self.reinitialize_swarm()
+
+    def step(self):
+        if self.converged():
+            self.reinitialize_swarm()
+        # self.swarm_decomposition()
+        super().step()
+
+    def get_name(self) -> str:
+        return "CollectiveResetPSO"
+

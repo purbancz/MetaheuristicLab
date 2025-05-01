@@ -15,7 +15,7 @@ from algorithm.particles_with_roles import RebelPSO, RejectorPSO, RebelRejectorP
     ContrarianDefeatistPSO, EschewerPSO, EscapistPSO, EschewerEscapistPSO, CDAPSO, EEAPSO, AnarchicPSO, AmnesiacPSO, \
     WandererPSO, NoisyPSO
 from algorithm.single_objective_PSO import SingleObjectivePSO, PerturbationPSO
-from algorithm.reinitialized_PSO import FAPSO
+from algorithm.reinitialized_PSO import FRAPSO, CollectiveResetPSO, PartialResetPSO
 from algorithm.NPSO import NPSO
 from algorithm.QTPSO import QTPSO
 from algorithm.SPPPSO import SPPPSO
@@ -283,7 +283,20 @@ parameter_spaces = {
         Real("c2", 0.01, 6),
         Real("perturbation_scale", 0.001, 1.0),
         Categorical("perturbation_method", ["gaussian", "cauchy"]),
-    ]
+    ],
+    'PartialResetPSO': [
+        Real("w", 0.01, 1),
+        Real("c1", 0.01, 6),
+        Real("c2", 0.01, 6),
+        Real("convergence_threshold", 0.00001, 0.2),
+        Real("restarter_fraction", 0.01, 0.8),
+    ],
+    'CollectiveResetPSO': [
+        Real("w", 0.01, 1),
+        Real("c1", 0.01, 6),
+        Real("c2", 0.01, 6),
+        Real("convergence_threshold", 0.00001, 0.2),
+    ],
 }
 
 current_algorithm = None

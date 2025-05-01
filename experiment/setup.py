@@ -8,7 +8,7 @@ from jmetal.util.termination_criterion import StoppingByEvaluations
 
 from algorithm.AdaptivePSO import CoAdaptativePSO, IndividualAdaptivePSO
 from algorithm.DifferentialEvolution import DifferentialEvolution
-from algorithm.reinitialized_PSO import FAPSO
+from algorithm.reinitialized_PSO import FRAPSO, CollectiveResetPSO, PartialResetPSO
 from algorithm.GradientEnhancedPSO import GradientEnhancedPSO
 from algorithm.HybridPSODE import HybridPSODE
 from algorithm.LightningPSO import LightningPSO
@@ -87,8 +87,8 @@ from problem.n_variables.zakharov import Zakharov
 
 
 def setup_experiment():
-    no_of_runs = 50
-    number_of_variables = 1000
+    no_of_runs = 5
+    number_of_variables = 100
     solutions_size = 100
     max_evaluations = 25000
     frequency = solutions_size  # Snapshot each generation
@@ -111,7 +111,7 @@ def setup_experiment():
         # 'SPPPSO': 'xkcd:charcoal',
         # 'TDPSO': 'xkcd:teal',
         # 'NPSO': 'xkcd:burgundy',
-        'FAPSO': 'xkcd:teal',
+        'FRAPSO': 'xkcd:teal',
         'ReverseLearningPSO': 'xkcd:yellow',
         'ReverseLearningPSO_with_bounce': 'xkcd:dirty yellow',
         'ReverseLearningGlobalAttractorPSO': 'xkcd:lime green',
@@ -185,7 +185,7 @@ def setup_experiment():
         # Griewank(number_of_variables),
         # HappyCat(number_of_variables),
         # HGBat(number_of_variables),
-        LennardJonesMinimumEnergyCluster(number_of_variables),
+        # LennardJonesMinimumEnergyCluster(number_of_variables),
         # Levy(number_of_variables),
         # Michalewicz(number_of_variables),
         # Mishra01(number_of_variables),
@@ -240,7 +240,7 @@ def setup_experiment():
         # ExpandedKatsuura(number_of_variables), # too long
         # Katsuura(number_of_variables),  # too long
         # Ackley(number_of_variables), # irace
-        # Rastrigin(number_of_variables),  # irace
+        Rastrigin(number_of_variables),  # irace
         # Sphere(number_of_variables), # irace
 
     ]
@@ -331,25 +331,25 @@ def setup_experiment():
         # #     improvement_threshold=0.0567,
         # #     termination_criterion=StoppingByEvaluations(max_evaluations)
         # # ),
-        'RRAPSO': lambda p: RRAPSO(  # LennardJonesMinimumEnergyCluster missing
-            problem=p,
-            swarm_size=solutions_size,
-            c1=0.548691568141336,
-            c2=5.907597506402747,
-            ac1=3.2624960653318853,
-            ac2=0.376736442803273,
-            base_inertia=0.109099990738931,
-            min_inertia=0.019422700188969,
-            max_inertia=0.467675367006755,
-            rebel_fraction=0.089454737167723,
-            rejector_fraction=0.10863150880624,
-            window_size=27,
-            max_rebel_fraction=0.148842504973759,
-            max_rejector_fraction=0.679700999528298,
-            diversity_threshold=0.027890990404388,
-            improvement_threshold=0.038668316988009,
-            termination_criterion=StoppingByEvaluations(max_evaluations)
-        ),
+        # 'RRAPSO': lambda p: RRAPSO(  # LennardJonesMinimumEnergyCluster missing
+        #     problem=p,
+        #     swarm_size=solutions_size,
+        #     c1=0.548691568141336,
+        #     c2=5.907597506402747,
+        #     ac1=3.2624960653318853,
+        #     ac2=0.376736442803273,
+        #     base_inertia=0.109099990738931,
+        #     min_inertia=0.019422700188969,
+        #     max_inertia=0.467675367006755,
+        #     rebel_fraction=0.089454737167723,
+        #     rejector_fraction=0.10863150880624,
+        #     window_size=27,
+        #     max_rebel_fraction=0.148842504973759,
+        #     max_rejector_fraction=0.679700999528298,
+        #     diversity_threshold=0.027890990404388,
+        #     improvement_threshold=0.038668316988009,
+        #     termination_criterion=StoppingByEvaluations(max_evaluations)
+        # ),
         # ## Worse aware algorithms
         # 'ReverseLearningPSO': lambda p: ReverseLearningPSO(  # clip rough tuning
         #     problem=p,
@@ -377,16 +377,16 @@ def setup_experiment():
         #     w=0.035467244014656,
         #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
         # ),
-        'CombinedLearningPSO': lambda p: CombinedLearningPSO(  # clip rough tuning
-            problem=p,
-            swarm_size=solutions_size,
-            c1=0.679870939188416,
-            c2=3.2484486786755418,
-            b1=0.04445122849381,
-            b2=0.384275983213548,
-            w=0.252967959141965,
-            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        ),
+        # 'CombinedLearningPSO': lambda p: CombinedLearningPSO(  # clip rough tuning
+        #     problem=p,
+        #     swarm_size=solutions_size,
+        #     c1=0.679870939188416,
+        #     c2=3.2484486786755418,
+        #     b1=0.04445122849381,
+        #     b2=0.384275983213548,
+        #     w=0.252967959141965,
+        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        # ),
         # ### Contrarian algorithms
         # 'ContrarianPSO': lambda p: ContrarianPSO(  # clip rough tuning
         #     problem=p,
@@ -565,16 +565,35 @@ def setup_experiment():
         #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
         # ),
         # ### Other
-        # 'FAPSO': lambda p: FAPSO(  # clip rough tuning
-        #     problem=p,
-        #     swarm_size=solutions_size,
-        #     c1=0.240010838523818,
-        #     c2=5.308903636820276,
-        #     w=0.081799781060863,
-        #     fractal_depth=4,
-        #     convergence_threshold=0.026560651344854,
-        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        # ),
+        'PartialResetPSO': lambda p: PartialResetPSO(
+            problem=p,
+            swarm_size=solutions_size,
+            c1=2.91,
+            c2=1.73,
+            w=0.33,
+            convergence_threshold=0.0125,
+            restarter_fraction=0.2,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
+        'CollectiveResetPSO': lambda p: CollectiveResetPSO(
+            problem=p,
+            swarm_size=solutions_size,
+            c1=2.05,
+            c2=2.45,
+            w=0.41,
+            convergence_threshold=0.018,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
+        'FRAPSO': lambda p: FRAPSO(  # clip rough tuning
+            problem=p,
+            swarm_size=solutions_size,
+            c1=0.240010838523818,
+            c2=5.308903636820276,
+            w=0.081799781060863,
+            fractal_depth=4,
+            convergence_threshold=0.026560651344854,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
         # ## Hybrid
         # 'HybridFullDisjointPSO': lambda p: HybridFullDisjointPSO(  # clip rough tuning
         #     problem=p,
@@ -618,29 +637,29 @@ def setup_experiment():
         #     assign_roles_every_iteration=True,
         #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
         # ),
-        'HybridAdditivePSO': lambda p: HybridAdditivePSO(  # clip rough tuning
-            problem=p,
-            swarm_size=solutions_size,
-            w=0.042646428822865,
-            c1=0.253645685149182,
-            c2=2.307040589069303,
-            rejector_c=1.3034967863175075,
-            defeatist_c=0.137324173204785,
-            escapist_c=0.023227418883015,
-            rebel_c=0.040886380920212,
-            contrarian_c=2.2432839871932138,
-            eschewer_c=2.769447241515806,
-            std_cognitive_prob=0.879673273767784,
-            rejector_prob=0.535682485751952,
-            defeatist_prob=0.538526878006812,
-            escapist_prob=0.462726801113222,
-            std_social_prob=0.764228739850829,
-            rebel_prob=0.475650793954077,
-            contrarian_prob=0.46010305052283,
-            eschewer_prob=0.31480023964547,
-            assign_flags_every_iteration=True,
-            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
-        ),
+        # 'HybridAdditivePSO': lambda p: HybridAdditivePSO(  # clip rough tuning
+        #     problem=p,
+        #     swarm_size=solutions_size,
+        #     w=0.042646428822865,
+        #     c1=0.253645685149182,
+        #     c2=2.307040589069303,
+        #     rejector_c=1.3034967863175075,
+        #     defeatist_c=0.137324173204785,
+        #     escapist_c=0.023227418883015,
+        #     rebel_c=0.040886380920212,
+        #     contrarian_c=2.2432839871932138,
+        #     eschewer_c=2.769447241515806,
+        #     std_cognitive_prob=0.879673273767784,
+        #     rejector_prob=0.535682485751952,
+        #     defeatist_prob=0.538526878006812,
+        #     escapist_prob=0.462726801113222,
+        #     std_social_prob=0.764228739850829,
+        #     rebel_prob=0.475650793954077,
+        #     contrarian_prob=0.46010305052283,
+        #     eschewer_prob=0.31480023964547,
+        #     assign_flags_every_iteration=True,
+        #     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        # ),
         ## Not mine
         # 'DCS-PSO': lambda p: DCSPSO(  # clip rough tuning
         #     problem=p,
@@ -680,14 +699,14 @@ def setup_experiment():
         #                                                          'CombinedLearningPSO'],
         # 'Worse aware algorithms negative': ['ContrarianPSO', 'DefeatistPSO', 'ContrarianDefeatistPSO'],
         # 'Worse aware algorithms positive': ['EschewerPSO', 'EscapistPSO', 'EschewerEscapistPSO'],
-        # 'Adaptive algorithms': ['CAPSO', 'IAPSO', 'FAPSO'],
-        # 'Adaptive algorithms without FAPSO': ['CAPSO', 'IAPSO'],
+        # 'Adaptive algorithms': ['CAPSO', 'IAPSO', 'FRAPSO'],
+        # 'Adaptive algorithms without FRAPSO': ['CAPSO', 'IAPSO'],
         # 'All without reverse learning': ['RebelPSO', 'RejectorPSO', 'RebelRejectorPSO', 'RRAPSO',
         #                                  'ContrarianPSO', 'DefeatistPSO', 'ContrarianDefeatistPSO', 'CDAPSO',
         #                                  'EschewerPSO', 'EscapistPSO', 'EschewerEscapistPSO', 'EEAPSO',
         #                                  'ReverseLearningGlobalAttractorPSO', 'ReverseLearningPersonalAttractorPSO',
-        #                                  'CombinedLearningPSO', 'CAPSO', 'IAPSO', 'FAPSO'],
-        # 'All without reverse learning, FAPSO and RRAPSO': ['RebelPSO', 'RejectorPSO', 'RebelRejectorPSO',
+        #                                  'CombinedLearningPSO', 'CAPSO', 'IAPSO', 'FRAPSO'],
+        # 'All without reverse learning, FRAPSO and RRAPSO': ['RebelPSO', 'RejectorPSO', 'RebelRejectorPSO',
         #                                             'ContrarianPSO', 'DefeatistPSO', 'ContrarianDefeatistPSO',
         #                                             'EschewerPSO', 'EscapistPSO', 'EschewerEscapistPSO',
         #                                             'ReverseLearningGlobalAttractorPSO',
@@ -697,10 +716,10 @@ def setup_experiment():
         #     'RebelPSO', 'RejectorPSO', 'RebelRejectorPSO', 'RRAPSO',
         #     'ContrarianPSO', 'DefeatistPSO', 'ContrarianDefeatistPSO', 'CDAPSO',
         #     'EschewerPSO', 'EscapistPSO', 'EschewerEscapistPSO', 'EEAPSO',
-        #     'CAPSO', 'IAPSO', 'FAPSO',
+        #     'CAPSO', 'IAPSO', 'FRAPSO',
         #     'HybridFullDisjointPSO', 'HybridPartialDisjointPSO', 'HybridAdditivePSO',
         # ],
-        # 'All without all reverse learning, FAPSO and RRAPSO': ['RebelPSO', 'RejectorPSO', 'RebelRejectorPSO',
+        # 'All without all reverse learning, FRAPSO and RRAPSO': ['RebelPSO', 'RejectorPSO', 'RebelRejectorPSO',
         #                                                 'ContrarianPSO', 'DefeatistPSO', 'ContrarianDefeatistPSO',
         #                                                 'EschewerPSO', 'EscapistPSO', 'EschewerEscapistPSO',
         #                                                 'CAPSO', 'IAPSO'],
