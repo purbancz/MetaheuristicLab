@@ -6,7 +6,7 @@ from skopt.utils import use_named_args, dump, load
 from skopt import gp_minimize
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
-from algorithm.FAPSO import FAPSO
+from algorithm.reinitialized_PSO import FAPSO
 from algorithm.NPSO import NPSO
 from algorithm.QTPSO import QTPSO
 from algorithm.SPPPSO import SPPPSO

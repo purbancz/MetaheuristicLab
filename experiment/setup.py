@@ -8,7 +8,7 @@ from jmetal.util.termination_criterion import StoppingByEvaluations
 
 from algorithm.AdaptivePSO import CoAdaptativePSO, IndividualAdaptivePSO
 from algorithm.DifferentialEvolution import DifferentialEvolution
-from algorithm.FAPSO import FAPSO
+from algorithm.reinitialized_PSO import FAPSO
 from algorithm.GradientEnhancedPSO import GradientEnhancedPSO
 from algorithm.HybridPSODE import HybridPSODE
 from algorithm.LightningPSO import LightningPSO
@@ -25,9 +25,9 @@ from algorithm.hgbat import HGBat
 from algorithm.hybrid_diverse import HybridPartialDisjointPSO, HybridFullDisjointPSO, HybridAdditivePSO
 from algorithm.particles_with_roles import RebelPSO, RejectorPSO, RebelRejectorPSO, RRAPSO, ContrarianPSO, DefeatistPSO, \
     ContrarianDefeatistPSO, EschewerPSO, EscapistPSO, EschewerEscapistPSO, CDAPSO, EEAPSO, AnarchicPSO, AmnesiacPSO, \
-    WandererPSO
+    WandererPSO, NoisyPSO
 from algorithm.ref_DCSPSO import DCSPSO
-from algorithm.single_objective_PSO import SingleObjectivePSO
+from algorithm.single_objective_PSO import SingleObjectivePSO, PerturbationPSO
 
 from problem.fixed_varaibles.branin import BraninRCOC
 from problem.fixed_varaibles.camel import SixHumpCamel, ThreeHumpCamel
@@ -127,6 +127,9 @@ def setup_experiment():
         'EschewerPSO': 'xkcd:pea green',
         'EscapistPSO': 'xkcd:marine',
         'EschewerEscapistPSO': 'xkcd:dark magenta',
+        'AnarchicPSO': 'xkcd:dark purple',
+        'AmnesiacPSO': 'xkcd:yellow green',
+        'WandererPSO': 'xkcd:pale blue',
         'HybridFullDisjointPSO': 'xkcd:reddy brown',
         'HybridPartialDisjointPSO': 'xkcd:strong blue',
         'HybridAdditivePSO': "xkcd:forrest green",
@@ -519,6 +522,27 @@ def setup_experiment():
             wanderer_fraction=0.4,
             termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
         ),
+        'NoisyPSO': lambda p: NoisyPSO(
+            problem=p,
+            swarm_size=solutions_size,
+            w=0.5,
+            c1=2.0,
+            c2=2.0,
+            noise_strength=1.0,
+            noisy_fraction=0.3,
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
+        'PerturbationPSO': lambda p: PerturbationPSO(
+            problem=p,
+            swarm_size=solutions_size,
+            w=0.5,
+            c1=2.0,
+            c2=2.0,
+            perturbation_scale=0.5,
+            perturbation_method="gaussian",
+            termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+        ),
+
         # # ## Adaptive algorithms
         # 'CAPSO': lambda p: CoAdaptativePSO(  # clip rough tuning
         #     problem=p,

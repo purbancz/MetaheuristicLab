@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=wanderer_algorithms_irace_tune
+#SBATCH --job-name=perturbation_algorithms_irace_tune
 #SBATCH --output=%x_%j.out
 #SBATCH --error=%x_%j.err
 #SBATCH --time=12:00:00

@@ -202,6 +202,51 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
     def get_name(self) -> str:
         return "PSO"
 
+
+class PerturbationPSO(SingleObjectivePSO):
+    """PSO with perturbation"""
+    def __init__(self,
+                 problem: FloatProblem,
+                 swarm_size: int,
+                 c1: float,
+                 c2: float,
+                 w: float,
+                 termination_criterion: TerminationCriterion,
+                 constraint_handling_mode: str = "clip",
+                 perturbation_method: str = "gaussian",
+                 perturbation_scale: float = 0.1):
+        super().__init__(problem, swarm_size, c1, c2, w, termination_criterion, constraint_handling_mode)
+        self.perturbation_method = perturbation_method
+        self.perturbation_scale = perturbation_scale
+
+    def perturbation(self, swarm: List[S]) -> None:
+        """
+            Apply perturbation to PSO particles.
+
+            :param swarm: List of particles, each with attributes 'velocity' or 'position'
+            :param method: 'gaussian' or 'cauchy'
+            :param scale: Standard deviation (gaussian) or scale parameter (cauchy)
+            """
+        lower_bound = np.array(self.problem.lower_bound)
+        upper_bound = np.array(self.problem.upper_bound)
+
+        for particle in swarm:
+            pos = np.array(particle.variables)
+            vel = np.array(particle.attributes['velocity'])
+
+            if self.perturbation_method.lower() == "gaussian":
+                noise = np.random.normal(loc=0.0, scale=self.perturbation_scale, size=pos.shape)
+            elif self.perturbation_method.lower() == "cauchy":
+                noise = np.random.standard_cauchy(size=pos.shape) * self.perturbation_scale
+            else:
+                raise ValueError("Unknown perturbation method: choose 'gaussian' or 'cauchy'")
+
+            new_pos = pos + noise
+            new_pos, new_vel = self.handle_constraints(new_pos, vel, lower_bound, upper_bound)
+
+            particle.variables = new_pos.tolist()
+            particle.attributes['velocity'] = new_vel.tolist()
+
 # class RebelPSO(SingleObjectivePSO):
 #     """PSO with rebel particles opposing global best"""
 #

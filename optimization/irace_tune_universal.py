@@ -16,7 +16,7 @@ from algorithm.WAPSO import ReverseLearningGlobalAttractorPSO, CombinedLearningP
 from algorithm.particles_with_roles import RebelPSO, RejectorPSO, RebelRejectorPSO, RRAPSO, ContrarianPSO, DefeatistPSO, \
     ContrarianDefeatistPSO, EschewerPSO, EscapistPSO, EschewerEscapistPSO, CDAPSO, EEAPSO
 from algorithm.single_objective_PSO import SingleObjectivePSO
-from algorithm.FAPSO import FAPSO
+from algorithm.reinitialized_PSO import FAPSO
 from algorithm.NPSO import NPSO
 from algorithm.QTPSO import QTPSO
 from algorithm.SPPPSO import SPPPSO

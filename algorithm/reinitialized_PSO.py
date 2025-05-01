@@ -1,8 +1,15 @@
+from typing import List, TypeVar
+
 import numpy as np
 from jmetal.core.problem import FloatProblem
 from jmetal.core.solution import FloatSolution
 from jmetal.util.termination_criterion import TerminationCriterion
+
+from algorithm.particles_with_roles import RoleMixin
 from algorithm.single_objective_PSO import SingleObjectivePSO
+
+S = TypeVar('S')
+R = TypeVar('R')
 
 class FAPSO(SingleObjectivePSO):
     """
@@ -14,8 +21,9 @@ class FAPSO(SingleObjectivePSO):
       - Multi-Resolution Search: Particles alternate between global and refined local search
       - Adaptive Focus: Automatically concentrates particles near promising regions
     """
+
     def __init__(self, problem: FloatProblem, swarm_size: int, c1: float, c2: float, w: float,
-                 termination_criterion: TerminationCriterion, fractal_depth=3, convergence_threshold = 1e-3):
+                 termination_criterion: TerminationCriterion, fractal_depth=3, convergence_threshold=1e-3):
         super().__init__(problem, swarm_size, c1, c2, w, termination_criterion)
         self.fractal_depth = fractal_depth
         self.convergence_threshold = convergence_threshold
@@ -37,9 +45,7 @@ class FAPSO(SingleObjectivePSO):
                 self.current_lower_bound,
                 self.current_upper_bound
             ).tolist()
-            particle.attributes['velocity'] = np.random.uniform(
-                -1, 1, self.problem.number_of_variables()
-            ).tolist()
+            particle.attributes['velocity'] = np.random.uniform(-1, 1, self.problem.number_of_variables()).tolist()
             particle.attributes['best_position'] = particle.variables.copy()
             particle.attributes['best_objective'] = particle.objectives[0]
 
@@ -72,3 +78,67 @@ class FAPSO(SingleObjectivePSO):
 
     def get_name(self) -> str:
         return "FAPSO"
+
+class ConvergenceRestarterPSO(SingleObjectivePSO, RoleMixin):
+    """
+    Convergence Restarter PSO:
+    Detects swarm convergence based on diversity. When converged,
+    particles marked with the 'is_restarter' role are randomly
+    reinitialized within the original problem bounds. The role assignment
+    is fixed at the beginning. NO minimum iterations between restarts.
+    """
+    def __init__(self,
+                 problem: FloatProblem,
+                 swarm_size: int,
+                 termination_criterion: TerminationCriterion,
+                 w: float,
+                 c1: float,
+                 c2: float,
+                 convergence_threshold: float = 1e-3,
+                 restarter_fraction: float = 0.1,
+                 constraint_handling_mode: str = "clip"
+                 ):
+
+        super().__init__(problem=problem, swarm_size=swarm_size, c1=c1, c2=c2, w=w,
+                         termination_criterion=termination_criterion,
+                         constraint_handling_mode=constraint_handling_mode)
+
+        self.convergence_threshold = convergence_threshold
+        self.restarter_fraction = max(0.0, min(1.0, restarter_fraction))
+        self._num_vars = self.problem.number_of_variables
+        self._lower_bound = np.array(self.problem.lower_bound)
+        self._upper_bound = np.array(self.problem.upper_bound)
+
+    def check_convergence(self) -> bool:
+        positions = np.array([p.variables for p in self.solutions])
+        centroid = np.mean(positions, axis=0)
+        diversity = np.mean(np.linalg.norm(positions - centroid, axis=1))
+        return diversity < self.convergence_threshold
+
+    def selective_reinitialization(self):
+        particles_to_reset = [p for p in self.solutions if p.attributes.get('is_restarter', False)]
+
+        for particle in particles_to_reset:
+            particle.variables = np.random.uniform(
+                self.problem.lower_bound,
+                self.problem.upper_bound
+            ).tolist()
+            particle.attributes['velocity'] = np.random.uniform(-1, 1, self.problem.number_of_variables()).tolist()
+            particle.attributes['best_position'] = particle.variables.copy()
+            particle.attributes['best_objective'] = particle.objectives[0]
+
+    def create_initial_solutions(self) -> List[S]:
+        solutions = super().create_initial_solutions()
+        self.mark_particles(solutions, self.restarter_fraction, 'is_restarter')
+        for p in solutions:
+             if not hasattr(p, 'attributes'): p.attributes = {}
+             if 'is_restarter' not in p.attributes: p.attributes['is_restarter'] = False
+        return solutions
+
+    def step(self):
+        if self.check_convergence():
+            self.selective_reinitialization()
+        super().step()
+
+    def get_name(self) -> str:
+        return "ConvergenceRestarterPSO"

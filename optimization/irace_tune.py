@@ -13,14 +13,14 @@ from algorithm.WAPSO import ReverseLearningGlobalAttractorPSO, CombinedLearningP
     ReverseLearningPSO
 from algorithm.particles_with_roles import RebelPSO, RejectorPSO, RebelRejectorPSO, RRAPSO, ContrarianPSO, DefeatistPSO, \
     ContrarianDefeatistPSO, EschewerPSO, EscapistPSO, EschewerEscapistPSO, CDAPSO, EEAPSO, AnarchicPSO, AmnesiacPSO, \
-    WandererPSO
-from algorithm.single_objective_PSO import SingleObjectivePSO
-from algorithm.FAPSO import FAPSO
+    WandererPSO, NoisyPSO
+from algorithm.single_objective_PSO import SingleObjectivePSO, PerturbationPSO
+from algorithm.reinitialized_PSO import FAPSO
 from algorithm.NPSO import NPSO
 from algorithm.QTPSO import QTPSO
 from algorithm.SPPPSO import SPPPSO
 from algorithm.TDPSO import TDPSO
-from irace import irace, ParameterSpace, Scenario, Experiment, Real, Integer, Bool
+from irace import irace, ParameterSpace, Scenario, Experiment, Real, Integer, Bool, Categorical
 import rpy2.robjects as robjects
 
 from problem.n_variables.ackley import Ackley
@@ -249,28 +249,41 @@ parameter_spaces = {
     #     # Behavior Flags
     #     # Bool("assign_flags_every_iteration"),
     # ],
-    'AnarchicPSO': [
+    # 'AnarchicPSO': [
+    #     Real("w", 0.01, 1),
+    #     Real("c1", 0.01, 6),
+    #     Real("c2", 0.01, 6),
+    #     Real("random_strength", 0.01, 3),
+    #     Real("anarchic_fraction", 0.01, 0.8),
+    # ],
+    # 'AmnesiacPSO': [
+    #     Real("w", 0.01, 1),
+    #     Real("c1", 0.01, 6),
+    #     Real("c2", 0.01, 6),
+    #     Real("random_strength", 0.01, 3),
+    #     Real("amnesiac_fraction", 0.01, 0.8),
+    # ],
+    # 'WandererPSO': [
+    #     Real("w", 0.01, 1),
+    #     Real("c1", 0.01, 6),
+    #     Real("c2", 0.01, 6),
+    #     Real("random_strength", 0.01, 3),
+    #     Real("wanderer_fraction", 0.01, 0.8),
+    # ],
+    'NoisyPSO': [
         Real("w", 0.01, 1),
         Real("c1", 0.01, 6),
         Real("c2", 0.01, 6),
-        Real("random_strength", 0.01, 3),
-        Real("anarchic_fraction", 0.01, 0.8),
+        Real("noise_strength", 0.01, 3),
+        Real("noisy_fraction", 0.01, 0.8),
     ],
-    'AmnesiacPSO': [
+    'PerturbationPSO': [
         Real("w", 0.01, 1),
         Real("c1", 0.01, 6),
         Real("c2", 0.01, 6),
-        Real("random_strength", 0.01, 3),
-        Real("amnesiac_fraction", 0.01, 0.8),
-    ],
-    'WandererPSO': [
-        Real("w", 0.01, 1),
-        Real("c1", 0.01, 6),
-        Real("c2", 0.01, 6),
-        Real("random_strength", 0.01, 3),
-        Real("wanderer_fraction", 0.01, 0.8),
-    ],
-
+        Real("perturbation_scale", 0.001, 1.0),
+        Categorical("perturbation_method", ["gaussian", "cauchy"]),
+    ]
 }
 
 current_algorithm = None

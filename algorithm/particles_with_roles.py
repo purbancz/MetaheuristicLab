@@ -971,3 +971,66 @@ class WandererPSO(SingleObjectivePSO, RoleMixin):
 
     def get_name(self) -> str:
         return "WandererPSO"
+
+
+# ==============================================================================
+# Variant: NoisyPSO (Standard PSO + Added Random Vector for Subpopulation)
+# ==============================================================================
+class NoisyPSO(SingleObjectivePSO, RoleMixin):
+    """
+    Noisy PSO (or Perturbed PSO):
+    Applies the standard PSO velocity update (inertia + cognitive + social)
+    to all particles. However, a subpopulation ('is_noisy') has an
+    additional scaled random vector added to their calculated velocity.
+    """
+
+    def __init__(self,
+                 problem: FloatProblem,
+                 swarm_size: int,
+                 termination_criterion: TerminationCriterion,
+                 w: float,
+                 c1: float,
+                 c2: float,
+                 noise_strength: float,
+                 noisy_fraction: float,
+                 constraint_handling_mode: str = "clip"):
+
+        super().__init__(problem, swarm_size, c1, c2, w, termination_criterion, constraint_handling_mode)
+        self.c1 = c1
+        self.c2 = c2
+        self.w = w
+        self.noise_strength = noise_strength
+        self.noisy_fraction = max(0.0, min(1.0, noisy_fraction))
+        self._num_vars = self.problem.number_of_variables
+
+    def create_initial_solutions(self) -> List[S]:
+        solutions = super().create_initial_solutions()
+        # Mark the subpopulation that will receive extra noise
+        self.mark_particles(solutions, self.noisy_fraction, 'is_noisy')
+        return solutions
+
+    def update_velocity(self, swarm: List[S]) -> None:
+        g_best_pos = np.array(self.best_global.variables)
+
+        for particle in swarm:
+            current_pos = np.array(particle.variables)
+            current_vel = np.array(particle.attributes['velocity'])
+            p_best_pos = np.array(particle.attributes['best_position'])
+
+            r1, r2 = random.random(), random.random(),
+            cognitive_vec = self.c1 * r1 * (p_best_pos - current_pos)
+            social_vec = self.c2 * r2 * (g_best_pos - current_pos)
+
+            base_velocity = self.w * current_vel + cognitive_vec + social_vec
+
+            if particle.attributes.get('is_noisy', False):
+                random_noise_vec = np.random.uniform(-1.0, 1.0, self._num_vars)
+                scaled_noise = self.noise_strength * random_noise_vec
+                final_velocity = base_velocity + scaled_noise
+            else:
+                final_velocity = base_velocity
+
+            particle.attributes['velocity'] = final_velocity.tolist()
+
+    def get_name(self) -> str:
+        return "NoisyPSO"
