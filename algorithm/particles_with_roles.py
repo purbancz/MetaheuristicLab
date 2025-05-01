@@ -1001,7 +1001,6 @@ class NoisyPSO(SingleObjectivePSO, RoleMixin):
         self.w = w
         self.noise_strength = noise_strength
         self.noisy_fraction = max(0.0, min(1.0, noisy_fraction))
-        self._num_vars = self.problem.number_of_variables
 
     def create_initial_solutions(self) -> List[S]:
         solutions = super().create_initial_solutions()
@@ -1024,7 +1023,7 @@ class NoisyPSO(SingleObjectivePSO, RoleMixin):
             base_velocity = self.w * current_vel + cognitive_vec + social_vec
 
             if particle.attributes.get('is_noisy', False):
-                random_noise_vec = np.random.uniform(-1.0, 1.0, self._num_vars)
+                random_noise_vec = np.random.uniform(-1.0, 1.0, self.problem.number_of_variables())
                 scaled_noise = self.noise_strength * random_noise_vec
                 final_velocity = base_velocity + scaled_noise
             else:
