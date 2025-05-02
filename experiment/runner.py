@@ -2,6 +2,8 @@ import copy
 import csv
 import pickle
 from datetime import datetime
+
+import humanize
 import numpy as np
 
 import time
@@ -268,6 +270,8 @@ def run_all_experiments_multi(num_parallel_workers: int = None): # Add parameter
                         std_dev = np.std(valid_final_fitness)
 
                     avg_time = np.mean(total_times_list) if total_times_list else 0.0
+                    sum_time = np.sum(total_times_list) if total_times_list else 0.0
+                    humanized_duration = humanize.naturaldelta(sum_time)
                     aggregated_fitness_array = np.array(all_fitness_data_list)
 
 
@@ -280,7 +284,8 @@ def run_all_experiments_multi(num_parallel_workers: int = None): # Add parameter
 
                 # --- Log and Write CSV Row ---
                 print(f"  Aggregated: Algorithm: {algo_name}, Problem: {problem_name}, "
-                      f"Avg Final Fitness: {avg_fitness:.4f}, Std Dev: {std_dev:.4f}, Avg Time: {avg_time:.2f}s")
+                      f"Avg Final Fitness: {avg_fitness:.4f}, Std Dev: {std_dev:.4f}, Avg single run duration: {avg_time:.2f}s, "
+                      f"Duration: {humanized_duration}, Finished at: {datetime.now()}, ")
                 writer.writerow([algo_name, problem_name, number_of_variables, no_of_runs, avg_fitness,
                                  std_dev, avg_time])
                 file.flush() # Ensure data is written periodically

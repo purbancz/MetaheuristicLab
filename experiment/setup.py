@@ -85,8 +85,8 @@ from problem.n_variables.styblinski import StyblinskiTang
 from problem.n_variables.weierstrass import ShiftedRotatedWeierstrass
 from problem.n_variables.zakharov import Zakharov
 
-NO_OF_RUNS = 5
-NUMBER_OF_VARIABLES = 10
+NO_OF_RUNS = 50
+NUMBER_OF_VARIABLES = 1000
 ###
 G_SOLUTIONS_SIZE = 100
 G_MAX_EVALUATIONS = 25000
@@ -602,22 +602,22 @@ def setup_experiment():
     # Define problems
     n_variables_problems = [
         # ##
-        RotatedHighConditionedElliptic(number_of_variables),
-        RotatedBentCigar(number_of_variables),
-        RotatedDiscus(number_of_variables),
-        ShiftedRotatedRosenbrock(number_of_variables),
-        ShiftedRotatedAckley(number_of_variables),
-        ShiftedRastrigin(number_of_variables),
-        ShiftedRotatedRastrigin(number_of_variables),
-        ShiftedSchwefel(number_of_variables),
-        ShiftedRotatedSchwefel(number_of_variables),
-        ShiftedRotatedHappyCat(number_of_variables),
-        ShiftedRotatedHGBat(number_of_variables),
-        ShiftedRotatedSchafferF7(number_of_variables),
-        ShiftedRotatedWeierstrass(number_of_variables),
-        ShiftedRotatedExpandedGriewankPlusRosenbrock(number_of_variables),
-        ShiftedRotatedExpandedScafferF6(number_of_variables),
-        # # ##
+        # RotatedHighConditionedElliptic(number_of_variables),
+        # RotatedBentCigar(number_of_variables),
+        # RotatedDiscus(number_of_variables),
+        # ShiftedRotatedRosenbrock(number_of_variables),
+        # ShiftedRotatedAckley(number_of_variables),
+        # ShiftedRastrigin(number_of_variables),
+        # ShiftedRotatedRastrigin(number_of_variables),
+        # ShiftedSchwefel(number_of_variables),
+        # ShiftedRotatedSchwefel(number_of_variables),
+        # ShiftedRotatedHappyCat(number_of_variables),
+        # ShiftedRotatedHGBat(number_of_variables),
+        # ShiftedRotatedSchafferF7(number_of_variables),
+        # ShiftedRotatedWeierstrass(number_of_variables),
+        # ShiftedRotatedExpandedGriewankPlusRosenbrock(number_of_variables),
+        # ShiftedRotatedExpandedScafferF6(number_of_variables),
+        # ##
         # AlpineN1(number_of_variables),
         # AlpineN1Max(number_of_variables),
         # AlpineN2(number_of_variables),
@@ -632,7 +632,7 @@ def setup_experiment():
         # GeneralizedSchafferN3(number_of_variables),
         # GeneralizedSchafferN4(number_of_variables),
         # GeneralizedSchmidtVetters(number_of_variables),
-        # LennardJonesMinimumEnergyCluster(number_of_variables),
+        LennardJonesMinimumEnergyCluster(number_of_variables),
         # Levy(number_of_variables),
         # Michalewicz(number_of_variables),
         # Mishra03(number_of_variables),
@@ -731,23 +731,23 @@ def setup_experiment():
     problems = n_variables_problems + fixed_variables_problems
 
     algorithms = {
-        'PSO': factory_PSO,
-        'RebelPSO': factory_RebelPSO,
-        'RejectorPSO': factory_RejectorPSO,
-        'RebelRejectorPSO': factory_RebelRejectorPSO,
-        'RRAPSO': factory_RRAPSO,
-        'ContrarianPSO': factory_ContrarianPSO,
-        'DefeatistPSO': factory_DefeatistPSO,
-        'ContrarianDefeatistPSO': factory_ContrarianDefeatistPSO,
-        'CDAPSO': factory_CDAPSO,
-        'EschewerPSO': factory_EschewerPSO,
-        'EscapistPSO': factory_EscapistPSO,
-        'EschewerEscapistPSO': factory_EschewerEscapistPSO,
-        'EEAPSO': factory_EEAPSO,
-        'ReverseLearningPSO': factory_ReverseLearningPSO,
-        'ReverseLearningGlobalAttractorPSO': factory_ReverseLearningGlobalAttractorPSO,
-        'ReverseLearningPersonalAttractorPSO': factory_ReverseLearningPersonalAttractorPSO,
-        'CombinedLearningPSO': factory_CombinedLearningPSO,
+        # 'PSO': factory_PSO,
+        # 'RebelPSO': factory_RebelPSO,
+        # 'RejectorPSO': factory_RejectorPSO,
+        # 'RebelRejectorPSO': factory_RebelRejectorPSO,
+        # 'RRAPSO': factory_RRAPSO,
+        # 'ContrarianPSO': factory_ContrarianPSO,
+        # 'DefeatistPSO': factory_DefeatistPSO,
+        # 'ContrarianDefeatistPSO': factory_ContrarianDefeatistPSO,
+        # 'CDAPSO': factory_CDAPSO,
+        # 'EschewerPSO': factory_EschewerPSO,
+        # 'EscapistPSO': factory_EscapistPSO,
+        # 'EschewerEscapistPSO': factory_EschewerEscapistPSO,
+        # 'EEAPSO': factory_EEAPSO,
+        # 'ReverseLearningPSO': factory_ReverseLearningPSO,
+        # 'ReverseLearningGlobalAttractorPSO': factory_ReverseLearningGlobalAttractorPSO,
+        # 'ReverseLearningPersonalAttractorPSO': factory_ReverseLearningPersonalAttractorPSO,
+        # 'CombinedLearningPSO': factory_CombinedLearningPSO,
         'AnarchicPSO': factory_AnarchicPSO,
         'AmnesiacPSO': factory_AmnesiacPSO,
         'WandererPSO': factory_WandererPSO,
@@ -758,7 +758,7 @@ def setup_experiment():
         'FRAPSO': factory_FRAPSO,
         'HybridFullDisjointPSO': factory_HybridFullDisjointPSO,
         'HybridPartialDisjointPSO': factory_HybridPartialDisjointPSO,
-        'HybridAdditivePSO': factory_HybridAdditivePSO,
+        # 'HybridAdditivePSO': factory_HybridAdditivePSO,
         'CAPSO': factory_CAPSO,
         'IAPSO': factory_IAPSO
     }

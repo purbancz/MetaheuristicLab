@@ -7,6 +7,11 @@ from experiment.runner import run_all_experiments, run_all_experiments_multi
 
 if __name__ == "__main__":
     try:
+        slurm_cpus_per_task = os.environ.get('SLURM_CPUS_PER_TASK')
+        slurm_ntasks = os.environ.get('SLURM_NTASKS')
+        print(f"Read SLURM_CPUS_PER_TASK: {slurm_cpus_per_task}")
+        print(f"Read SLURM_NTASKS: {slurm_ntasks}")
+
         slurm_cpus = int(os.environ.get('SLURM_CPUS_PER_TASK', os.environ.get('SLURM_NTASKS', 0)))
         if slurm_cpus > 0:
             num_workers = slurm_cpus
