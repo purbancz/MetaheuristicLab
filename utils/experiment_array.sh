@@ -1,9 +1,9 @@
 #!/bin/bash
-#SBATCH --job-name=LennardJonesMinimumEnergyCluster_wanderer_reset_hybrid_adaptive_1000dim_hybrid
+#SBATCH --job-name=all_problems_all_algorithms_100dim
 #SBATCH --output=slurm_logs/%x_%j.out # Log directory
 #SBATCH --error=slurm_logs/%x_%j.err  # Log directory
-#SBATCH --time=72:00:00           # Adjust time as needed
-#SBATCH --partition=plgrid
+#SBATCH --time=12:00:00           # Adjust time as needed
+#SBATCH --partition=plgrid-now
 #SBATCH --account=plglscclass24-cpu # Your account
 
 # --- Key Change: Request 1 task with multiple CPUs ---
