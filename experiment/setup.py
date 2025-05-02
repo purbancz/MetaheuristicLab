@@ -86,7 +86,7 @@ from problem.n_variables.weierstrass import ShiftedRotatedWeierstrass
 from problem.n_variables.zakharov import Zakharov
 
 NO_OF_RUNS = 50
-NUMBER_OF_VARIABLES = 1000
+NUMBER_OF_VARIABLES = 100
 ###
 G_SOLUTIONS_SIZE = 100
 G_MAX_EVALUATIONS = 25000
@@ -617,7 +617,7 @@ def setup_experiment():
         # ShiftedRotatedWeierstrass(number_of_variables),
         # ShiftedRotatedExpandedGriewankPlusRosenbrock(number_of_variables),
         # ShiftedRotatedExpandedScafferF6(number_of_variables),
-        # ##
+        # # ##
         # AlpineN1(number_of_variables),
         # AlpineN1Max(number_of_variables),
         # AlpineN2(number_of_variables),

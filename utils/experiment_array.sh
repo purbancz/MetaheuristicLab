@@ -1,16 +1,16 @@
 #!/bin/bash
-#SBATCH --job-name=pso_multi_experiment # Changed name slightly
+#SBATCH --job-name=LennardJonesMinimumEnergyCluster_wanderer_reset_hybrid_adaptive_1000dim_hybrid
 #SBATCH --output=slurm_logs/%x_%j.out # Log directory
 #SBATCH --error=slurm_logs/%x_%j.err  # Log directory
-#SBATCH --time=2:00:00           # Adjust time as needed
-#SBATCH --partition=plgrid-now
+#SBATCH --time=72:00:00           # Adjust time as needed
+#SBATCH --partition=plgrid
 #SBATCH --account=plglscclass24-cpu # Your account
 
 # --- Key Change: Request 1 task with multiple CPUs ---
 #SBATCH --nodes=1
 #SBATCH --ntasks=1                 # Request only ONE main task (your python script)
-#SBATCH --cpus-per-task=48         # Give that task ALL 48 cores requested
-#SBATCH --mem=16G                  # Total memory for the single task (adjust if needed)
+#SBATCH --cpus-per-task=25         # Give that task ALL 48 cores requested
+#SBATCH --mem=8G                  # Total memory for the single task (adjust if needed)
 #SBATCH --mail-type=ALL
 
 # --- Create Log Directory ---
