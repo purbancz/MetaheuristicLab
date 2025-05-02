@@ -12,8 +12,20 @@ from pandas.plotting import parallel_coordinates
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.inspection import permutation_importance
+from sklearn.preprocessing import LabelEncoder
 import numpy as np
 
+
+def encode_categoricals(df: pd.DataFrame) -> pd.DataFrame:
+    df_encoded = df.copy()
+    for col in df_encoded.select_dtypes(include='object').columns:
+        le = LabelEncoder()
+        try:
+            df_encoded[col] = le.fit_transform(df_encoded[col])
+        except Exception as e:
+            print(f"Skipping column {col}: {e}")
+            df_encoded.drop(columns=[col], inplace=True)
+    return df_encoded
 
 def save_fig(given_title, plot_dir="plots"):
     """Saves the plot in a specified directory, creating the directory if needed."""
@@ -26,15 +38,20 @@ def save_fig(given_title, plot_dir="plots"):
 
 def auto_normalize(df, exclude_columns):
     """Automatically determines min-max ranges by rounding down min and rounding up max."""
-    min_max_values = {}
+    if exclude_columns is None:
+        exclude_columns = []
+
+    custom_min_max = {}
     for col in df.columns:
-        if col not in exclude_columns:
+        if col in exclude_columns:
+            continue
+        if pd.api.types.is_numeric_dtype(df[col]):
             min_val = df[col].min()
             max_val = df[col].max()
-            rounded_min = np.floor(min_val * 100) / 100  # Floor to 2 decimal places
-            rounded_max = np.ceil(max_val * 100) / 100  # Ceil to 2 decimal places
-            min_max_values[col] = (rounded_min, rounded_max)
-    return min_max_values
+            rounded_min = np.floor(min_val * 100) / 100
+            rounded_max = np.ceil(max_val * 100) / 100
+            custom_min_max[col] = (rounded_min, rounded_max)
+    return custom_min_max
 
 
 def generate_parallel_coordinates_plot(df, target_col, algo_name, plots_folder):
@@ -63,8 +80,15 @@ def generate_parallel_coordinates_plot(df, target_col, algo_name, plots_folder):
 
     # Create the figure
     fig, ax = plt.subplots(figsize=(12, 6))
-    parallel_coordinates(df_sorted.drop(columns=[target_col]), class_column="color", colormap=cm.viridis, alpha=0.7,
-                         ax=ax)
+    df_plot = df_sorted.drop(columns=[target_col])
+
+    for col in df_plot.columns:
+        dtype = df_plot[col].dtype
+        if isinstance(dtype, pd.CategoricalDtype) or pd.api.types.is_object_dtype(dtype):
+            df_plot[col] = df_plot[col].astype("category").cat.codes
+
+    parallel_coordinates(df_plot, class_column="color", colormap=cm.viridis, alpha=0.7)
+
     ax.get_legend().remove()
 
     # Set title
@@ -104,6 +128,7 @@ def generate_parallel_coordinates_plot(df, target_col, algo_name, plots_folder):
 def generate_correlation_matrix_plot(df, algo_name, plots_folder):
     # plt.figure(figsize=(8, 6))
 
+
     constant_columns = [col for col in df.columns if df[col].nunique() <= 1 and col != target_col]
     df = df.drop(columns=constant_columns)
 
@@ -112,7 +137,9 @@ def generate_correlation_matrix_plot(df, algo_name, plots_folder):
     fig_height = max(6, int(n_cols * 0.5))
 
     plt.figure(figsize=(fig_width, fig_height))
-    sns.heatmap(df.corr(), annot=True, cmap="coolwarm", fmt=".2f")
+    df_encoded = encode_categoricals(df)
+    sns.heatmap(df_encoded.corr(), annot=True, cmap="coolwarm", fmt=".2f")
+    # sns.heatmap(df.corr(), annot=True, cmap="coolwarm", fmt=".2f")
     title = f"Correlation matrix for {algo_name} parameters"
     plt.title(title)
     save_fig(title, plots_folder)
@@ -189,6 +216,7 @@ def generate_residual_plots(rf, X_test, y_test, algo_name, plots_folder):
 
 def generate_rf_dependent_plots(df, target_col, algo_name, plots_folder):
     X = df.drop(columns=[target_col])
+    X = encode_categoricals(X)
     y = df[target_col]
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 

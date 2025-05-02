@@ -1,4 +1,8 @@
+import csv
+import os
 import pickle
+from collections import defaultdict
+from datetime import datetime
 import numpy as np
 import scikit_posthocs as sp
 import pandas as pd
@@ -541,3 +545,153 @@ def kruskal_wallis_with_posthoc(pickle_files, perform_shapiro=False, perform_pos
         problem, dimension, group1, group2, p_adj = result
         print(f"{problem} & {dimension} & {group1} vs {group2} & {p_adj:.4f} \\\\")
     print(f"Size: {len(non_significant_vs_best_tukey)}")
+
+
+
+def get_data_group_key(loaded_data_item):
+    """
+    Inspects a loaded data item (list or dict) to find the dimension and run count.
+    Returns a tuple (dimension, runs) or (None, None) if not found/consistent.
+    """
+    dimension = None
+    runs = None
+
+    if isinstance(loaded_data_item, list):
+        if not loaded_data_item: return None, None # Empty list
+        # Assume list contains problem dicts, check the first one
+        first_problem_data = loaded_data_item[0]
+        if not isinstance(first_problem_data, dict): return None, None
+    elif isinstance(loaded_data_item, dict):
+        # Assumes dict is a single problem dict
+        first_problem_data = loaded_data_item
+    else:
+        return None, None # Unrecognized structure
+
+    # Extract dimension
+    dimension = first_problem_data.get('n_vars')
+    if dimension is None or not isinstance(dimension, int):
+         print(f"Warning: Could not determine dimension from data item: {first_problem_data.get('problem', 'Unknown')}")
+         return None, None # Dimension not found or invalid
+
+    # Extract runs - check first algorithm's data shape
+    results = first_problem_data.get('results')
+    if not results or not isinstance(results, dict): return dimension, None # Cannot determine runs
+
+    try:
+        first_algo_name = next(iter(results))
+        first_algo_data = results[first_algo_name]
+        if 'data' in first_algo_data and isinstance(first_algo_data['data'], np.ndarray):
+            runs = first_algo_data['data'].shape[0] # Number of rows is number of runs
+        else:
+            return dimension, None # No data array to get runs from
+    except StopIteration: # No algorithms in results
+         return dimension, None
+    except Exception as e:
+         print(f"Warning: Error extracting run count from data item: {e}")
+         return dimension, None
+
+    # Optional: Add consistency check if data_item is a list with multiple problems
+    if isinstance(loaded_data_item, list) and len(loaded_data_item) > 1:
+        for other_problem_data in loaded_data_item[1:]:
+             other_dim = other_problem_data.get('n_vars')
+             # Add similar run check if needed
+             if other_dim != dimension:
+                  print(f"Warning: Inconsistent dimensions ({dimension} vs {other_dim}) within a single loaded list. Grouping based on first entry.")
+                  # Decide how to handle - here we use the first one found
+                  break
+
+    return dimension, runs
+
+
+# --- Refactored Function to Extract Results to CSV ---
+def extract_results_to_csv(pickle_files, output_prefix="aggregated_results", base_results_dir=results_dir):
+    """
+    Loads data, groups by actual dimension/runs found IN the data, combines
+    within groups, and writes separate summary CSV files.
+    """
+    print(f"Processing {len(pickle_files)} pickle files for CSV extraction...")
+
+    # 1. Load all data first, keeping track of original filepath if needed for context
+    loaded_data_map = {fp: load_data_from_pickle(fp) for fp in pickle_files}
+    valid_loaded_data = {fp: data for fp, data in loaded_data_map.items() if data is not None}
+
+    if not valid_loaded_data:
+        print("Error: No valid data loaded from any pickle files.")
+        return
+
+    # 2. Group loaded data objects by inspected dimension and runs
+    grouped_data_objects = defaultdict(list)
+    print("Inspecting loaded data and grouping...")
+    for filepath, data_item in valid_loaded_data.items():
+        dimension, runs = get_data_group_key(data_item)
+        if dimension is not None and runs is not None:
+            group_key = (dimension, runs)
+            # Append the actual data object to the group list
+            grouped_data_objects[group_key].append(data_item)
+            # print(f"  Grouped {filepath} into Dim={dimension}, Runs={runs}")
+        else:
+            print(f"  Skipping data from {filepath} due to missing/inconsistent dimension or run info.")
+
+    if not grouped_data_objects:
+        print("Error: Could not group any valid data. No CSVs generated.")
+        return
+
+    # 3. Process each group
+    for (dimension, runs), data_objects_in_group in grouped_data_objects.items():
+        print(f"\n--- Processing Group: Dimension={dimension}, Runs={runs} ---")
+        print(f"  Data sources in group: {len(data_objects_in_group)}")
+
+        # 4. Combine data for the current group
+        print("  Combining data for this group...")
+        # Pass the list of actual data objects (which can be lists or dicts)
+        combined_data_dict, total_runs_in_group = combine_data(data_objects_in_group)
+
+        if not combined_data_dict:
+            print("  Error: Data combination resulted in empty dictionary for this group. Skipping CSV generation.")
+            continue
+        # Verify run count consistency
+        if total_runs_in_group != runs:
+             print(f"  Warning: Aggregated run count ({total_runs_in_group}) differs from initially inferred runs ({runs}). Using aggregated value: {total_runs_in_group}")
+        effective_runs = total_runs_in_group # Trust the combined data
+
+        print(f"  Data combined. Effective runs for this group: {effective_runs}")
+
+        # 5. Determine Output Path and Filename
+        group_dir = os.path.join(base_results_dir, f"dim{dimension}_runs{effective_runs}")
+        make_dir(group_dir)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_csv_filename = os.path.join(group_dir, f"{output_prefix}_dim{dimension}_runs{effective_runs}_{timestamp}.csv")
+
+        # 6. Prepare and Write CSV
+        header = ['Algorithm', 'Problem', 'Variables', 'Runs', 'Average Final Fitness',
+                  'Standard deviation', 'Average Computing Time (s)']
+        print(f"  Writing aggregated results to: {output_csv_filename}")
+        try:
+            with open(output_csv_filename, mode='w', newline='', encoding='utf-8') as file:
+                writer = csv.writer(file)
+                writer.writerow(header)
+                for problem_name in sorted(combined_data_dict.keys()):
+                    problem_data = combined_data_dict[problem_name]
+                    data_dimension = problem_data.get('n_vars', 'N/A')
+                    # Final check dimension consistency within combined data for this problem
+                    if data_dimension != dimension and data_dimension != 'N/A':
+                         print(f"    Internal Warning: Combined data dimension {data_dimension} differs from group key {dimension} for problem '{problem_name}'. Using {dimension}.")
+                         # Decide whether to skip or use group dimension
+                    results = problem_data.get('results', {})
+                    for algo_name in sorted(results.keys()):
+                        algo_data = results[algo_name]
+                        runs_count = algo_data.get('runs', effective_runs)
+                        avg_fitness = algo_data.get('avg_fitness', float('nan'))
+                        std_dev = algo_data.get('std_dev', float('nan'))
+                        avg_time = algo_data.get('avg_time', float('nan'))
+                        writer.writerow([
+                            algo_name, problem_name, dimension, runs_count,
+                            f"{avg_fitness}" if np.isfinite(avg_fitness) else "Inf/NaN",
+                            f"{std_dev}" if np.isfinite(std_dev) else "NaN",
+                            f"{avg_time}" if np.isfinite(avg_time) else "NaN"
+                        ])
+            print(f"  CSV file generation complete for group (Dim={dimension}, Runs={effective_runs}).")
+        except IOError as e: print(f"  Error writing CSV file '{output_csv_filename}': {e}")
+        except Exception as e: print(f"  An unexpected error occurred during CSV generation for group (Dim={dimension}, Runs={effective_runs}): {e}")
+
+    print("\nFinished processing all groups.")

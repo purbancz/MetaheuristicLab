@@ -116,10 +116,13 @@ def process_file(filepath):
             txt_lines.append(f"'{alg_name}': [")
 
             for param in param_columns:
-                if df_top10[param].dtype == bool:
+                values = df_top10[param]
+                unique_vals = values.unique()
+
+                if pd.api.types.is_bool_dtype(values):
                     txt_lines.append(f'    Bool("{param}"),')
-                else:
-                    values = df_top10[param]
+
+                elif pd.api.types.is_numeric_dtype(values):
                     p_min, p_max = values.min(), values.max()
                     p_range = p_max - p_min
                     new_lower = p_min - 0.1 * p_range
@@ -131,6 +134,15 @@ def process_file(filepath):
                         txt_lines.append(f'    Integer("{param}", {new_lower}, {new_upper}),')
                     else:
                         txt_lines.append(f'    Real("{param}", {new_lower:.5f}, {new_upper:.5f}),')
+
+                elif pd.api.types.is_object_dtype(values) or values.dtype == "category":
+                    # Treat as categorical
+                    sorted_unique = sorted(set(unique_vals))
+                    options = ", ".join(f'"{v}"' for v in sorted_unique)
+                    txt_lines.append(f'    Categorical("{param}", [{options}]),')
+
+                else:
+                    print(f"Warning: unknown dtype for param '{param}' – skipped.")
 
             txt_lines.append("],")
             result_txt = "\n".join(txt_lines)

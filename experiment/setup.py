@@ -91,6 +91,8 @@ NUMBER_OF_VARIABLES = 1000
 ###
 G_SOLUTIONS_SIZE = 100
 G_MAX_EVALUATIONS = 25000
+###
+RESULTS_DIR = 'experiment_results'
 
 def factory_PSO(p):
     return SingleObjectivePSO(
@@ -363,11 +365,11 @@ def factory_NoisyPSO(p):
     return NoisyPSO(
         problem=p,
         swarm_size=G_SOLUTIONS_SIZE,
-        w=0.5,
-        c1=2.0,
-        c2=2.0,
-        noise_strength=1.0,
-        noisy_fraction=0.3,
+        w=0.115020987604261,
+        c1=4.8318858911420115,
+        c2=1.614568939944967,
+        noise_strength=0.290212372970094,
+        noisy_fraction=0.112113689734281,
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
 
@@ -375,10 +377,10 @@ def factory_PerturbationPSO(p):
     return PerturbationPSO(
         problem=p,
         swarm_size=G_SOLUTIONS_SIZE,
-        w=0.5,
-        c1=2.0,
-        c2=2.0,
-        perturbation_scale=0.5,
+        w=0.637125109727299,
+        c1=2.5453875960820325,
+        c2=0.789097207083248,
+        perturbation_scale=0.008133747975949,
         perturbation_method="gaussian",
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
@@ -387,11 +389,11 @@ def factory_PartialResetPSO(p):
     return PartialResetPSO(
         problem=p,
         swarm_size=G_SOLUTIONS_SIZE,
-        c1=2.91,
-        c2=1.73,
-        w=0.33,
-        convergence_threshold=0.0125,
-        restarter_fraction=0.2,
+        c1=0.679134138911766,
+        c2=5.272727181825268,
+        w=0.104836252102958,
+        convergence_threshold=0.096846050413171,
+        restarter_fraction=0.645623785582219,
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
 
@@ -399,10 +401,10 @@ def factory_CollectiveResetPSO(p):
     return CollectiveResetPSO(
         problem=p,
         swarm_size=G_SOLUTIONS_SIZE,
-        c1=2.05,
-        c2=2.45,
-        w=0.41,
-        convergence_threshold=0.018,
+        c1=0.110057824204724,
+        c2=5.689570413149101,
+        w=0.090016392772831,
+        convergence_threshold=0.042520351566281,
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
 
@@ -573,7 +575,7 @@ def setup_experiment():
         'DCS-PSO': 'xkcd:rich purple',
     }
 
-    results_dir = 'experiment_results'
+    results_dir = RESULTS_DIR
     make_dir(results_dir)
 
     # Define problems
@@ -703,34 +705,34 @@ def setup_experiment():
     problems = n_variables_problems + fixed_variables_problems
 
     algorithms = {
-        # 'PSO': factory_PSO,
-        # 'RebelPSO': factory_RebelPSO,
-        # 'RejectorPSO': factory_RejectorPSO,
-        # 'RebelRejectorPSO': factory_RebelRejectorPSO,
-        # 'RRAPSO': factory_RRAPSO,
-        # 'ContrarianPSO': factory_ContrarianPSO,
-        # 'DefeatistPSO': factory_DefeatistPSO,
-        # 'ContrarianDefeatistPSO': factory_ContrarianDefeatistPSO,
-        # 'CDAPSO': factory_CDAPSO,
-        # 'EschewerPSO': factory_EschewerPSO,
-        # 'EscapistPSO': factory_EscapistPSO,
-        # 'EschewerEscapistPSO': factory_EschewerEscapistPSO,
-        # 'EEAPSO': factory_EEAPSO,
-        # 'ReverseLearningPSO': factory_ReverseLearningPSO,
-        # 'ReverseLearningGlobalAttractorPSO': factory_ReverseLearningGlobalAttractorPSO,
-        # 'ReverseLearningPersonalAttractorPSO': factory_ReverseLearningPersonalAttractorPSO,
-        # 'CombinedLearningPSO': factory_CombinedLearningPSO,
+        'PSO': factory_PSO,
+        'RebelPSO': factory_RebelPSO,
+        'RejectorPSO': factory_RejectorPSO,
+        'RebelRejectorPSO': factory_RebelRejectorPSO,
+        'RRAPSO': factory_RRAPSO,
+        'ContrarianPSO': factory_ContrarianPSO,
+        'DefeatistPSO': factory_DefeatistPSO,
+        'ContrarianDefeatistPSO': factory_ContrarianDefeatistPSO,
+        'CDAPSO': factory_CDAPSO,
+        'EschewerPSO': factory_EschewerPSO,
+        'EscapistPSO': factory_EscapistPSO,
+        'EschewerEscapistPSO': factory_EschewerEscapistPSO,
+        'EEAPSO': factory_EEAPSO,
+        'ReverseLearningPSO': factory_ReverseLearningPSO,
+        'ReverseLearningGlobalAttractorPSO': factory_ReverseLearningGlobalAttractorPSO,
+        'ReverseLearningPersonalAttractorPSO': factory_ReverseLearningPersonalAttractorPSO,
+        'CombinedLearningPSO': factory_CombinedLearningPSO,
         'AnarchicPSO': factory_AnarchicPSO,
         'AmnesiacPSO': factory_AmnesiacPSO,
         'WandererPSO': factory_WandererPSO,
-        # 'NoisyPSO': factory_NoisyPSO,
-        # 'PerturbationPSO': factory_PerturbationPSO,
-        # 'PartialResetPSO': factory_PartialResetPSO,
-        # 'CollectiveResetPSO': factory_CollectiveResetPSO,
+        'NoisyPSO': factory_NoisyPSO,
+        'PerturbationPSO': factory_PerturbationPSO,
+        'PartialResetPSO': factory_PartialResetPSO,
+        'CollectiveResetPSO': factory_CollectiveResetPSO,
         'FRAPSO': factory_FRAPSO,
         'HybridFullDisjointPSO': factory_HybridFullDisjointPSO,
         'HybridPartialDisjointPSO': factory_HybridPartialDisjointPSO,
-        # 'HybridAdditivePSO': factory_HybridAdditivePSO,
+        'HybridAdditivePSO': factory_HybridAdditivePSO,
         'CAPSO': factory_CAPSO,
         'IAPSO': factory_IAPSO
     }
