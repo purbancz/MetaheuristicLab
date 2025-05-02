@@ -50,7 +50,7 @@ from problem.n_variables.CEC import RotatedHighConditionedElliptic, RotatedBentC
     CompositionFunction3, CompositionFunction4, CompositionFunction5, CompositionFunction6, CompositionFunction7, \
     CompositionFunction8, ShiftedRotatedSchafferF7
 from problem.n_variables.ackley import Ackley
-from problem.n_variables.alpine import AlpineN1, AlpineN2, AlpineN2Max
+from problem.n_variables.alpine import AlpineN1, AlpineN2, AlpineN2Max, AlpineN1Max
 from problem.n_variables.bent_cigar import BentCigar
 from problem.n_variables.bird import Bird
 from problem.n_variables.cross import CrownedCross, CrossLeggedTable, Cross, GeneralizedCrossInTray
@@ -85,14 +85,14 @@ from problem.n_variables.styblinski import StyblinskiTang
 from problem.n_variables.weierstrass import ShiftedRotatedWeierstrass
 from problem.n_variables.zakharov import Zakharov
 
-
-NO_OF_RUNS = 50
-NUMBER_OF_VARIABLES = 1000
+NO_OF_RUNS = 5
+NUMBER_OF_VARIABLES = 10
 ###
 G_SOLUTIONS_SIZE = 100
 G_MAX_EVALUATIONS = 25000
 ###
 RESULTS_DIR = 'experiment_results'
+
 
 def factory_PSO(p):
     return SingleObjectivePSO(
@@ -103,6 +103,7 @@ def factory_PSO(p):
         w=0.063200081558323,
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
+
 
 def factory_RebelPSO(p):
     return RebelPSO(
@@ -116,6 +117,7 @@ def factory_RebelPSO(p):
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
 
+
 def factory_RejectorPSO(p):
     return RejectorPSO(
         problem=p,
@@ -127,6 +129,7 @@ def factory_RejectorPSO(p):
         rejector_fraction=0.67871106256468,
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
+
 
 def factory_RebelRejectorPSO(p):
     return RebelRejectorPSO(
@@ -141,6 +144,7 @@ def factory_RebelRejectorPSO(p):
         rejector_fraction=0.193683456340565,
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
+
 
 def factory_RRAPSO(p):
     return RRAPSO(
@@ -163,6 +167,7 @@ def factory_RRAPSO(p):
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
 
+
 def factory_ContrarianPSO(p):
     return ContrarianPSO(
         problem=p,
@@ -175,6 +180,7 @@ def factory_ContrarianPSO(p):
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
 
+
 def factory_DefeatistPSO(p):
     return DefeatistPSO(
         problem=p,
@@ -186,6 +192,7 @@ def factory_DefeatistPSO(p):
         defeatist_fraction=0.5278118065626,
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
+
 
 def factory_ContrarianDefeatistPSO(p):
     return ContrarianDefeatistPSO(
@@ -200,6 +207,7 @@ def factory_ContrarianDefeatistPSO(p):
         defeatist_fraction=0.192437869591703,
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
+
 
 def factory_CDAPSO(p):
     return CDAPSO(
@@ -222,6 +230,7 @@ def factory_CDAPSO(p):
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
 
+
 def factory_EschewerPSO(p):
     return EschewerPSO(
         problem=p,
@@ -234,6 +243,7 @@ def factory_EschewerPSO(p):
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
 
+
 def factory_EscapistPSO(p):
     return EscapistPSO(
         problem=p,
@@ -245,6 +255,7 @@ def factory_EscapistPSO(p):
         escapist_fraction=0.475506405577598,
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
+
 
 def factory_EschewerEscapistPSO(p):
     return EschewerEscapistPSO(
@@ -259,6 +270,7 @@ def factory_EschewerEscapistPSO(p):
         escapist_fraction=0.230072580176876,
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
+
 
 def factory_EEAPSO(p):
     return EEAPSO(
@@ -281,6 +293,7 @@ def factory_EEAPSO(p):
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
 
+
 def factory_ReverseLearningPSO(p):
     return ReverseLearningPSO(
         problem=p,
@@ -290,6 +303,7 @@ def factory_ReverseLearningPSO(p):
         w=0.0632,
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
+
 
 def factory_ReverseLearningGlobalAttractorPSO(p):
     return ReverseLearningGlobalAttractorPSO(
@@ -302,6 +316,7 @@ def factory_ReverseLearningGlobalAttractorPSO(p):
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
 
+
 def factory_ReverseLearningPersonalAttractorPSO(p):
     return ReverseLearningPersonalAttractorPSO(
         problem=p,
@@ -312,6 +327,7 @@ def factory_ReverseLearningPersonalAttractorPSO(p):
         w=0.035467244014656,
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
+
 
 def factory_CombinedLearningPSO(p):
     return CombinedLearningPSO(
@@ -325,6 +341,7 @@ def factory_CombinedLearningPSO(p):
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
 
+
 def factory_AnarchicPSO(p):
     return AnarchicPSO(
         problem=p,
@@ -336,6 +353,7 @@ def factory_AnarchicPSO(p):
         anarchic_fraction=0.075244394488655,
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
+
 
 def factory_AmnesiacPSO(p):
     return AmnesiacPSO(
@@ -349,6 +367,7 @@ def factory_AmnesiacPSO(p):
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
 
+
 def factory_WandererPSO(p):
     return WandererPSO(
         problem=p,
@@ -360,6 +379,7 @@ def factory_WandererPSO(p):
         wanderer_fraction=0.380225883274424,
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
+
 
 def factory_NoisyPSO(p):
     return NoisyPSO(
@@ -373,6 +393,7 @@ def factory_NoisyPSO(p):
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
 
+
 def factory_PerturbationPSO(p):
     return PerturbationPSO(
         problem=p,
@@ -384,6 +405,7 @@ def factory_PerturbationPSO(p):
         perturbation_method="gaussian",
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
+
 
 def factory_PartialResetPSO(p):
     return PartialResetPSO(
@@ -397,6 +419,7 @@ def factory_PartialResetPSO(p):
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
 
+
 def factory_CollectiveResetPSO(p):
     return CollectiveResetPSO(
         problem=p,
@@ -407,6 +430,7 @@ def factory_CollectiveResetPSO(p):
         convergence_threshold=0.042520351566281,
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
+
 
 def factory_FRAPSO(p):
     return FRAPSO(
@@ -419,6 +443,7 @@ def factory_FRAPSO(p):
         convergence_threshold=0.026560651344854,
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
+
 
 def factory_HybridFullDisjointPSO(p):
     return HybridFullDisjointPSO(
@@ -443,6 +468,7 @@ def factory_HybridFullDisjointPSO(p):
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
 
+
 def factory_HybridPartialDisjointPSO(p):
     return HybridPartialDisjointPSO(
         problem=p,
@@ -465,6 +491,7 @@ def factory_HybridPartialDisjointPSO(p):
         assign_roles_every_iteration=True,
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
+
 
 def factory_HybridAdditivePSO(p):
     return HybridAdditivePSO(
@@ -491,6 +518,7 @@ def factory_HybridAdditivePSO(p):
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
 
+
 def factory_CAPSO(p):
     return CoAdaptativePSO(
         problem=p,
@@ -503,6 +531,7 @@ def factory_CAPSO(p):
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
 
+
 def factory_IAPSO(p):
     return IndividualAdaptivePSO(
         problem=p,
@@ -514,14 +543,6 @@ def factory_IAPSO(p):
         w=0.076308243863222,
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
-
-
-
-
-
-
-
-
 
 
 def setup_experiment():
@@ -581,68 +602,47 @@ def setup_experiment():
     # Define problems
     n_variables_problems = [
         # ##
-        # RotatedHighConditionedElliptic(number_of_variables),
-        # RotatedBentCigar(number_of_variables),
-        # RotatedDiscus(number_of_variables),
-        # ShiftedRotatedRosenbrock(number_of_variables),
-        # ShiftedRotatedAckley(number_of_variables),
-        # ShiftedRastrigin(number_of_variables),
-        # ShiftedRotatedRastrigin(number_of_variables),
-        # ShiftedSchwefel(number_of_variables),
-        # ShiftedRotatedSchwefel(number_of_variables),
-        # ShiftedRotatedHappyCat(number_of_variables),
-        # ShiftedRotatedHGBat(number_of_variables),
-        # ShiftedRotatedSchafferF7(number_of_variables),
-        # ShiftedRotatedWeierstrass(number_of_variables),  # done
-        # ShiftedRotatedExpandedGriewankPlusRosenbrock(number_of_variables),
-        # ShiftedRotatedExpandedScafferF6(number_of_variables), #15
-        # ##
+        RotatedHighConditionedElliptic(number_of_variables),
+        RotatedBentCigar(number_of_variables),
+        RotatedDiscus(number_of_variables),
+        ShiftedRotatedRosenbrock(number_of_variables),
+        ShiftedRotatedAckley(number_of_variables),
+        ShiftedRastrigin(number_of_variables),
+        ShiftedRotatedRastrigin(number_of_variables),
+        ShiftedSchwefel(number_of_variables),
+        ShiftedRotatedSchwefel(number_of_variables),
+        ShiftedRotatedHappyCat(number_of_variables),
+        ShiftedRotatedHGBat(number_of_variables),
+        ShiftedRotatedSchafferF7(number_of_variables),
+        ShiftedRotatedWeierstrass(number_of_variables),
+        ShiftedRotatedExpandedGriewankPlusRosenbrock(number_of_variables),
+        ShiftedRotatedExpandedScafferF6(number_of_variables),
+        # # ##
         # AlpineN1(number_of_variables),
+        # AlpineN1Max(number_of_variables),
         # AlpineN2(number_of_variables),
         # AlpineN2Max(number_of_variables),
-        # BentCigar(number_of_variables),
-        # Bird(number_of_variables),
-        # CarromTable(number_of_variables),
-        # Cross(number_of_variables),
         # CrossLeggedTable(number_of_variables),
         # CrownedCross(number_of_variables),
-        # Discus(number_of_variables),
-        # DixonPrice(number_of_variables),
         # EggHolder(number_of_variables),
-        # ExpandedShaffer(number_of_variables), # 28
-        # GeneralizedCrossInTray(number_of_variables), # 29 24h
-        # GeneralizedDixonPriceRosenbrock(number_of_variables),
+        # ExpandedShaffer(number_of_variables),
         # GeneralizedHolderTable(number_of_variables),
-        # GeneralizedPenalizedN1(number_of_variables),
         # GeneralizedSchafferN1(number_of_variables),
         # GeneralizedSchafferN2(number_of_variables),
         # GeneralizedSchafferN3(number_of_variables),
         # GeneralizedSchafferN4(number_of_variables),
-        # GeneralizedSchafferN7(number_of_variables),
         # GeneralizedSchmidtVetters(number_of_variables),
-        # Griewank(number_of_variables),
-        # HappyCat(number_of_variables),
-        # HGBat(number_of_variables),
         # LennardJonesMinimumEnergyCluster(number_of_variables),
         # Levy(number_of_variables),
         # Michalewicz(number_of_variables),
-        # Mishra01(number_of_variables),
-        # Mishra02(number_of_variables),
         # Mishra03(number_of_variables),
         # Mishra04(number_of_variables),
         # Mishra05(number_of_variables),
         # Mishra06(number_of_variables),
-        # Mishra11(number_of_variables),
-        # PenHolder(number_of_variables),
-        # Plateau(number_of_variables),
-        # Quartic(number_of_variables),
-        # Rosenbrock(number_of_variables),
-        # RosenbrockModified01(number_of_variables),
         # RosenbrockModified02(number_of_variables),
         # Salomon(number_of_variables),
         # SchwefelN20(number_of_variables),
         # SchwefelN21(number_of_variables),
-        # SchwefelN22(number_of_variables),
         # SchwefelN26(number_of_variables),
         # SchwefelN36(number_of_variables),
         # SchwefelN6(number_of_variables),
@@ -650,14 +650,11 @@ def setup_experiment():
         # ShubertN3(number_of_variables),
         # ShubertN4(number_of_variables),
         # SineEnvelope(number_of_variables),
-        # StepN1(number_of_variables),
-        # StepN2(number_of_variables),
-        # StepN3(number_of_variables),
         # Stochastic(number_of_variables),
         # StretchedV(number_of_variables),
         # StyblinskiTang(number_of_variables),
-        # TestTubeHolder(number_of_variables),
-        # Zakharov(number_of_variables),
+
+        # ## Rejected
 
         # HybridFunction1(number_of_variables),
         # HybridFunction2(number_of_variables),
@@ -680,6 +677,35 @@ def setup_experiment():
         # Ackley(number_of_variables), # irace
         # Rastrigin(number_of_variables),  # irace
         # Sphere(number_of_variables), # irace
+
+        # ## uninterested results
+        # BentCigar(number_of_variables),
+        # Bird(number_of_variables),
+        # CarromTable(number_of_variables),
+        # Cross(number_of_variables),
+        # Discus(number_of_variables),
+        # DixonPrice(number_of_variables),
+        # GeneralizedCrossInTray(number_of_variables),
+        # GeneralizedDixonPriceRosenbrock(number_of_variables),
+        # GeneralizedPenalizedN1(number_of_variables),
+        # GeneralizedSchafferN7(number_of_variables),
+        # Griewank(number_of_variables),
+        # HappyCat(number_of_variables),
+        # HGBat(number_of_variables),
+        # Mishra01(number_of_variables),
+        # Mishra02(number_of_variables),
+        # Mishra11(number_of_variables),
+        # PenHolder(number_of_variables),
+        # Plateau(number_of_variables),
+        # Quartic(number_of_variables),
+        # Rosenbrock(number_of_variables),
+        # RosenbrockModified01(number_of_variables),
+        # SchwefelN22(number_of_variables),
+        # StepN1(number_of_variables),
+        # StepN2(number_of_variables),
+        # StepN3(number_of_variables),
+        # TestTubeHolder(number_of_variables),
+        # Zakharov(number_of_variables),
 
     ]
 
@@ -781,13 +807,15 @@ def setup_experiment():
         #                                             'ReverseLearningGlobalAttractorPSO',
         #                                             'ReverseLearningPersonalAttractorPSO',
         #                                             'CombinedLearningPSO', 'CAPSO', 'IAPSO'],
-        # 'All without all reverse learning': [
-        #     'RebelPSO', 'RejectorPSO', 'RebelRejectorPSO', 'RRAPSO',
-        #     'ContrarianPSO', 'DefeatistPSO', 'ContrarianDefeatistPSO', 'CDAPSO',
-        #     'EschewerPSO', 'EscapistPSO', 'EschewerEscapistPSO', 'EEAPSO',
-        #     'CAPSO', 'IAPSO', 'FRAPSO',
-        #     'HybridFullDisjointPSO', 'HybridPartialDisjointPSO', 'HybridAdditivePSO',
-        # ],
+        'All without all reverse learning': [
+            'RebelPSO', 'RejectorPSO', 'RebelRejectorPSO', 'RRAPSO',
+            'ContrarianPSO', 'DefeatistPSO', 'ContrarianDefeatistPSO', 'CDAPSO',
+            'EschewerPSO', 'EscapistPSO', 'EschewerEscapistPSO', 'EEAPSO',
+            'AnarchicPSO', 'AmnesiacPSO', 'WandererPSO', 'NoisyPSO', 'PerturbationPSO',
+            'PartialResetPSO', 'CollectiveResetPSO', 'FRAPSO',
+            'HybridFullDisjointPSO', 'HybridPartialDisjointPSO', 'HybridAdditivePSO',
+            'CAPSO', 'IAPSO',
+        ],
         # 'All without all reverse learning, FRAPSO and RRAPSO': ['RebelPSO', 'RejectorPSO', 'RebelRejectorPSO',
         #                                                 'ContrarianPSO', 'DefeatistPSO', 'ContrarianDefeatistPSO',
         #                                                 'EschewerPSO', 'EscapistPSO', 'EschewerEscapistPSO',

@@ -56,6 +56,14 @@ class AlpineN2(FloatProblem):
     def name(self) -> str:
         return "Alpine N2"
 
+class AlpineN1Max(AlpineN1):
+    def __init__(self, number_of_variables: int = 2):
+        super().__init__(number_of_variables)
+        self.obj_directions = [self.MAXIMIZE]
+
+    def name(self) -> str:
+        return "Alpine N1 Max"
+
 class AlpineN2Max(AlpineN2):
     def __init__(self, number_of_variables: int = 2):
         super().__init__(number_of_variables)

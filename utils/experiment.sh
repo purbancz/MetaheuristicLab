@@ -2,8 +2,8 @@
 #SBATCH --job-name=LennardJonesMinimumEnergyCluster_wanderer_hybrid_adaptive_1000dim_hybrid
 #SBATCH --output=%x_%j.out
 #SBATCH --error=%x_%j.err
-#SBATCH --time=72:00:00
-#SBATCH --partition=plgrid
+#SBATCH --time=1:00:00
+#SBATCH --partition=plgrid-testing
 #SBATCH --account=plglscclass24-cpu
 #SBATCH --nodes=1
 #SBATCH --ntasks=48
