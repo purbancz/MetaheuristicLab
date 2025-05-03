@@ -21,12 +21,11 @@ from algorithm.WAPSO import ReverseLearningGlobalAttractorPSO, CombinedLearningP
     ReverseLearningPSO
 from algorithm.SPPPSO import SPPPSO
 from algorithm.TDPSO import TDPSO
-from algorithm.hgbat import HGBat
-from algorithm.hybrid_diverse import HybridPartialDisjointPSO, HybridFullDisjointPSO, HybridAdditivePSO
+from algorithm.hybrid_diverse import HybridPartialDisjointPSO, HybridFullDisjointPSO, HybridAdditivePSO, \
+    HybridFullDisjointPSO_WithRandom, HybridPartialDisjointPSO_WithRandom, HybridAdditivePSO_WithRandom
 from algorithm.particles_with_roles import RebelPSO, RejectorPSO, RebelRejectorPSO, RRAPSO, ContrarianPSO, DefeatistPSO, \
     ContrarianDefeatistPSO, EschewerPSO, EscapistPSO, EschewerEscapistPSO, CDAPSO, EEAPSO, AnarchicPSO, AmnesiacPSO, \
-    WandererPSO, NoisyPSO
-from algorithm.ref_DCSPSO import DCSPSO
+    WandererPSO, NoisyPSO, AAAPSO, NAPSO
 from algorithm.single_objective_PSO import SingleObjectivePSO, PerturbationPSO
 
 from problem.fixed_varaibles.branin import BraninRCOC
@@ -42,6 +41,7 @@ from problem.fixed_varaibles.mccormick import McCormick
 from problem.fixed_varaibles.schaffer import SchafferN2
 from problem.fixed_varaibles.shekel import Shekel
 from problem.fixed_varaibles.shubert import Shubert
+from problem.hgbat import HGBat
 from problem.n_variables.CEC import RotatedHighConditionedElliptic, RotatedBentCigar, RotatedDiscus, \
     ShiftedRotatedRosenbrock, ShiftedRotatedAckley, ShiftedRastrigin, ShiftedRotatedRastrigin, ShiftedSchwefel, \
     ShiftedRotatedSchwefel, ShiftedRotatedKatsuura, ShiftedRotatedHappyCat, ShiftedRotatedHGBat, \
@@ -86,7 +86,7 @@ from problem.n_variables.weierstrass import ShiftedRotatedWeierstrass
 from problem.n_variables.zakharov import Zakharov
 
 NO_OF_RUNS = 50
-NUMBER_OF_VARIABLES = 100
+NUMBER_OF_VARIABLES = 1000
 ###
 G_SOLUTIONS_SIZE = 100
 G_MAX_EVALUATIONS = 25000
@@ -381,6 +381,28 @@ def factory_WandererPSO(p):
     )
 
 
+def factory_AAAPSO(p):
+    return AAAPSO(
+        problem=p,
+        swarm_size=G_SOLUTIONS_SIZE,
+        c1=1.289749876747761,
+        c2=4.9065094037838595,
+        base_inertia=0.114157882091415,
+        min_inertia=0.068050062417605,
+        max_inertia=0.469635443616177,
+        random_strength=0.1,
+        anarchic_fraction=0.5,
+        amnesiac_fraction=0.5,
+        window_size=10,
+        max_anarchic_fraction=0.8,
+        max_amnesiac_fraction=0.8,
+        diversity_threshold=0.1,
+        improvement_threshold=0.01,
+        constraint_handling_mode="clip",
+        termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
+    )
+
+
 def factory_NoisyPSO(p):
     return NoisyPSO(
         problem=p,
@@ -390,6 +412,25 @@ def factory_NoisyPSO(p):
         c2=1.614568939944967,
         noise_strength=0.290212372970094,
         noisy_fraction=0.112113689734281,
+        termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
+    )
+
+def factory_NAPSO(p):
+    return NAPSO(
+        problem=p,
+        swarm_size=G_SOLUTIONS_SIZE,
+        c1=1.289749876747761,
+        c2=4.9065094037838595,
+        base_inertia=0.114157882091415,
+        min_inertia=0.068050062417605,
+        max_inertia=0.469635443616177,
+        noise_strength=0.1,
+        noisy_fraction=0.5,
+        max_noisy_fraction=0.8,
+        window_size=10,
+        diversity_threshold=0.1,
+        improvement_threshold=0.01,
+        constraint_handling_mode="clip",
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
 
@@ -519,6 +560,94 @@ def factory_HybridAdditivePSO(p):
     )
 
 
+def factory_HybridFullDisjointPSO_WithRandom(p):
+    return HybridFullDisjointPSO_WithRandom(
+        problem=p,
+        swarm_size=G_SOLUTIONS_SIZE,
+        w=0.5,  # Default inertia weight
+        c1=1.5,  # Default cognitive coefficient
+        rejector_c=1.0,
+        defeatist_c=1.0,
+        escapist_c=1.0,
+        amnesiac_c=1.0,
+        c2=1.5,  # Default social coefficient
+        rebel_c=1.0,
+        contrarian_c=1.0,
+        eschewer_c=1.0,
+        anarchic_c=1.0,
+        rejector_fraction=0.0,
+        defeatist_fraction=0.0,
+        escapist_fraction=0.0,
+        amnesiac_fraction=0.0,
+        rebel_fraction=0.0,
+        contrarian_fraction=0.0,
+        eschewer_fraction=0.0,
+        anarchic_fraction=0.0,
+        constraint_handling_mode="clip",
+        assign_roles_every_iteration=False,
+        termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
+    )
+
+
+def factory_HybridPartialDisjointPSO_WithRandom(p):
+    return HybridPartialDisjointPSO_WithRandom(
+        problem=p,
+        swarm_size=G_SOLUTIONS_SIZE,
+        w=0.5,  # Default inertia weight
+        c1=1.5,  # Default cognitive coefficient
+        c2=1.5,  # Default social coefficient
+        rejector_c=1.0,
+        defeatist_c=1.0,
+        escapist_c=1.0,
+        rebel_c=1.0,
+        contrarian_c=1.0,
+        eschewer_c=1.0,
+        amnesiac_c=1.0,
+        anarchic_c=1.0,
+        rejector_fraction=0.0,
+        defeatist_fraction=0.0,
+        escapist_fraction=0.0,
+        amnesiac_fraction=0.0,
+        rebel_fraction=0.0,
+        contrarian_fraction=0.0,
+        eschewer_fraction=0.0,
+        anarchic_fraction=0.0,
+        constraint_handling_mode="clip",
+        assign_roles_every_iteration=False,
+        termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
+    )
+
+def factory_HybridAdditivePSO_WithRandom(p):
+    return HybridAdditivePSO_WithRandom(
+        problem=p,
+        swarm_size=G_SOLUTIONS_SIZE,
+        w=0.5,  # Default inertia weight
+        c1=1.5,  # Default cognitive coefficient
+        rejector_c=1.0,
+        defeatist_c=1.0,
+        escapist_c=1.0,
+        amnesiac_c=1.0,
+        c2=1.5,  # Default social coefficient
+        rebel_c=1.0,
+        contrarian_c=1.0,
+        eschewer_c=1.0,
+        anarchic_c=1.0,
+        std_cognitive_prob=1.0,  # Default probability for standard cognitive role
+        rejector_prob=0.0,
+        defeatist_prob=0.0,
+        escapist_prob=0.0,
+        amnesiac_prob=0.0,
+        std_social_prob=1.0,  # Default probability for standard social role
+        rebel_prob=0.0,
+        contrarian_prob=0.0,
+        eschewer_prob=0.0,
+        anarchic_prob=0.0,
+        constraint_handling_mode="clip",
+        assign_flags_every_iteration=False,
+        termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
+    )
+
+
 def factory_CAPSO(p):
     return CoAdaptativePSO(
         problem=p,
@@ -601,58 +730,58 @@ def setup_experiment():
 
     # Define problems
     n_variables_problems = [
-        ##
-        RotatedHighConditionedElliptic(number_of_variables),
-        RotatedBentCigar(number_of_variables),
-        RotatedDiscus(number_of_variables),
-        ShiftedRotatedRosenbrock(number_of_variables),
-        ShiftedRotatedAckley(number_of_variables),
-        ShiftedRastrigin(number_of_variables),
-        ShiftedRotatedRastrigin(number_of_variables),
-        ShiftedSchwefel(number_of_variables),
-        ShiftedRotatedSchwefel(number_of_variables),
-        ShiftedRotatedHappyCat(number_of_variables),
-        ShiftedRotatedHGBat(number_of_variables),
-        ShiftedRotatedSchafferF7(number_of_variables),
-        ShiftedRotatedWeierstrass(number_of_variables),
-        ShiftedRotatedExpandedGriewankPlusRosenbrock(number_of_variables),
-        ShiftedRotatedExpandedScafferF6(number_of_variables),
         # ##
-        AlpineN1(number_of_variables),
-        AlpineN1Max(number_of_variables),
-        AlpineN2(number_of_variables),
-        AlpineN2Max(number_of_variables),
-        CrossLeggedTable(number_of_variables),
-        CrownedCross(number_of_variables),
-        EggHolder(number_of_variables),
-        ExpandedShaffer(number_of_variables),
-        GeneralizedHolderTable(number_of_variables),
-        GeneralizedSchafferN1(number_of_variables),
-        GeneralizedSchafferN2(number_of_variables),
-        GeneralizedSchafferN3(number_of_variables),
-        GeneralizedSchafferN4(number_of_variables),
-        GeneralizedSchmidtVetters(number_of_variables),
+        # RotatedHighConditionedElliptic(number_of_variables),
+        # RotatedBentCigar(number_of_variables),
+        # RotatedDiscus(number_of_variables),
+        # ShiftedRotatedRosenbrock(number_of_variables),
+        # ShiftedRotatedAckley(number_of_variables),
+        # ShiftedRastrigin(number_of_variables),
+        # ShiftedRotatedRastrigin(number_of_variables),
+        # ShiftedSchwefel(number_of_variables),
+        # ShiftedRotatedSchwefel(number_of_variables),
+        # ShiftedRotatedHappyCat(number_of_variables),
+        # ShiftedRotatedHGBat(number_of_variables),
+        # ShiftedRotatedSchafferF7(number_of_variables),
+        ShiftedRotatedWeierstrass(number_of_variables),
+        # ShiftedRotatedExpandedGriewankPlusRosenbrock(number_of_variables),
+        # ShiftedRotatedExpandedScafferF6(number_of_variables),
+        # # ##
+        # AlpineN1(number_of_variables),
+        # AlpineN1Max(number_of_variables),
+        # AlpineN2(number_of_variables),
+        # AlpineN2Max(number_of_variables),
+        # CrossLeggedTable(number_of_variables),
+        # CrownedCross(number_of_variables),
+        # EggHolder(number_of_variables),
+        # ExpandedShaffer(number_of_variables),
+        # GeneralizedHolderTable(number_of_variables),
+        # GeneralizedSchafferN1(number_of_variables),
+        # GeneralizedSchafferN2(number_of_variables),
+        # GeneralizedSchafferN3(number_of_variables),
+        # GeneralizedSchafferN4(number_of_variables),
+        # GeneralizedSchmidtVetters(number_of_variables),
         LennardJonesMinimumEnergyCluster(number_of_variables),
-        Levy(number_of_variables),
-        Michalewicz(number_of_variables),
-        Mishra03(number_of_variables),
-        Mishra04(number_of_variables),
-        Mishra05(number_of_variables),
-        Mishra06(number_of_variables),
-        RosenbrockModified02(number_of_variables),
-        Salomon(number_of_variables),
-        SchwefelN20(number_of_variables),
-        SchwefelN21(number_of_variables),
-        SchwefelN26(number_of_variables),
-        SchwefelN36(number_of_variables),
-        SchwefelN6(number_of_variables),
-        ShubertN1(number_of_variables),
-        ShubertN3(number_of_variables),
-        ShubertN4(number_of_variables),
-        SineEnvelope(number_of_variables),
-        Stochastic(number_of_variables),
-        StretchedV(number_of_variables),
-        StyblinskiTang(number_of_variables),
+        # Levy(number_of_variables),
+        # Michalewicz(number_of_variables),
+        # Mishra03(number_of_variables),
+        # Mishra04(number_of_variables),
+        # Mishra05(number_of_variables),
+        # Mishra06(number_of_variables),
+        # RosenbrockModified02(number_of_variables),
+        # Salomon(number_of_variables),
+        # SchwefelN20(number_of_variables),
+        # SchwefelN21(number_of_variables),
+        # SchwefelN26(number_of_variables),
+        # SchwefelN36(number_of_variables),
+        # SchwefelN6(number_of_variables),
+        # ShubertN1(number_of_variables),
+        # ShubertN3(number_of_variables),
+        # ShubertN4(number_of_variables),
+        # SineEnvelope(number_of_variables),
+        # Stochastic(number_of_variables),
+        # StretchedV(number_of_variables),
+        # StyblinskiTang(number_of_variables),
 
         # ## Rejected
 
@@ -731,36 +860,41 @@ def setup_experiment():
     problems = n_variables_problems + fixed_variables_problems
 
     algorithms = {
-        'PSO': factory_PSO,
-        'RebelPSO': factory_RebelPSO,
-        'RejectorPSO': factory_RejectorPSO,
-        'RebelRejectorPSO': factory_RebelRejectorPSO,
-        'RRAPSO': factory_RRAPSO,
-        'ContrarianPSO': factory_ContrarianPSO,
-        'DefeatistPSO': factory_DefeatistPSO,
-        'ContrarianDefeatistPSO': factory_ContrarianDefeatistPSO,
-        'CDAPSO': factory_CDAPSO,
-        'EschewerPSO': factory_EschewerPSO,
-        'EscapistPSO': factory_EscapistPSO,
-        'EschewerEscapistPSO': factory_EschewerEscapistPSO,
-        'EEAPSO': factory_EEAPSO,
-        'ReverseLearningPSO': factory_ReverseLearningPSO,
-        'ReverseLearningGlobalAttractorPSO': factory_ReverseLearningGlobalAttractorPSO,
-        'ReverseLearningPersonalAttractorPSO': factory_ReverseLearningPersonalAttractorPSO,
-        'CombinedLearningPSO': factory_CombinedLearningPSO,
-        'AnarchicPSO': factory_AnarchicPSO,
-        'AmnesiacPSO': factory_AmnesiacPSO,
-        'WandererPSO': factory_WandererPSO,
-        'NoisyPSO': factory_NoisyPSO,
-        'PerturbationPSO': factory_PerturbationPSO,
-        'PartialResetPSO': factory_PartialResetPSO,
-        'CollectiveResetPSO': factory_CollectiveResetPSO,
-        'FRAPSO': factory_FRAPSO,
-        'HybridFullDisjointPSO': factory_HybridFullDisjointPSO,
-        'HybridPartialDisjointPSO': factory_HybridPartialDisjointPSO,
-        'HybridAdditivePSO': factory_HybridAdditivePSO,
-        'CAPSO': factory_CAPSO,
-        'IAPSO': factory_IAPSO
+        # 'PSO': factory_PSO,
+        # 'RebelPSO': factory_RebelPSO,
+        # 'RejectorPSO': factory_RejectorPSO,
+        # 'RebelRejectorPSO': factory_RebelRejectorPSO,
+        # 'RRAPSO': factory_RRAPSO,
+        # 'ContrarianPSO': factory_ContrarianPSO,
+        # 'DefeatistPSO': factory_DefeatistPSO,
+        # 'ContrarianDefeatistPSO': factory_ContrarianDefeatistPSO,
+        # 'CDAPSO': factory_CDAPSO,
+        # 'EschewerPSO': factory_EschewerPSO,
+        # 'EscapistPSO': factory_EscapistPSO,
+        # 'EschewerEscapistPSO': factory_EschewerEscapistPSO,
+        # 'EEAPSO': factory_EEAPSO,
+        # 'ReverseLearningPSO': factory_ReverseLearningPSO,
+        # 'ReverseLearningGlobalAttractorPSO': factory_ReverseLearningGlobalAttractorPSO,
+        # 'ReverseLearningPersonalAttractorPSO': factory_ReverseLearningPersonalAttractorPSO,
+        # 'CombinedLearningPSO': factory_CombinedLearningPSO,
+        # 'AnarchicPSO': factory_AnarchicPSO,
+        # 'AmnesiacPSO': factory_AmnesiacPSO,
+        # 'WandererPSO': factory_WandererPSO,
+        'AAAPSO': factory_AAAPSO,
+        # 'NoisyPSO': factory_NoisyPSO,
+        'NAPSO': factory_NoisyPSO,
+        # 'PerturbationPSO': factory_PerturbationPSO,
+        # 'PartialResetPSO': factory_PartialResetPSO,
+        # 'CollectiveResetPSO': factory_CollectiveResetPSO,
+        # 'FRAPSO': factory_FRAPSO,
+        # 'HybridFullDisjointPSO': factory_HybridFullDisjointPSO,
+        # 'HybridPartialDisjointPSO': factory_HybridPartialDisjointPSO,
+        # 'HybridAdditivePSO': factory_HybridAdditivePSO,
+        'HybridFullDisjointPSO_WithRandom': factory_HybridFullDisjointPSO,
+        'HybridPartialDisjointPSO_WithRandom': factory_HybridPartialDisjointPSO,
+        'HybridAdditivePSO_WithRandom': factory_HybridAdditivePSO,
+        # 'CAPSO': factory_CAPSO,
+        # 'IAPSO': factory_IAPSO
     }
 
     group_of_algorithms = {

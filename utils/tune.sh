@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=perturbation_algorithms_irace_tune
+#SBATCH --job-name=new_random_algorithms_irace_tune
 #SBATCH --output=%x_%j.out
 #SBATCH --error=%x_%j.err
 #SBATCH --time=12:00:00
@@ -25,7 +25,7 @@ echo "Job started at: $(date -d @$START_TIME)"
 # Run the Python script
 echo "PYTHON SCRIPT IS BEING EXECUTED"
 export PYTHONPATH="$HOME/GA-PSO_Hybrid:$PYTHONPATH"
-python -u $HOME/GA-PSO_Hybrid/optimization/irace_tune.py
+python -u $HOME/GA-PSO_Hybrid/optimization/irace_tune_universal.py
 echo "Tuning completed successfully."
 
 # Log end time

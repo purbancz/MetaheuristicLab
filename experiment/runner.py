@@ -283,7 +283,7 @@ def run_all_experiments_multi(num_parallel_workers: int = None): # Add parameter
                 }
 
                 # --- Log and Write CSV Row ---
-                print(f"  Aggregated: Algorithm: {algo_name}, Problem: {problem_name}, "
+                print(f"Aggregated: Algorithm: {algo_name}, Problem: {problem_name}, "
                       f"Avg Final Fitness: {avg_fitness:.4f}, Std Dev: {std_dev:.4f}, Avg single run duration: {avg_time:.2f}s, "
                       f"Duration: {humanized_duration}, Finished at: {datetime.now()}, ")
                 writer.writerow([algo_name, problem_name, number_of_variables, no_of_runs, avg_fitness,
@@ -325,7 +325,7 @@ def run_all_experiments_multi(num_parallel_workers: int = None): # Add parameter
 
             # --- Pickle cumulative data after each problem ---
             # Saves progress more frequently
-            overall_pickle_filename = f'{dimensions_dir}/{timestamp_str}_all_problems_dim{number_of_variables}_runs{no_of_runs}_experiment_data.pkl'
+            overall_pickle_filename = f'{dimensions_dir}/{timestamp_str}_{safe_problem_name}_all_problems_dim{number_of_variables}_runs{no_of_runs}_experiment_data.pkl'
             print(f"  Saving cumulative results to {overall_pickle_filename}")
             with open(overall_pickle_filename, 'wb') as f:
                 pickle.dump(all_experiment_data, f)

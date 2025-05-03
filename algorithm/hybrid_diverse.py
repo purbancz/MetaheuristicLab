@@ -546,7 +546,6 @@ class HybridFullDisjointPSO(WorstAwarePSO, RoleMixin):
             particle.attributes['velocity'] = new_velocity.tolist()
 
     def get_name(self) -> str:
-        # Name remains the same, but behavior is clarified by docstring
         return "HybridFullDisjointPSO"
 
 # ---------------------------------------------------------------------------
@@ -781,4 +780,489 @@ class HybridAdditivePSO(WorstAwarePSO, RoleMixin):
             particle.attributes['velocity'] = new_velocity.tolist()
 
     def get_name(self) -> str:
-        return "HybridAdditivePSO_DefaultStd" # Updated name
+        return "HybridAdditivePSO"
+
+
+
+class HybridPartialDisjointPSO_WithRandom(WorstAwarePSO, RoleMixin):
+    """
+    Hybrid Partial Disjoint PSO including Anarchic/Amnesiac roles.
+
+    Partial Disjoint Strategy:
+    - Cognitive Roles (Mutually Exclusive): standard, rejector, defeatist, escapist, amnesiac
+    - Social Roles (Mutually Exclusive): standard, rebel, contrarian, eschewer, anarchic
+    - Assignments are independent.
+
+    Coefficients control magnitude for each role type.
+    """
+    def __init__(self,
+                 problem: FloatProblem, swarm_size: int, termination_criterion: TerminationCriterion, w: float,
+                 c1: float = 1.5, c2: float = 1.5,
+                 rejector_c: float = 1.0, defeatist_c: float = 1.0, escapist_c: float = 1.0,
+                 rebel_c: float = 1.0, contrarian_c: float = 1.0, eschewer_c: float = 1.0,
+                 amnesiac_c: float = 1.0,
+                 anarchic_c: float = 1.0,
+                 rejector_fraction: float = 0.0, defeatist_fraction: float = 0.0, escapist_fraction: float = 0.0, amnesiac_fraction: float = 0.0,
+                 rebel_fraction: float = 0.0, contrarian_fraction: float = 0.0, eschewer_fraction: float = 0.0, anarchic_fraction: float = 0.0,
+                 constraint_handling_mode: str = "clip", assign_roles_every_iteration: bool = False):
+
+        super().__init__(problem, swarm_size, c1, c2, w, termination_criterion, constraint_handling_mode)
+        self.c1=c1; self.c2=c2; self.rejector_c=rejector_c; self.defeatist_c=defeatist_c; self.escapist_c=escapist_c;
+        self.rebel_c=rebel_c; self.contrarian_c=contrarian_c; self.eschewer_c=eschewer_c;
+        self.amnesiac_c = amnesiac_c
+        self.anarchic_c = anarchic_c
+
+        # Store fractions
+        self.rejector_fraction = max(0.0, min(1.0, rejector_fraction))
+        self.defeatist_fraction = max(0.0, min(1.0, defeatist_fraction))
+        self.escapist_fraction = max(0.0, min(1.0, escapist_fraction))
+        self.amnesiac_fraction = max(0.0, min(1.0, amnesiac_fraction))
+        self.rebel_fraction = max(0.0, min(1.0, rebel_fraction))
+        self.contrarian_fraction = max(0.0, min(1.0, contrarian_fraction))
+        self.eschewer_fraction = max(0.0, min(1.0, eschewer_fraction))
+        self.anarchic_fraction = max(0.0, min(1.0, anarchic_fraction))
+
+        self.assign_roles_every_iteration = assign_roles_every_iteration
+
+        cognitive_sum = self.rejector_fraction + self.defeatist_fraction + self.escapist_fraction + self.amnesiac_fraction
+        social_sum = self.rebel_fraction + self.contrarian_fraction + self.eschewer_fraction + self.anarchic_fraction
+        if cognitive_sum > 1.0: logger.warning(f"Sum of cognitive fractions ({cognitive_sum:.2f}) > 1.0.")
+        if social_sum > 1.0: logger.warning(f"Sum of social fractions ({social_sum:.2f}) > 1.0.")
+
+    def _assign_roles(self, swarm: List[S]) -> None:
+        n = len(swarm)
+        if n == 0: return
+        for p in swarm:
+            if not hasattr(p, 'attributes'): p.attributes = {}
+
+        indices_cognitive = list(range(n)); random.shuffle(indices_cognitive)
+        current_idx = 0
+        counts_cog = {
+            'rejector': int(n * self.rejector_fraction), 'defeatist': int(n * self.defeatist_fraction),
+            'escapist': int(n * self.escapist_fraction), 'amnesiac': int(n * self.amnesiac_fraction) # Added amnesiac
+        }
+        for role_name, count in counts_cog.items():
+            limit = min(current_idx + count, n)
+            for i in range(current_idx, limit):
+                swarm[indices_cognitive[i]].attributes['cognitive_role'] = role_name
+            current_idx = limit
+            if current_idx >= n: break
+        while current_idx < n:
+            swarm[indices_cognitive[current_idx]].attributes['cognitive_role'] = 'standard'
+            current_idx += 1
+
+        indices_social = list(range(n)); random.shuffle(indices_social)
+        current_idx_social = 0
+        counts_soc = {
+            'rebel': int(n * self.rebel_fraction), 'contrarian': int(n * self.contrarian_fraction),
+            'eschewer': int(n * self.eschewer_fraction), 'anarchic': int(n * self.anarchic_fraction) # Added anarchic
+        }
+        # Assign special social roles
+        for role_name, count in counts_soc.items():
+            limit = min(current_idx_social + count, n)
+            for i in range(current_idx_social, limit):
+                swarm[indices_social[i]].attributes['social_role'] = role_name
+            current_idx_social = limit
+            if current_idx_social >= n: break
+        while current_idx_social < n:
+            swarm[indices_social[current_idx_social]].attributes['social_role'] = 'standard'
+            current_idx_social += 1
+        # self._log_role_distribution(swarm)
+
+    def create_initial_solutions(self) -> List[S]:
+        solutions = super().create_initial_solutions()
+        self._assign_roles(solutions)
+        return solutions
+
+    @staticmethod
+    def _log_role_distribution(swarm: List[S]):
+        counts = {}
+        for p in swarm:
+            role = p.attributes.get('assigned_role', 'N/A')
+            counts[role] = counts.get(role, 0) + 1
+        logger.debug("Assigned Role Distribution:")
+        sorted_counts = sorted(counts.items())
+        for role, count in sorted_counts:
+            logger.debug(f"  Role: {role:<15} | Count: {count}")
+
+    def step(self):
+        if self.assign_roles_every_iteration:
+            self._assign_roles(self.solutions)
+
+        self.update_velocity(self.solutions)
+        self.update_position(self.solutions)
+        self.perturbation(self.solutions)
+        self.solutions = self.evaluate(self.solutions)
+        # These already update both best/worst for global/particle via WorstAwarePSO
+        self.update_global_best(self.solutions)
+        self.update_particle_best(self.solutions)
+
+    def update_particle_best(self, swarm: List[S]) -> None:
+        super().update_particle_best(swarm)
+        self.update_particle_worst(swarm)
+
+    def update_global_best(self, swarm: List[S]) -> None:
+        super().update_global_best(swarm)
+        self.update_global_worst(swarm)
+
+    def update_velocity(self, swarm: List[S]) -> None:
+        """Updates velocity including anarchic/amnesiac logic."""
+        if self.best_global is None or self.global_worst is None or not swarm: return
+        g_best = np.array(self.best_global.variables)
+        g_worst = np.array(self.global_worst.variables)
+
+        for particle in swarm:
+            attrs = particle.attributes
+            required_attrs = ['velocity', 'best_position', 'worst_position', 'cognitive_role', 'social_role']
+            if not all(attr in attrs for attr in required_attrs): continue
+
+            current = np.array(particle.variables); velocity = np.array(attrs['velocity'])
+            p_best = np.array(attrs['best_position']); p_worst = np.array(attrs['worst_position'])
+            cognitive_role = attrs['cognitive_role']; social_role = attrs['social_role']
+            r1 = random.random(); r2 = random.random()
+
+            if cognitive_role == 'rejector': cognitive_vec = self.rejector_c * r1 * (current - p_best)
+            elif cognitive_role == 'defeatist': cognitive_vec = self.defeatist_c * r1 * (p_worst - current)
+            elif cognitive_role == 'escapist': cognitive_vec = self.escapist_c * r1 * (current - p_worst)
+            elif cognitive_role == 'amnesiac': cognitive_vec = self.amnesiac_c * np.random.uniform(-1.0, 1.0, self.problem.number_of_variables()) # Use amnesiac_c
+            else: cognitive_vec = self.c1 * r1 * (p_best - current) # Standard
+
+            if social_role == 'rebel': social_vec = self.rebel_c * r2 * (current - g_best)
+            elif social_role == 'contrarian': social_vec = self.contrarian_c * r2 * (g_worst - current)
+            elif social_role == 'eschewer': social_vec = self.eschewer_c * r2 * (current - g_worst)
+            elif social_role == 'anarchic': social_vec = self.anarchic_c * np.random.uniform(-1.0, 1.0, self.problem.number_of_variables()) # Use anarchic_c
+            else: social_vec = self.c2 * r2 * (g_best - current) # Standard
+
+            new_velocity = self.w * velocity + cognitive_vec + social_vec
+            particle.attributes['velocity'] = new_velocity.tolist()
+
+    def get_name(self) -> str:
+        return "HybridPartialDisjointPSO_WithRandom"
+
+
+class HybridFullDisjointPSO_WithRandom(WorstAwarePSO, RoleMixin):
+    """
+    Hybrid Full Disjoint PSO including Anarchic/Amnesiac roles.
+
+    Assigns AT MOST ONE special role overall. Includes random vector roles.
+    - std_cognitive, std_social (implicit if role='standard')
+    - rejector, defeatist, escapist, amnesiac (use standard social)
+    - rebel, contrarian, eschewer, anarchic (use standard cognitive)
+    - wanderer (only inertia + random)
+
+    Fractions for *all* special roles must sum <= 1.0.
+    """
+    def __init__(self,
+                 problem: FloatProblem, swarm_size: int, termination_criterion: TerminationCriterion, w: float,
+                 c1: float = 1.5, rejector_c: float = 1.0, defeatist_c: float = 1.0, escapist_c: float = 1.0, amnesiac_c: float = 1.0, # Cognitive + Amnesiac
+                 c2: float = 1.5, rebel_c: float = 1.0, contrarian_c: float = 1.0, eschewer_c: float = 1.0, anarchic_c: float = 1.0, # Social + Anarchic
+                 rejector_fraction: float = 0.0, defeatist_fraction: float = 0.0, escapist_fraction: float = 0.0, amnesiac_fraction: float = 0.0, # Cognitive specials
+                 rebel_fraction: float = 0.0, contrarian_fraction: float = 0.0, eschewer_fraction: float = 0.0, anarchic_fraction: float = 0.0, # Social specials
+                 constraint_handling_mode: str = "clip", assign_roles_every_iteration: bool = False):
+
+        super().__init__(problem, swarm_size, c1, c2, w, termination_criterion, constraint_handling_mode)
+        # Define roles and their coefficients
+        self.coefficients = {
+            'std_cognitive': c1, 'rejector': rejector_c, 'defeatist': defeatist_c, 'escapist': escapist_c, 'amnesiac': amnesiac_c,
+            'std_social': c2, 'rebel': rebel_c, 'contrarian': contrarian_c, 'eschewer': eschewer_c, 'anarchic': anarchic_c,
+        }
+        self.special_cognitive_roles = {'rejector', 'defeatist', 'escapist', 'amnesiac'}
+        self.special_social_roles = {'rebel', 'contrarian', 'eschewer', 'anarchic'}
+
+        # Validate and process individual fractions
+        self.special_role_fractions_input = { # Collect all fraction inputs
+            'rejector': rejector_fraction, 'defeatist': defeatist_fraction, 'escapist': escapist_fraction, 'amnesiac': amnesiac_fraction,
+            'rebel': rebel_fraction, 'contrarian': contrarian_fraction, 'eschewer': eschewer_fraction, 'anarchic': anarchic_fraction,
+        }
+        total_special_fraction = 0.0; active_special_fractions = {}
+        for role_name, fraction in self.special_role_fractions_input.items():
+            if not (0.0 <= fraction <= 1.0): raise ValueError(f"Fraction for {role_name} invalid.")
+            if fraction > 1e-9: # Use tolerance to consider active
+                 active_special_fractions[role_name] = fraction
+                 total_special_fraction += fraction
+        if total_special_fraction > 1.0 + 1e-9: raise ValueError(f"Sum of special fractions ({total_special_fraction:.4f}) > 1.0.")
+
+        self.special_role_fractions = active_special_fractions
+        self.standard_fraction = max(0.0, 1.0 - total_special_fraction)
+        logger.info(f"Initializing HFDPSO+R: {total_special_fraction*100:.1f}% special, {self.standard_fraction*100:.1f}% standard.")
+        self.assign_roles_every_iteration = assign_roles_every_iteration
+
+    # _assign_roles remains the same structure, using self.special_role_fractions dict
+
+    # create_initial_solutions, _log_role_distribution, step, update_particle/global_best remain the same
+    def _assign_roles(self, swarm: List[S]) -> None:
+        """
+        Assigns at most one special role ('rejector', 'rebel', etc.) or
+        'standard' to each particle based on the provided fractions.
+        """
+        n = len(swarm)
+        if n == 0: return
+
+        indices = list(range(n))
+        random.shuffle(indices)
+        current_idx = 0
+
+        # Assign Special Roles first
+        for role_name, fraction in self.special_role_fractions.items():
+            # Calculate number to assign for this specific role
+            num_to_assign = int(round(n * fraction))
+            num_to_assign = min(num_to_assign, n - current_idx) # Cap by remaining particles
+
+            for i in range(num_to_assign):
+                if current_idx >= n: break
+                particle_idx = indices[current_idx]
+                # Initialize attributes dict if needed
+                if not hasattr(swarm[particle_idx], 'attributes') or swarm[particle_idx].attributes is None:
+                    swarm[particle_idx].attributes = {}
+                # Assign the specific special role name
+                swarm[particle_idx].attributes['assigned_role'] = role_name
+                current_idx += 1
+            if current_idx >= n: break # Stop if all particles assigned
+
+        # Assign 'standard' to the remaining particles
+        num_standard = n - current_idx
+        # logger.debug(f"Assigning {num_standard} particles the 'standard' role.")
+        for i in range(num_standard):
+            if current_idx >= n: break # Should not happen ideally
+            particle_idx = indices[current_idx]
+            if not hasattr(swarm[particle_idx], 'attributes') or swarm[particle_idx].attributes is None:
+                 swarm[particle_idx].attributes = {}
+            # Assign 'standard' for standard-standard particles
+            swarm[particle_idx].attributes['assigned_role'] = 'standard'
+            current_idx += 1
+
+        # Final check for debugging potential rounding issues
+        if current_idx != n:
+             logger.error(f"Role assignment mismatch: Assigned roles to {current_idx} out of {n} particles.")
+
+        # self._log_role_distribution(swarm) # Optional logging
+
+
+    def create_initial_solutions(self) -> List[S]:
+        solutions = super().create_initial_solutions()
+        self._assign_roles(solutions) # Use the revised assignment method
+        return solutions
+
+    @staticmethod
+    def _log_role_distribution(swarm: List[S]):
+        counts = {}
+        for p in swarm:
+            role = p.attributes.get('assigned_role', 'N/A')
+            counts[role] = counts.get(role, 0) + 1
+        logger.debug("Assigned Role Distribution:")
+        sorted_counts = sorted(counts.items())
+        for role, count in sorted_counts:
+            logger.debug(f"  Role: {role:<15} | Count: {count}")
+
+    def step(self):
+        if self.assign_roles_every_iteration:
+            self._assign_roles(self.solutions) # Use the revised assignment method
+
+        self.update_velocity(self.solutions)
+        self.update_position(self.solutions)
+        self.perturbation(self.solutions)
+        self.solutions = self.evaluate(self.solutions)
+        # These already update both best/worst for global/particle via WorstAwarePSO
+        self.update_global_best(self.solutions)
+        self.update_particle_best(self.solutions)
+
+    def update_particle_best(self, swarm: List[S]) -> None:
+        super().update_particle_best(swarm)
+        self.update_particle_worst(swarm)
+
+    def update_global_best(self, swarm: List[S]) -> None:
+        super().update_global_best(swarm)
+        self.update_global_worst(swarm)
+
+    def update_velocity(self, swarm: List[S]) -> None:
+        """Calculates velocity based on single assigned role (standard, special_cog, special_soc)."""
+        if self.best_global is None or self.global_worst is None or not swarm: return
+        g_best = np.array(self.best_global.variables); g_worst = np.array(self.global_worst.variables)
+
+        for particle in swarm:
+            attrs = particle.attributes
+            required_attrs = ['velocity', 'best_position', 'worst_position', 'assigned_role']
+            if not all(attr in attrs for attr in required_attrs): continue
+
+            current = np.array(particle.variables); velocity = np.array(attrs['velocity'])
+            p_best = np.array(attrs['best_position']); p_worst = np.array(attrs['worst_position'])
+            assigned_role = attrs['assigned_role']
+            r1 = random.random(); r2 = random.random()
+            cognitive_vec = np.zeros_like(current); social_vec = np.zeros_like(current)
+            new_velocity = np.zeros_like(current)
+
+            # --- Determine Components based on Assigned Role ---
+            if assigned_role == 'standard':
+                coeff_c1 = self.coefficients['std_cognitive']; coeff_c2 = self.coefficients['std_social']
+                cognitive_vec = coeff_c1 * r1 * (p_best - current)
+                social_vec = coeff_c2 * r2 * (g_best - current)
+                new_velocity = self.w * velocity + cognitive_vec + social_vec
+            elif assigned_role in self.special_cognitive_roles:
+                coeff_c2 = self.coefficients['std_social']
+                social_vec = coeff_c2 * r2 * (g_best - current)
+                coeff_spec = self.coefficients[assigned_role]
+                if assigned_role == 'rejector': cognitive_vec = coeff_spec * r1 * (current - p_best)
+                elif assigned_role == 'defeatist': cognitive_vec = coeff_spec * r1 * (p_worst - current)
+                elif assigned_role == 'escapist': cognitive_vec = coeff_spec * r1 * (current - p_worst)
+                elif assigned_role == 'amnesiac': cognitive_vec = coeff_spec * np.random.uniform(-1.0, 1.0, self.problem.number_of_variables())
+                new_velocity = self.w * velocity + cognitive_vec + social_vec
+            elif assigned_role in self.special_social_roles:
+                coeff_c1 = self.coefficients['std_cognitive']
+                cognitive_vec = coeff_c1 * r1 * (p_best - current)
+                coeff_spec = self.coefficients[assigned_role]
+                if assigned_role == 'rebel': social_vec = coeff_spec * r2 * (current - g_best)
+                elif assigned_role == 'contrarian': social_vec = coeff_spec * r2 * (g_worst - current)
+                elif assigned_role == 'eschewer': social_vec = coeff_spec * r2 * (current - g_worst)
+                elif assigned_role == 'anarchic': social_vec = coeff_spec * np.random.uniform(-1.0, 1.0, self.problem.number_of_variables())
+                new_velocity = self.w * velocity + cognitive_vec + social_vec
+            else:
+                 logger.error(f"Unrecognized assigned_role '{assigned_role}'. Applying standard velocity.")
+                 coeff_c1 = self.coefficients['std_cognitive']; coeff_c2 = self.coefficients['std_social']
+                 cognitive_vec = coeff_c1 * r1 * (p_best - current); social_vec = coeff_c2 * r2 * (g_best - current)
+                 new_velocity = self.w * velocity + cognitive_vec + social_vec
+
+            particle.attributes['velocity'] = new_velocity.tolist()
+
+    def get_name(self) -> str:
+        return "HybridFullDisjointPSO_WithRandom"
+
+class HybridAdditivePSO_WithRandom(WorstAwarePSO, RoleMixin):
+    """
+    Hybrid Additive PSO including Anarchic/Amnesiac roles (Default-to-Standard).
+
+    Allows simultaneous activation of multiple behaviors based on probabilities.
+    Adds Anarchic (random social) and Amnesiac (random cognitive) possibilities.
+    Includes default-to-standard logic.
+    """
+    def __init__(self,
+                 problem: FloatProblem, swarm_size: int, termination_criterion: TerminationCriterion, w: float,
+                 c1: float = 1.5, rejector_c: float = 1.0, defeatist_c: float = 1.0, escapist_c: float = 1.0, amnesiac_c: float = 1.0,
+                 c2: float = 1.5, rebel_c: float = 1.0, contrarian_c: float = 1.0, eschewer_c: float = 1.0, anarchic_c: float = 1.0,
+                 std_cognitive_prob: float = 1.0, rejector_prob: float = 0.0, defeatist_prob: float = 0.0, escapist_prob: float = 0.0, amnesiac_prob: float = 0.0, # Cog probs
+                 std_social_prob: float = 1.0, rebel_prob: float = 0.0, contrarian_prob: float = 0.0, eschewer_prob: float = 0.0, anarchic_prob: float = 0.0, # Soc probs
+                 constraint_handling_mode: str = "clip", assign_flags_every_iteration: bool = False):
+
+        super().__init__(problem, swarm_size, c1, c2, w, termination_criterion, constraint_handling_mode)
+        self.coefficients = {
+            'is_std_cognitive': c1, 'is_rejector': rejector_c, 'is_defeatist': defeatist_c, 'is_escapist': escapist_c, 'is_amnesiac': amnesiac_c,
+            'is_std_social': c2, 'is_rebel': rebel_c, 'is_contrarian': contrarian_c, 'is_eschewer': eschewer_c, 'is_anarchic': anarchic_c
+        }
+        prob_params = {
+            'std_cognitive': std_cognitive_prob, 'rejector': rejector_prob, 'defeatist': defeatist_prob, 'escapist': escapist_prob, 'amnesiac': amnesiac_prob,
+            'std_social': std_social_prob, 'rebel': rebel_prob, 'contrarian': contrarian_prob, 'eschewer': eschewer_prob, 'anarchic': anarchic_prob
+        }
+        self.role_probabilities = {}
+        for role_base_name, prob in prob_params.items():
+            flag_name = f"is_{role_base_name}"
+            if not (0.0 <= prob <= 1.0): raise ValueError(f"Probability for {role_base_name} invalid.")
+            if flag_name not in self.coefficients: raise ValueError(f"Flag {flag_name} missing coeff.")
+            self.role_probabilities[flag_name] = prob
+
+        self.assign_flags_every_iteration = assign_flags_every_iteration
+        logger.info(f"Initializing HAPSO+R (Default-to-Standard) with individual probabilities.")
+
+    # _assign_role_flags_to_swarm remains the same structure (iterates self.role_probabilities)
+
+    # create_initial_solutions, _log_role_distribution, step, update_particle/global_best remain the same
+    def _assign_role_flags_to_swarm(self, swarm: List[S]) -> None:
+        """
+        Assigns boolean flags (e.g., 'is_rejector') to each particle based
+        on activation probabilities stored in self.role_probabilities.
+        (This method remains unchanged).
+        """
+        n = len(swarm)
+        if n == 0: return
+
+        for i in range(n):
+            particle = swarm[i]
+            if not hasattr(particle, 'attributes') or particle.attributes is None:
+                 particle.attributes = {}
+            attrs = particle.attributes
+
+            # Determine activation for each possible role flag using the stored probabilities
+            for flag_name, probability in self.role_probabilities.items():
+                attrs[flag_name] = (random.random() < probability)
+        # self._log_role_distribution(swarm)
+
+
+    # create_initial_solutions remains the same
+    def create_initial_solutions(self) -> List[S]:
+        solutions = super().create_initial_solutions()
+        self._assign_role_flags_to_swarm(solutions)
+        return solutions
+
+    # _log_role_distribution remains the same
+    @staticmethod
+    def _log_role_distribution(swarm: List[S]):
+        if not swarm or not hasattr(swarm[0], 'attributes') or not swarm[0].attributes:
+             logger.debug("Cannot log role distribution: Swarm empty or first particle has no attributes.")
+             return
+        flag_counts = {}
+        known_flags = [f for f in swarm[0].attributes.keys() if f.startswith('is_')]
+        for flag in known_flags: flag_counts[flag] = 0
+        for p in swarm:
+             for flag in known_flags:
+                 if p.attributes.get(flag, False): flag_counts[flag] += 1
+        logger.debug("Role Activation Counts (Additive):")
+        sorted_counts = sorted(flag_counts.items())
+        for flag, count in sorted_counts: logger.debug(f"  Flag: {flag:<20} | Active Count: {count}")
+
+    # step remains the same
+    def step(self):
+        if self.assign_flags_every_iteration:
+            self._assign_role_flags_to_swarm(self.solutions)
+
+        self.update_velocity(self.solutions)
+        self.update_position(self.solutions)
+        self.perturbation(self.solutions)
+        self.solutions = self.evaluate(self.solutions)
+        self.update_global_best(self.solutions)
+        self.update_particle_best(self.solutions)
+
+    def update_particle_best(self, swarm: List[S]) -> None:
+        super().update_particle_best(swarm)
+        self.update_particle_worst(swarm)
+
+    def update_global_best(self, swarm: List[S]) -> None:
+        super().update_global_best(swarm)
+        self.update_global_worst(swarm)
+
+    def update_velocity(self, swarm: List[S]) -> None:
+        """Calculates velocity summing active roles, including anarchic/amnesiac, with default-to-standard."""
+        if self.best_global is None or self.global_worst is None or not swarm: return
+        g_best = np.array(self.best_global.variables); g_worst = np.array(self.global_worst.variables)
+
+        for particle in swarm:
+            attrs = particle.attributes; required_core_attrs = ['velocity', 'best_position', 'worst_position']
+            if not all(attr in attrs for attr in required_core_attrs): continue
+            for flag_name in self.coefficients.keys():
+                if flag_name not in attrs: attrs[flag_name] = False
+
+            current = np.array(particle.variables); velocity = np.array(attrs['velocity'])
+            p_best = np.array(attrs['best_position']); p_worst = np.array(attrs['worst_position'])
+            cognitive_component = np.zeros_like(current); social_component = np.zeros_like(current)
+            rand_factors = {flag: random.random() for flag in self.coefficients}
+
+            any_special_cognitive_active = False
+            if attrs.get('is_rejector', False): coeff = self.coefficients['is_rejector']; cognitive_component += coeff * rand_factors['is_rejector'] * (current - p_best); any_special_cognitive_active = True
+            if attrs.get('is_defeatist', False): coeff = self.coefficients['is_defeatist']; cognitive_component += coeff * rand_factors['is_defeatist'] * (p_worst - current); any_special_cognitive_active = True
+            if attrs.get('is_escapist', False): coeff = self.coefficients['is_escapist']; cognitive_component += coeff * rand_factors['is_escapist'] * (current - p_worst); any_special_cognitive_active = True
+            if attrs.get('is_amnesiac', False): coeff = self.coefficients['is_amnesiac']; cognitive_component += coeff * np.random.uniform(-1.0, 1.0, self.problem.number_of_variables()); any_special_cognitive_active = True # Added amnesiac
+
+            apply_std_cognitive = attrs.get('is_std_cognitive', False) or not any_special_cognitive_active
+            if apply_std_cognitive: coeff = self.coefficients['is_std_cognitive']; cognitive_component += coeff * rand_factors['is_std_cognitive'] * (p_best - current)
+
+            any_special_social_active = False
+            if attrs.get('is_rebel', False): coeff = self.coefficients['is_rebel']; social_component += coeff * rand_factors['is_rebel'] * (current - g_best); any_special_social_active = True
+            if attrs.get('is_contrarian', False): coeff = self.coefficients['is_contrarian']; social_component += coeff * rand_factors['is_contrarian'] * (g_worst - current); any_special_social_active = True
+            if attrs.get('is_eschewer', False): coeff = self.coefficients['is_eschewer']; social_component += coeff * rand_factors['is_eschewer'] * (current - g_worst); any_special_social_active = True
+            if attrs.get('is_anarchic', False): coeff = self.coefficients['is_anarchic']; social_component += coeff * np.random.uniform(-1.0, 1.0, self.problem.number_of_variables()); any_special_social_active = True # Added anarchic
+
+            apply_std_social = attrs.get('is_std_social', False) or not any_special_social_active
+            if apply_std_social: coeff = self.coefficients['is_std_social']; social_component += coeff * rand_factors['is_std_social'] * (g_best - current)
+
+            new_velocity = self.w * velocity + cognitive_component + social_component
+            particle.attributes['velocity'] = new_velocity.tolist()
+
+    def get_name(self) -> str:
+        return "HybridAdditivePSO_WithRandom"
