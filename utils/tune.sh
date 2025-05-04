@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=new_random_algorithms_irace_tune
+#SBATCH --job-name=final_algorithms_irace_tune
 #SBATCH --output=%x_%j.out
 #SBATCH --error=%x_%j.err
 #SBATCH --time=12:00:00
@@ -8,7 +8,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=48
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=1G
+#SBATCH --mem=8G
 #SBATCH --mail-type=ALL
 
 

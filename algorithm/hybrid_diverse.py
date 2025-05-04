@@ -1,5 +1,5 @@
 import random
-from typing import List, TypeVar, Dict
+from typing import List, TypeVar
 
 import numpy as np
 from jmetal.core.problem import FloatProblem
@@ -807,8 +807,8 @@ class HybridPartialDisjointPSO_WithRandom(WorstAwarePSO, RoleMixin):
                  constraint_handling_mode: str = "clip", assign_roles_every_iteration: bool = False):
 
         super().__init__(problem, swarm_size, c1, c2, w, termination_criterion, constraint_handling_mode)
-        self.c1=c1; self.c2=c2; self.rejector_c=rejector_c; self.defeatist_c=defeatist_c; self.escapist_c=escapist_c;
-        self.rebel_c=rebel_c; self.contrarian_c=contrarian_c; self.eschewer_c=eschewer_c;
+        self.c1=c1; self.c2=c2; self.rejector_c=rejector_c; self.defeatist_c=defeatist_c; self.escapist_c=escapist_c
+        self.rebel_c=rebel_c; self.contrarian_c=contrarian_c; self.eschewer_c=eschewer_c
         self.amnesiac_c = amnesiac_c
         self.anarchic_c = anarchic_c
 
@@ -857,7 +857,6 @@ class HybridPartialDisjointPSO_WithRandom(WorstAwarePSO, RoleMixin):
             'rebel': int(n * self.rebel_fraction), 'contrarian': int(n * self.contrarian_fraction),
             'eschewer': int(n * self.eschewer_fraction), 'anarchic': int(n * self.anarchic_fraction) # Added anarchic
         }
-        # Assign special social roles
         for role_name, count in counts_soc.items():
             limit = min(current_idx_social + count, n)
             for i in range(current_idx_social, limit):
@@ -948,7 +947,6 @@ class HybridFullDisjointPSO_WithRandom(WorstAwarePSO, RoleMixin):
     - std_cognitive, std_social (implicit if role='standard')
     - rejector, defeatist, escapist, amnesiac (use standard social)
     - rebel, contrarian, eschewer, anarchic (use standard cognitive)
-    - wanderer (only inertia + random)
 
     Fractions for *all* special roles must sum <= 1.0.
     """
@@ -1266,3 +1264,473 @@ class HybridAdditivePSO_WithRandom(WorstAwarePSO, RoleMixin):
 
     def get_name(self) -> str:
         return "HybridAdditivePSO_WithRandom"
+
+
+
+
+# ==============================================================================
+# Hybrid Partial Disjoint PSO with Convergence Restarters
+# ==============================================================================
+class HybridPartialDisjointRestarterPSO(HybridPartialDisjointPSO_WithRandom):
+    """
+    Hybrid Partial Disjoint PSO + Convergence Restarter logic (Revised).
+
+    A fixed fraction 'is_restarter' is marked initially and EXCLUDED from
+    other special cognitive/social role assignments. Restarters are reinitialized
+    upon swarm convergence (low diversity).
+
+    Non-restarter particles follow the Partial Disjoint strategy:
+    - Cognitive Roles (Mutually Exclusive within non-restarters): standard, rejector, ... amnesiac
+    - Social Roles (Mutually Exclusive within non-restarters): standard, rebel, ... anarchic
+    - Cognitive/Social assignments are independent for non-restarters.
+
+    Fractions for special cognitive/social roles apply ONLY to the non-restarter pool.
+    """
+    def __init__(self,
+                 problem: FloatProblem, swarm_size: int, termination_criterion: TerminationCriterion, w: float,
+                 c1: float = 1.5, c2: float = 1.5,
+                 rejector_c: float = 1.0, defeatist_c: float = 1.0, escapist_c: float = 1.0,
+                 rebel_c: float = 1.0, contrarian_c: float = 1.0, eschewer_c: float = 1.0,
+                 amnesiac_c: float = 1.0, anarchic_c: float = 1.0,
+                 restarter_fraction: float = 0.1,
+                 rejector_fraction: float = 0.0, defeatist_fraction: float = 0.0, escapist_fraction: float = 0.0, amnesiac_fraction: float = 0.0,
+                 rebel_fraction: float = 0.0, contrarian_fraction: float = 0.0, eschewer_fraction: float = 0.0, anarchic_fraction: float = 0.0,
+                 convergence_threshold: float = 1e-3,
+                 assign_roles_every_iteration: bool = False,
+                 constraint_handling_mode: str = "clip"):
+
+        WorstAwarePSO.__init__(
+            self, problem=problem, swarm_size=swarm_size, c1=c1, c2=c2, w=w,
+            termination_criterion=termination_criterion,
+            constraint_handling_mode=constraint_handling_mode
+        )
+        self.c1=c1; self.c2=c2; self.rejector_c=rejector_c; self.defeatist_c=defeatist_c; self.escapist_c=escapist_c
+        self.rebel_c=rebel_c; self.contrarian_c=contrarian_c; self.eschewer_c=eschewer_c
+        self.amnesiac_c = amnesiac_c; self.anarchic_c = anarchic_c
+
+        self.restarter_fraction = max(0.0, min(1.0, restarter_fraction))
+        self.cognitive_role_fractions_input = {  # Store raw inputs
+            'rejector': rejector_fraction, 'defeatist': defeatist_fraction,
+            'escapist': escapist_fraction, 'amnesiac': amnesiac_fraction,
+        }
+        self.social_role_fractions_input = {
+            'rebel': rebel_fraction, 'contrarian': contrarian_fraction,
+            'eschewer': eschewer_fraction, 'anarchic': anarchic_fraction,
+        }
+        sum_cog_special = sum(max(0.0, min(1.0, v)) for v in self.cognitive_role_fractions_input.values())
+        sum_soc_special = sum(max(0.0, min(1.0, v)) for v in self.social_role_fractions_input.values())
+        if sum_cog_special > 1.0 + 1e-9: logger.warning(
+            f"Initial sum of special cognitive fractions ({sum_cog_special:.2f}) > 1.0. Will be normalized during assignment.")
+        if sum_soc_special > 1.0 + 1e-9: logger.warning(
+            f"Initial sum of special social fractions ({sum_soc_special:.2f}) > 1.0. Will be normalized during assignment.")
+        # Store other parameters
+        self.assign_roles_every_iteration = assign_roles_every_iteration
+        self.convergence_threshold = convergence_threshold
+
+
+    # --- Assign Roles with EXPLICIT NORMALIZATION ---
+    def _assign_roles(self, swarm: List[S], initial_assignment=False) -> None:
+        """
+        Assigns roles: 'is_restarter' first, then cognitive/social roles
+        to non-restarters, explicitly normalizing fractions if sum > 1.0.
+        """
+        n = len(swarm)
+        if n == 0: return
+
+        # Step 1: Assign/Identify Restarters (only if initial assignment)
+        if initial_assignment:
+            RoleMixin.mark_particles(swarm, self.restarter_fraction, 'is_restarter')
+            for p in swarm:
+                if not hasattr(p, 'attributes'): p.attributes = {}
+                if 'is_restarter' not in p.attributes: p.attributes['is_restarter'] = False
+
+        # Step 2: Identify Non-Restarters
+        non_restarter_indices = [i for i, p in enumerate(swarm) if not p.attributes.get('is_restarter', False)]
+        n_non_restarters = len(non_restarter_indices)
+
+        if n_non_restarters == 0:
+             logger.warning("No non-restarter particles to assign cognitive/social roles.")
+             for p in swarm:
+                  if not hasattr(p, 'attributes'): p.attributes = {}
+                  p.attributes['cognitive_role'] = 'standard'; p.attributes['social_role'] = 'standard'
+             return
+
+        # --- Step 3: Normalize & Assign Cognitive Roles to Non-Restarters ---
+        active_cog_fractions = {k: v for k, v in self.cognitive_role_fractions_input.items() if v > 1e-9}
+        sum_cog_special = sum(active_cog_fractions.values())
+        final_cog_fractions = active_cog_fractions # Start with active fractions
+
+        if sum_cog_special > 1.0:
+            logger.info(f"Normalizing cognitive fractions for non-restarters (Sum={sum_cog_special:.2f})")
+            factor = 1.0 / sum_cog_special
+            final_cog_fractions = {k: v * factor for k, v in active_cog_fractions.items()}
+
+        # Assign using final (normalized or original) fractions
+        random.shuffle(non_restarter_indices)
+        current_idx_cog = 0
+        for role_name, fraction in final_cog_fractions.items():
+            num_to_assign = int(round(n_non_restarters * fraction))
+            limit = min(current_idx_cog + num_to_assign, n_non_restarters)
+            for i in range(current_idx_cog, limit):
+                particle_index = non_restarter_indices[i]
+                swarm[particle_index].attributes['cognitive_role'] = role_name
+            current_idx_cog = limit
+            if current_idx_cog >= n_non_restarters: break
+        # Assign standard to the rest
+        while current_idx_cog < n_non_restarters:
+            swarm[non_restarter_indices[current_idx_cog]].attributes['cognitive_role'] = 'standard'
+            current_idx_cog += 1
+
+        # --- Step 4: Normalize & Assign Social Roles to Non-Restarters ---
+        active_soc_fractions = {k: v for k, v in self.social_role_fractions_input.items() if v > 1e-9}
+        sum_soc_special = sum(active_soc_fractions.values())
+        final_soc_fractions = active_soc_fractions
+
+        if sum_soc_special > 1.0:
+             logger.info(f"Normalizing social fractions for non-restarters (Sum={sum_soc_special:.2f})")
+             factor = 1.0 / sum_soc_special
+             final_soc_fractions = {k: v * factor for k, v in active_soc_fractions.items()}
+
+        # Assign using final (normalized or original) fractions
+        random.shuffle(non_restarter_indices) # Reshuffle
+        current_idx_soc = 0
+        for role_name, fraction in final_soc_fractions.items():
+             num_to_assign = int(round(n_non_restarters * fraction))
+             limit = min(current_idx_soc + num_to_assign, n_non_restarters)
+             for i in range(current_idx_soc, limit):
+                 swarm[non_restarter_indices[i]].attributes['social_role'] = role_name
+             current_idx_soc = limit
+             if current_idx_soc >= n_non_restarters: break
+        # Assign standard to the rest
+        while current_idx_soc < n_non_restarters:
+             swarm[non_restarter_indices[current_idx_soc]].attributes['social_role'] = 'standard'
+             current_idx_soc += 1
+
+        # --- Step 5: Ensure Restarters have placeholder roles ---
+        for p in swarm:
+            if p.attributes.get('is_restarter', False):
+                 if 'cognitive_role' not in p.attributes: p.attributes['cognitive_role'] = 'standard'
+                 if 'social_role' not in p.attributes: p.attributes['social_role'] = 'standard'
+
+    def create_initial_solutions(self) -> List[S]:
+        solutions = WorstAwarePSO.create_initial_solutions(self)
+        self._assign_roles(solutions, initial_assignment=True)
+        return solutions
+
+    def check_convergence(self) -> bool:
+        """Checks if the swarm diversity is below the threshold."""
+        if not self.solutions or len(self.solutions) < 2: return False
+        try:
+            positions = np.array([p for p in self.solutions if p.attributes.get('is_restarter', False)])
+            if positions.ndim != 2 or positions.shape[1] != self.problem.number_of_variables(): return False
+            centroid = np.mean(positions, axis=0)
+            diversity = np.mean(np.linalg.norm(positions - centroid, axis=1))
+            return diversity < self.convergence_threshold
+        except Exception as e: print(f"Error calculating diversity: {e}"); return False
+
+    def selective_reinitialization(self):
+        particles_to_reset = [p for p in self.solutions if p.attributes.get('is_restarter', False)]
+
+        for particle in particles_to_reset:
+            particle.variables = np.random.uniform(
+                self.problem.lower_bound,
+                self.problem.upper_bound
+            ).tolist()
+            particle.attributes['velocity'] = np.random.uniform(-1, 1, self.problem.number_of_variables()).tolist()
+            particle.attributes['best_position'] = particle.variables.copy()
+            particle.attributes['best_objective'] = particle.objectives[0]
+            particle.attributes['worst_position'] = particle.variables.copy()
+            particle.attributes['worst_objective'] = particle.objectives[0]
+
+
+    # Override step
+    def step(self):
+        """ Checks convergence, restarts if needed, potentially reassigns roles, then updates. """
+        if self.check_convergence():
+            self.selective_reinitialization()
+        if self.assign_roles_every_iteration:
+            self._assign_roles(self.solutions, initial_assignment=False)
+        self.update_velocity(self.solutions)
+        self.update_position(self.solutions)
+        self.perturbation(self.solutions)
+        self.solutions = self.evaluate(self.solutions)
+        self.update_global_best(self.solutions)
+        self.update_particle_best(self.solutions)
+
+
+# ==============================================================================
+# Hybrid Full Disjoint PSO with Convergence Restarters (Explicit Normalization)
+# ==============================================================================
+class HybridFullDisjointRestarterPSO(HybridFullDisjointPSO_WithRandom): # Inherit implementation details
+    """
+    Hybrid Full Disjoint PSO + Convergence Restarter logic.
+
+    A fixed fraction 'is_restarter' is marked initially and EXCLUDED from
+    the main role assignment. Restarters are reinitialized upon convergence.
+
+    Non-restarter particles follow the Full Disjoint strategy:
+    - If assigned special cognitive role -> standard social component.
+    - If assigned special social role -> standard cognitive component.
+    - Remaining non-restarters get role 'standard' (standard cog + standard soc).
+
+    Fractions for special roles apply ONLY to the non-restarter pool and are
+    explicitly normalized if their sum > 1.0.
+    """
+    def __init__(self,
+                 problem: FloatProblem, swarm_size: int, termination_criterion: TerminationCriterion, w: float,
+                 # --- All params from HybridFullDisjointPSO_WithRandom ---
+                 c1: float = 1.5, rejector_c: float = 1.0, defeatist_c: float = 1.0, escapist_c: float = 1.0, amnesiac_c: float = 1.0,
+                 c2: float = 1.5, rebel_c: float = 1.0, contrarian_c: float = 1.0, eschewer_c: float = 1.0, anarchic_c: float = 1.0,
+                 rejector_fraction: float = 0.0, defeatist_fraction: float = 0.0, escapist_fraction: float = 0.0, amnesiac_fraction: float = 0.0,
+                 rebel_fraction: float = 0.0, contrarian_fraction: float = 0.0, eschewer_fraction: float = 0.0, anarchic_fraction: float = 0.0,
+                 assign_roles_every_iteration: bool = False, # For the main assigned_role of NON-RESTARTERS
+                 # --- PLUS Params for ConvergenceRestarter ---
+                 convergence_threshold: float = 1e-3,
+                 restarter_fraction: float = 0.1,
+                 constraint_handling_mode: str = "clip"):
+
+        # --- NOTE: Call GRANDPARENT init (WorstAwarePSO) ---
+        # We handle all role assignments locally.
+        WorstAwarePSO.__init__(
+            self, problem=problem, swarm_size=swarm_size, c1=c1, c2=c2, w=w,
+            termination_criterion=termination_criterion,
+            constraint_handling_mode=constraint_handling_mode
+        )
+        # Store all coefficients
+        self.coefficients = { # Copy from parent or redefine
+            'std_cognitive': c1, 'rejector': rejector_c, 'defeatist': defeatist_c, 'escapist': escapist_c, 'amnesiac': amnesiac_c,
+            'std_social': c2, 'rebel': rebel_c, 'contrarian': contrarian_c, 'eschewer': eschewer_c, 'anarchic': anarchic_c,
+        }
+        # Define role categories (copied from parent for clarity)
+        self.special_cognitive_roles = {'rejector', 'defeatist', 'escapist', 'amnesiac'}
+        self.special_social_roles = {'rebel', 'contrarian', 'eschewer', 'anarchic'}
+        self.valid_special_roles = self.special_cognitive_roles.union(self.special_social_roles)
+
+
+        # Store Fractions
+        self.restarter_fraction = max(0.0, min(1.0, restarter_fraction))
+        # Store input fractions for the non-restarter pool specials
+        self.special_role_fractions_input = {
+            'rejector': rejector_fraction, 'defeatist': defeatist_fraction, 'escapist': escapist_fraction, 'amnesiac': amnesiac_fraction,
+            'rebel': rebel_fraction, 'contrarian': contrarian_fraction, 'eschewer': eschewer_fraction, 'anarchic': anarchic_fraction,
+        }
+        # Initial validation of sum (optional but helpful)
+        sum_special = sum(max(0.0, min(1.0, v)) for v in self.special_role_fractions_input.values())
+        if sum_special > 1.0 + 1e-9:
+            logger.warning(f"Initial sum of special role fractions ({sum_special:.2f}) > 1.0. Will be normalized for non-restarter pool during assignment.")
+
+        # Store other parameters
+        self.assign_roles_every_iteration = assign_roles_every_iteration
+        self.convergence_threshold = convergence_threshold
+
+    def _assign_roles(self, swarm: List[S], initial_assignment=False) -> None:
+        """
+        Assigns 'is_restarter', then assigns AT MOST ONE special role
+        (or 'standard') to non-restarters, normalizing fractions first.
+        """
+        n = len(swarm)
+        if n == 0: return
+
+        # Step 1: Assign/Identify Restarters (Only needed initially)
+        if initial_assignment:
+            RoleMixin.mark_particles(swarm, self.restarter_fraction, 'is_restarter')
+            for p in swarm: # Ensure attribute exists
+                if not hasattr(p, 'attributes'): p.attributes = {}
+                if 'is_restarter' not in p.attributes: p.attributes['is_restarter'] = False
+
+        # Step 2: Identify Non-Restarters
+        non_restarter_indices = [i for i, p in enumerate(swarm) if not p.attributes.get('is_restarter', False)]
+        n_non_restarters = len(non_restarter_indices)
+
+        if n_non_restarters == 0:
+             logger.warning("No non-restarter particles to assign main roles.")
+             for p in swarm:
+                  if not hasattr(p, 'attributes'): p.attributes = {}
+                  p.attributes['assigned_role'] = 'standard' # Or 'restarter_main'?
+             return
+
+        # --- Step 3: Normalize Special Fractions for Non-Restarter Pool ---
+        active_special_fractions = {k: v for k, v in self.special_role_fractions_input.items() if v > 1e-9 and k in self.valid_special_roles}
+        sum_special = sum(active_special_fractions.values())
+        final_special_fractions = active_special_fractions
+
+        if sum_special > 1.0:
+            logger.info(f"Normalizing special fractions for non-restarters (Sum={sum_special:.2f})")
+            factor = 1.0 / sum_special
+            final_special_fractions = {k: v * factor for k, v in active_special_fractions.items()}
+
+        # --- Step 4: Assign Roles to Non-Restarters ---
+        random.shuffle(non_restarter_indices)
+        current_idx = 0
+        for role_name, fraction in final_special_fractions.items():
+            num_to_assign = int(round(n_non_restarters * fraction))
+            limit = min(current_idx + num_to_assign, n_non_restarters)
+            for i in range(current_idx, limit):
+                particle_index = non_restarter_indices[i]
+                swarm[particle_index].attributes['assigned_role'] = role_name
+            current_idx = limit
+            if current_idx >= n_non_restarters: break
+
+        while current_idx < n_non_restarters:
+            swarm[non_restarter_indices[current_idx]].attributes['assigned_role'] = 'standard'
+            current_idx += 1
+
+        for p in swarm:
+            if p.attributes.get('is_restarter', False):
+                 if 'assigned_role' not in p.attributes: p.attributes['assigned_role'] = 'standard'
+
+
+    def create_initial_solutions(self) -> List[S]:
+        solutions = WorstAwarePSO.create_initial_solutions(self)
+        self._assign_roles(solutions, initial_assignment=True)
+        return solutions
+
+    def check_convergence(self) -> bool:
+        """Checks if the swarm diversity is below the threshold."""
+        if not self.solutions or len(self.solutions) < 2: return False
+        try:
+            positions = np.array([p for p in self.solutions if p.attributes.get('is_restarter', False)])
+            if positions.ndim != 2 or positions.shape[1] != self.problem.number_of_variables(): return False
+            centroid = np.mean(positions, axis=0)
+            diversity = np.mean(np.linalg.norm(positions - centroid, axis=1))
+            return diversity < self.convergence_threshold
+        except Exception as e: print(f"Error calculating diversity: {e}"); return False
+
+    def selective_reinitialization(self):
+        particles_to_reset = [p for p in self.solutions if p.attributes.get('is_restarter', False)]
+
+        for particle in particles_to_reset:
+            particle.variables = np.random.uniform(
+                self.problem.lower_bound,
+                self.problem.upper_bound
+            ).tolist()
+            particle.attributes['velocity'] = np.random.uniform(-1, 1, self.problem.number_of_variables()).tolist()
+            particle.attributes['best_position'] = particle.variables.copy()
+            particle.attributes['best_objective'] = particle.objectives[0]
+            particle.attributes['worst_position'] = particle.variables.copy()
+            particle.attributes['worst_objective'] = particle.objectives[0]
+
+
+    # Override step
+    def step(self):
+        """ Checks convergence, restarts if needed, potentially reassigns roles, then updates. """
+        if self.check_convergence():
+            self.selective_reinitialization()
+        if self.assign_roles_every_iteration:
+            self._assign_roles(self.solutions, initial_assignment=False)
+        self.update_velocity(self.solutions)
+        self.update_position(self.solutions)
+        self.perturbation(self.solutions)
+        self.solutions = self.evaluate(self.solutions)
+        self.update_global_best(self.solutions)
+        self.update_particle_best(self.solutions)
+
+    def get_name(self) -> str: return "HybridFullDisjointRestarterPSO"
+
+
+# ==============================================================================
+# Hybrid Additive PSO with Convergence Restarters
+# ==============================================================================
+class HybridAdditiveRestarterPSO(HybridAdditivePSO_WithRandom): # Mixin first
+    """
+    Hybrid Additive PSO + Convergence Restarter logic.
+
+    Applies the additive velocity update (summing influences from probabilistically
+    activated roles like is_rebel, is_anarchic, is_std_cognitive, etc.) to all particles.
+    A fixed fraction 'is_restarter' is marked initially and reinitialized upon convergence.
+    The additive role flags apply to *all* particles, including restarters between resets.
+    """
+    def __init__(self,
+                 problem: FloatProblem, swarm_size: int, termination_criterion: TerminationCriterion, w: float,
+                 # --- All params from HybridAdditivePSO_WithRandom ---
+                 c1: float = 1.5, rejector_c: float = 1.0, defeatist_c: float = 1.0, escapist_c: float = 1.0, amnesiac_c: float = 1.0,
+                 c2: float = 1.5, rebel_c: float = 1.0, contrarian_c: float = 1.0, eschewer_c: float = 1.0, anarchic_c: float = 1.0,
+                 std_cognitive_prob: float = 1.0, rejector_prob: float = 0.0, defeatist_prob: float = 0.0, escapist_prob: float = 0.0, amnesiac_prob: float = 0.0,
+                 std_social_prob: float = 1.0, rebel_prob: float = 0.0, contrarian_prob: float = 0.0, eschewer_prob: float = 0.0, anarchic_prob: float = 0.0,
+                 assign_flags_every_iteration: bool = False, # For the additive role flags
+                  # --- PLUS Params for ConvergenceRestarter ---
+                 convergence_threshold: float = 1e-3,
+                 restarter_fraction: float = 0.1,
+                 constraint_handling_mode: str = "clip"):
+
+        # 1. Initialize the base Hybrid Additive algorithm
+        HybridAdditivePSO_WithRandom.__init__(
+            self, problem=problem, swarm_size=swarm_size, termination_criterion=termination_criterion, w=w,
+            c1=c1, rejector_c=rejector_c, defeatist_c=defeatist_c, escapist_c=escapist_c, amnesiac_c=amnesiac_c,
+            c2=c2, rebel_c=rebel_c, contrarian_c=contrarian_c, eschewer_c=eschewer_c, anarchic_c=anarchic_c,
+            std_cognitive_prob=std_cognitive_prob, rejector_prob=rejector_prob, defeatist_prob=defeatist_prob,
+            escapist_prob=escapist_prob, amnesiac_prob=amnesiac_prob, std_social_prob=std_social_prob,
+            rebel_prob=rebel_prob, contrarian_prob=contrarian_prob, eschewer_prob=eschewer_prob, anarchic_prob=anarchic_prob,
+            constraint_handling_mode=constraint_handling_mode,
+            assign_flags_every_iteration=assign_flags_every_iteration # Pass this through
+        )
+        self.convergence_threshold = convergence_threshold
+        self.restarter_fraction = max(0.0, min(1.0, restarter_fraction))
+
+    def create_initial_solutions(self) -> List[S]:
+        solutions = super().create_initial_solutions()
+        RoleMixin.mark_particles(solutions, self.restarter_fraction, 'is_restarter')
+        for p in solutions:
+            if not hasattr(p, 'attributes'): p.attributes = {}
+            if 'is_restarter' not in p.attributes: p.attributes['is_restarter'] = False
+            # Optional: Clear additive flags for initial restarters for strictness
+            # if p.attributes['is_restarter']:
+            #     for flag_name in self.coefficients.keys(): # self.coefficients defined in parent __init__
+            #           p.attributes[flag_name] = False
+        return solutions
+
+    # --- OVERRIDE Additive Flag Assignment ---
+    def _assign_role_flags_to_swarm(self, swarm: List[S]) -> None:
+        """
+        Assigns additive boolean flags probabilistically ONLY to NON-RESTARTER particles.
+        Restarters retain their flags (likely False unless manually set).
+        """
+        n = len(swarm)
+        if n == 0: return
+        if not hasattr(self, 'role_probabilities'):
+             logger.error("role_probabilities not initialized!")
+             return
+
+        for i in range(n):
+            particle = swarm[i]
+            if not hasattr(particle, 'attributes'): particle.attributes = {}
+            attrs = particle.attributes
+
+            if not attrs.get('is_restarter', False):
+                for flag_name, probability in self.role_probabilities.items():
+                    attrs[flag_name] = (random.random() < probability)
+
+    def check_convergence(self) -> bool:
+        """Checks if the swarm diversity is below the threshold."""
+        if not self.solutions or len(self.solutions) < 2: return False
+        try:
+            positions = np.array([p for p in self.solutions if p.attributes.get('is_restarter', False)])
+            if positions.ndim != 2 or positions.shape[1] != self.problem.number_of_variables(): return False
+            centroid = np.mean(positions, axis=0)
+            diversity = np.mean(np.linalg.norm(positions - centroid, axis=1))
+            return diversity < self.convergence_threshold
+        except Exception as e: print(f"Error calculating diversity: {e}"); return False
+
+    def selective_reinitialization(self):
+        particles_to_reset = [p for p in self.solutions if p.attributes.get('is_restarter', False)]
+
+        for particle in particles_to_reset:
+            particle.variables = np.random.uniform(
+                self.problem.lower_bound,
+                self.problem.upper_bound
+            ).tolist()
+            particle.attributes['velocity'] = np.random.uniform(-1, 1, self.problem.number_of_variables()).tolist()
+            particle.attributes['best_position'] = particle.variables.copy()
+            particle.attributes['best_objective'] = particle.objectives[0]
+            particle.attributes['worst_position'] = particle.variables.copy()
+            particle.attributes['worst_objective'] = particle.objectives[0]
+
+
+    # Override step
+    def step(self):
+        """ Checks convergence, restarts if needed, then performs hybrid additive step. """
+        if self.check_convergence():
+            self.selective_reinitialization()
+        super().step()
+
+    def get_name(self) -> str: return "HybridAdditiveRestarterPSO"

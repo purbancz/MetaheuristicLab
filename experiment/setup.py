@@ -8,10 +8,11 @@ from algorithm.reinitialized_PSO import FRAPSO, CollectiveResetPSO, PartialReset
 from algorithm.WAPSO import ReverseLearningGlobalAttractorPSO, CombinedLearningPSO, ReverseLearningPersonalAttractorPSO, \
     ReverseLearningPSO
 from algorithm.hybrid_diverse import HybridPartialDisjointPSO, HybridFullDisjointPSO, HybridAdditivePSO, \
-    HybridFullDisjointPSO_WithRandom, HybridPartialDisjointPSO_WithRandom, HybridAdditivePSO_WithRandom
+    HybridFullDisjointPSO_WithRandom, HybridPartialDisjointPSO_WithRandom, HybridAdditivePSO_WithRandom, \
+    HybridFullDisjointRestarterPSO, HybridPartialDisjointRestarterPSO, HybridAdditiveRestarterPSO
 from algorithm.particles_with_roles import RebelPSO, RejectorPSO, RebelRejectorPSO, RRAPSO, ContrarianPSO, DefeatistPSO, \
     ContrarianDefeatistPSO, EschewerPSO, EscapistPSO, EschewerEscapistPSO, CDAPSO, EEAPSO, AnarchicPSO, AmnesiacPSO, \
-    WandererPSO, NoisyPSO, AAAPSO, NAPSO
+    WandererPSO, NoisyPSO, AAAPSO, NAPSO, CLAPSO
 from algorithm.single_objective_PSO import SingleObjectivePSO, PerturbationPSO
 
 from problem.fixed_varaibles.branin import BraninRCOC
@@ -71,7 +72,7 @@ from problem.n_variables.styblinski import StyblinskiTang
 from problem.n_variables.weierstrass import ShiftedRotatedWeierstrass
 from problem.n_variables.zakharov import Zakharov
 
-NO_OF_RUNS = 50
+NO_OF_RUNS = 5
 NUMBER_OF_VARIABLES = 100
 ###
 G_SOLUTIONS_SIZE = 100
@@ -325,6 +326,29 @@ def factory_CombinedLearningPSO(p):
         b2=0.384275983213548,
         w=0.252967959141965,
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
+    )
+
+
+def factory_CLAPSO(p):
+    return CLAPSO(
+        problem=p,
+        termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS),
+        swarm_size=G_SOLUTIONS_SIZE,
+        c1=2.0,
+        c2=2.0,
+        cl_c1=2.0,
+        cl_c2=2.0,
+        b1=0.5,
+        b2=0.5,
+        base_inertia=0.9,
+        min_inertia=0.4,
+        max_inertia=0.9,
+        cl_fraction=0.5,
+        max_cl_fraction=0.9,
+        window_size=10,
+        diversity_threshold=0.1,
+        improvement_threshold=0.01,
+        constraint_handling_mode="clip"
     )
 
 
@@ -635,6 +659,102 @@ def factory_HybridAdditivePSO_WithRandom(p):
     )
 
 
+
+def factory_HybridFullDisjointRestarterPSO(p):
+    return HybridFullDisjointRestarterPSO(
+        problem=p,
+        swarm_size=G_SOLUTIONS_SIZE,
+        termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS),
+        w=0.65,
+        c1=2.10,
+        rejector_c=0.90,
+        defeatist_c=1.00,
+        escapist_c=0.85,
+        amnesiac_c=0.70,
+        c2=2.00,
+        rebel_c=1.20,
+        contrarian_c=1.10,
+        eschewer_c=0.80,
+        anarchic_c=0.60,
+        rejector_fraction=0.05,
+        defeatist_fraction=0.10,
+        escapist_fraction=0.05,
+        amnesiac_fraction=0.05,
+        rebel_fraction=0.10,
+        contrarian_fraction=0.10,
+        eschewer_fraction=0.05,
+        anarchic_fraction=0.05,
+        assign_roles_every_iteration=False,
+        convergence_threshold=1e-3,
+        restarter_fraction=0.20,
+        constraint_handling_mode="clip"
+    )
+
+
+def factory_HybridPartialDisjointRestarterPSO(p):
+    return HybridPartialDisjointRestarterPSO(
+        problem=p,
+        swarm_size=G_SOLUTIONS_SIZE,
+        termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS),
+        w=0.70,
+        c1=2.00,
+        c2=1.80,
+        rejector_c=0.90,
+        defeatist_c=1.10,
+        escapist_c=0.80,
+        amnesiac_c=0.50,
+        rebel_c=1.20,
+        contrarian_c=1.00,
+        eschewer_c=0.70,
+        anarchic_c=0.60,
+        restarter_fraction=0.15,
+        rejector_fraction=0.10,
+        defeatist_fraction=0.10,
+        escapist_fraction=0.05,
+        amnesiac_fraction=0.05,
+        rebel_fraction=0.10,
+        contrarian_fraction=0.10,
+        eschewer_fraction=0.05,
+        anarchic_fraction=0.05,
+        convergence_threshold=1e-3,
+        assign_roles_every_iteration=True,
+        constraint_handling_mode="clip"
+    )
+
+
+def factory_HybridAdditiveRestarterPSO(p):
+    return HybridAdditiveRestarterPSO(
+        problem=p,
+        swarm_size=G_SOLUTIONS_SIZE,
+        termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS),
+        w=0.60,
+        c1=2.00,
+        rejector_c=0.90,
+        defeatist_c=1.10,
+        escapist_c=0.80,
+        amnesiac_c=0.70,
+        c2=1.90,
+        rebel_c=1.20,
+        contrarian_c=1.00,
+        eschewer_c=0.75,
+        anarchic_c=0.65,
+        std_cognitive_prob=1.00,
+        rejector_prob=0.10,
+        defeatist_prob=0.10,
+        escapist_prob=0.05,
+        amnesiac_prob=0.05,
+        std_social_prob=1.00,
+        rebel_prob=0.10,
+        contrarian_prob=0.10,
+        eschewer_prob=0.05,
+        anarchic_prob=0.05,
+        assign_flags_every_iteration=True,
+        convergence_threshold=2e-3,
+        restarter_fraction=0.15,
+        constraint_handling_mode="clip"
+    )
+
+
 def factory_CAPSO(p):
     return CoAdaptativePSO(
         problem=p,
@@ -717,58 +837,58 @@ def setup_experiment():
 
     # Define problems
     n_variables_problems = [
-        # ##
-        RotatedHighConditionedElliptic(number_of_variables),
-        RotatedBentCigar(number_of_variables),
-        RotatedDiscus(number_of_variables),
-        ShiftedRotatedRosenbrock(number_of_variables),
-        ShiftedRotatedAckley(number_of_variables),
-        ShiftedRastrigin(number_of_variables),
-        ShiftedRotatedRastrigin(number_of_variables),
-        ShiftedSchwefel(number_of_variables),
-        ShiftedRotatedSchwefel(number_of_variables),
-        ShiftedRotatedHappyCat(number_of_variables),
-        ShiftedRotatedHGBat(number_of_variables),
-        ShiftedRotatedSchafferF7(number_of_variables),
-        ShiftedRotatedWeierstrass(number_of_variables),
-        ShiftedRotatedExpandedGriewankPlusRosenbrock(number_of_variables),
-        ShiftedRotatedExpandedScafferF6(number_of_variables),
-        # ##
-        AlpineN1(number_of_variables),
-        AlpineN1Max(number_of_variables),
-        AlpineN2(number_of_variables),
-        AlpineN2Max(number_of_variables),
-        CrossLeggedTable(number_of_variables),
-        CrownedCross(number_of_variables),
-        EggHolder(number_of_variables),
-        ExpandedShaffer(number_of_variables),
-        GeneralizedHolderTable(number_of_variables),
-        GeneralizedSchafferN1(number_of_variables),
-        GeneralizedSchafferN2(number_of_variables),
-        GeneralizedSchafferN3(number_of_variables),
-        GeneralizedSchafferN4(number_of_variables),
-        GeneralizedSchmidtVetters(number_of_variables),
-        LennardJonesMinimumEnergyCluster(number_of_variables),
-        Levy(number_of_variables),
-        Michalewicz(number_of_variables),
-        Mishra03(number_of_variables),
-        Mishra04(number_of_variables),
-        Mishra05(number_of_variables),
-        Mishra06(number_of_variables),
-        RosenbrockModified02(number_of_variables),
-        Salomon(number_of_variables),
-        SchwefelN20(number_of_variables),
-        SchwefelN21(number_of_variables),
-        SchwefelN26(number_of_variables),
-        SchwefelN36(number_of_variables),
-        SchwefelN6(number_of_variables),
-        ShubertN1(number_of_variables),
-        ShubertN3(number_of_variables),
-        ShubertN4(number_of_variables),
-        SineEnvelope(number_of_variables),
-        Stochastic(number_of_variables),
-        StretchedV(number_of_variables),
-        StyblinskiTang(number_of_variables),
+        # # ##
+        # RotatedHighConditionedElliptic(number_of_variables),
+        # RotatedBentCigar(number_of_variables),
+        # RotatedDiscus(number_of_variables),
+        # ShiftedRotatedRosenbrock(number_of_variables),
+        # ShiftedRotatedAckley(number_of_variables),
+        # ShiftedRastrigin(number_of_variables),
+        # ShiftedRotatedRastrigin(number_of_variables),
+        # ShiftedSchwefel(number_of_variables),
+        # ShiftedRotatedSchwefel(number_of_variables),
+        # ShiftedRotatedHappyCat(number_of_variables),
+        # ShiftedRotatedHGBat(number_of_variables),
+        # ShiftedRotatedSchafferF7(number_of_variables),
+        # ShiftedRotatedWeierstrass(number_of_variables),
+        # ShiftedRotatedExpandedGriewankPlusRosenbrock(number_of_variables),
+        # ShiftedRotatedExpandedScafferF6(number_of_variables),
+        # # ##
+        # AlpineN1(number_of_variables),
+        # AlpineN1Max(number_of_variables),
+        # AlpineN2(number_of_variables),
+        # AlpineN2Max(number_of_variables),
+        # CrossLeggedTable(number_of_variables),
+        # CrownedCross(number_of_variables),
+        # EggHolder(number_of_variables),
+        # ExpandedShaffer(number_of_variables),
+        # GeneralizedHolderTable(number_of_variables),
+        # GeneralizedSchafferN1(number_of_variables),
+        # GeneralizedSchafferN2(number_of_variables),
+        # GeneralizedSchafferN3(number_of_variables),
+        # GeneralizedSchafferN4(number_of_variables),
+        # GeneralizedSchmidtVetters(number_of_variables),
+        # LennardJonesMinimumEnergyCluster(number_of_variables),
+        # Levy(number_of_variables),
+        # Michalewicz(number_of_variables),
+        # Mishra03(number_of_variables),
+        # Mishra04(number_of_variables),
+        # Mishra05(number_of_variables),
+        # Mishra06(number_of_variables),
+        # RosenbrockModified02(number_of_variables),
+        # Salomon(number_of_variables),
+        # SchwefelN20(number_of_variables),
+        # SchwefelN21(number_of_variables),
+        # SchwefelN26(number_of_variables),
+        # SchwefelN36(number_of_variables),
+        # SchwefelN6(number_of_variables),
+        # ShubertN1(number_of_variables),
+        # ShubertN3(number_of_variables),
+        # ShubertN4(number_of_variables),
+        # SineEnvelope(number_of_variables),
+        # Stochastic(number_of_variables),
+        # StretchedV(number_of_variables),
+        # StyblinskiTang(number_of_variables),
 
         # ## Rejected
 
@@ -791,7 +911,7 @@ def setup_experiment():
         # ExpandedKatsuura(number_of_variables), # too long
         # Katsuura(number_of_variables),  # too long
         # Ackley(number_of_variables), # irace
-        # Rastrigin(number_of_variables),  # irace
+        Rastrigin(number_of_variables),  # irace
         # Sphere(number_of_variables), # irace
 
         # ## uninterested results
@@ -864,12 +984,13 @@ def setup_experiment():
         # 'ReverseLearningGlobalAttractorPSO': factory_ReverseLearningGlobalAttractorPSO,
         # 'ReverseLearningPersonalAttractorPSO': factory_ReverseLearningPersonalAttractorPSO,
         # 'CombinedLearningPSO': factory_CombinedLearningPSO,
+        'CLAPSO': factory_CLAPSO,
         # 'AnarchicPSO': factory_AnarchicPSO,
         # 'AmnesiacPSO': factory_AmnesiacPSO,
         # 'WandererPSO': factory_WandererPSO,
-        'AAAPSO': factory_AAAPSO,
+        # 'AAAPSO': factory_AAAPSO,
         # 'NoisyPSO': factory_NoisyPSO,
-        'NAPSO': factory_NoisyPSO,
+        # 'NAPSO': factory_NoisyPSO,
         # 'PerturbationPSO': factory_PerturbationPSO,
         # 'PartialResetPSO': factory_PartialResetPSO,
         # 'CollectiveResetPSO': factory_CollectiveResetPSO,
@@ -877,9 +998,12 @@ def setup_experiment():
         # 'HybridFullDisjointPSO': factory_HybridFullDisjointPSO,
         # 'HybridPartialDisjointPSO': factory_HybridPartialDisjointPSO,
         # 'HybridAdditivePSO': factory_HybridAdditivePSO,
-        'HybridFullDisjointPSO_WithRandom': factory_HybridFullDisjointPSO,
-        'HybridPartialDisjointPSO_WithRandom': factory_HybridPartialDisjointPSO,
-        'HybridAdditivePSO_WithRandom': factory_HybridAdditivePSO,
+        # 'HybridFullDisjointPSO_WithRandom': factory_HybridFullDisjointPSO,
+        # 'HybridPartialDisjointPSO_WithRandom': factory_HybridPartialDisjointPSO,
+        # 'HybridAdditivePSO_WithRandom': factory_HybridAdditivePSO,
+        'HybridFullDisjointRestarterPSO': factory_HybridFullDisjointRestarterPSO,
+        'HybridPartialDisjointRestarterPSO': factory_HybridPartialDisjointRestarterPSO,
+        'HybridAdditiveRestarterPSO': factory_HybridAdditiveRestarterPSO,
         # 'CAPSO': factory_CAPSO,
         # 'IAPSO': factory_IAPSO
     }
@@ -934,7 +1058,7 @@ def setup_experiment():
             'EschewerPSO', 'EscapistPSO', 'EschewerEscapistPSO', 'EEAPSO',
             'AnarchicPSO', 'AmnesiacPSO', 'WandererPSO', 'NoisyPSO', 'PerturbationPSO',
             'PartialResetPSO', 'CollectiveResetPSO', 'FRAPSO',
-            'HybridFullDisjointPSO', 'HybridPartialDisjointPSO', 'HybridAdditivePSO',
+            'HybridFullDisjointPSO_WithRandom', 'HybridPartialDisjointPSO_WithRandom', 'HybridAdditivePSO_WithRandom',
             'CAPSO', 'IAPSO',
         ],
         # 'All without all reverse learning, FRAPSO and RRAPSO': ['RebelPSO', 'RejectorPSO', 'RebelRejectorPSO',

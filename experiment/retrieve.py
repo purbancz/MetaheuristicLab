@@ -1,4 +1,5 @@
 import csv
+import glob
 import os
 import pickle
 from collections import defaultdict
@@ -23,6 +24,15 @@ from experiment.setup import setup_experiment, make_dir
 #     with open(file_path, 'rb') as f:
 #         loaded_data = pickle.load(f)
 #     return loaded_data
+
+def collect_pickle_files_from_paths(paths):
+    pkl_files = []
+
+    for path in paths:
+        files = glob.glob(os.path.join(path, '**', '*.pkl'), recursive=True)
+        pkl_files.extend(files)
+
+    return pkl_files
 
 
 def plot_all_from_pickle(file_path):

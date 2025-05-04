@@ -1255,3 +1255,128 @@ class NAPSO(AdaptiveRoleMixin, RoleMixin, SingleObjectivePSO):
 
     def get_name(self) -> str:
         return "NAPSO"
+
+
+# ==============================================================================
+# Combined Learning Adaptive PSO (CLAPSO)
+# ==============================================================================
+class CLAPSO(AdaptiveRoleMixin, RoleMixin, WorstAwarePSO): # Inherit from WorstAwarePSO
+    """
+    Combined Learning Adaptive PSO (CLAPSO):
+    Applies either standard PSO or Combined Learning PSO velocity update.
+    The fraction of particles using the Combined Learning rule ('is_cl')
+    and the inertia weight adapt based on swarm diversity and improvement rate.
+    """
+    def __init__(self,
+                 problem: FloatProblem,
+                 termination_criterion: TerminationCriterion,
+                 swarm_size: int,
+                 c1: float,
+                 c2: float,
+                 cl_c1: float, # can be same as c1
+                 cl_c2: float, # can be same as c2
+                 b1: float,
+                 b2: float,
+                 base_inertia: float,
+                 min_inertia: float,
+                 max_inertia: float,
+                 cl_fraction: float,
+                 max_cl_fraction: float = 0.9,
+                 window_size: int = 10,
+                 diversity_threshold: float = 0.1,
+                 improvement_threshold: float = 0.01,
+                 constraint_handling_mode: str = "clip"):
+
+        WorstAwarePSO.__init__(
+            self,
+            problem=problem,
+            swarm_size=swarm_size,
+            c1=c1,
+            c2=c2,
+            w=base_inertia,
+            termination_criterion=termination_criterion,
+            constraint_handling_mode=constraint_handling_mode
+        )
+        self.c1_std = c1
+        self.c2_std = c2
+        self.c1_cl = cl_c1
+        self.c2_cl = cl_c2
+        self.b1_cl = b1
+        self.b2_cl = b2
+
+        cl_fraction = max(0.0, min(1.0, cl_fraction))
+        AdaptiveRoleMixin._init_adaptive(
+            self, # Pass self
+            swarm_size=swarm_size,
+            base_inertia=base_inertia,
+            min_inertia=min_inertia,
+            max_inertia=max_inertia,
+            role_fractions={
+                'is_cl': cl_fraction,
+            },
+            max_role_fractions={
+                'is_cl': max(cl_fraction, min(1.0, max_cl_fraction)),
+            },
+            diversity_threshold=diversity_threshold,
+            improvement_threshold=improvement_threshold,
+            window_size=window_size
+        )
+
+    def create_initial_solutions(self) -> List[S]:
+        solutions = super().create_initial_solutions()
+        for p in solutions:
+             if not hasattr(p, 'attributes'): p.attributes = {}
+        RoleMixin.mark_particles(solutions, self.original_fractions['is_cl'], 'is_cl')
+        for p in solutions:
+             if 'is_cl' not in p.attributes: p.attributes['is_cl'] = False
+        return solutions
+
+    # Override update_velocity
+    def update_velocity(self, swarm: List[S]) -> None:
+        """Adapts parameters and then updates velocity using either Standard or Combined Learning rule."""
+        self.adapt_parameters(swarm)
+        self.update_global_worst(swarm)
+
+        if self.best_global is None or self.global_worst is None: return
+
+        g_best_pos = np.array(self.best_global.variables)
+        g_worst_pos = np.array(self.global_worst.variables)
+
+        for particle in swarm:
+            attrs = particle.attributes
+            required = ['velocity', 'best_position', 'worst_position', 'is_cl'] # is_cl added by marking
+            if not all(k in attrs for k in required): continue
+
+            current_pos = np.array(particle.variables)
+            current_vel = np.array(attrs['velocity'])
+
+            if attrs.get('is_cl', False):
+                r1, r2, r3, r4 = random.random(), random.random(), random.random(), random.random()
+                p_best_pos = np.array(attrs['best_position'])
+                p_worst_pos = np.array(attrs['worst_position'])
+
+                new_velocity = (self.w * current_vel +
+                                self.c1_cl * r1 * (p_best_pos - current_pos) +
+                                self.c2_cl * r2 * (g_best_pos - current_pos) +
+                                self.b1_cl * r3 * (current_pos - p_worst_pos) +
+                                self.b2_cl * r4 * (current_pos - g_worst_pos))
+            else:
+                r1, r2 = random.random(), random.random()
+                p_best_pos = np.array(attrs['best_position'])
+
+                cognitive_vec = self.c1_std * r1 * (p_best_pos - current_pos)
+                social_vec = self.c2_std * r2 * (g_best_pos - current_pos)
+                new_velocity = self.w * current_vel + cognitive_vec + social_vec
+
+            particle.attributes['velocity'] = new_velocity.tolist()
+
+    def update_particle_best(self, swarm: List[S]) -> None:
+        super().update_particle_best(swarm)
+        self.update_particle_worst(swarm)
+
+    def update_global_best(self, swarm: List[FloatSolution]) -> None:
+        super().update_global_best(swarm)
+        self.update_global_worst(swarm)
+
+    def get_name(self) -> str:
+        return "CLAPSO"

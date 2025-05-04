@@ -13,7 +13,7 @@ R = TypeVar('R')
 
 class FRAPSO(SingleObjectivePSO):
     """
-    Fractal Adaptive PSO (FAPSO)
+    Fractal Restart Adaptive PSO (FRAPSO)
     Fractal, Focus
     Concept: Uses fractal decomposition for hierarchical search
     Key Features:
