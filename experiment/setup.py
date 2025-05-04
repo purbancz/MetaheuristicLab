@@ -1,26 +1,12 @@
 import os
 
-from jmetal.algorithm.singleobjective import GeneticAlgorithm
-from jmetal.operator import PolynomialMutation, SBXCrossover, DifferentialEvolutionCrossover
-from jmetal.problem import Sphere, Srinivas
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
 
 from algorithm.AdaptivePSO import CoAdaptativePSO, IndividualAdaptivePSO
-from algorithm.DifferentialEvolution import DifferentialEvolution
 from algorithm.reinitialized_PSO import FRAPSO, CollectiveResetPSO, PartialResetPSO
-from algorithm.GradientEnhancedPSO import GradientEnhancedPSO
-from algorithm.HybridPSODE import HybridPSODE
-from algorithm.LightningPSO import LightningPSO
-from algorithm.NPSO import NPSO
-from algorithm.PGCHEA import PGCHEA
-from algorithm.PGPHEA import PGPHEA
-from algorithm.PGSHEA import PGSHEA
-from algorithm.QTPSO import QTPSO
 from algorithm.WAPSO import ReverseLearningGlobalAttractorPSO, CombinedLearningPSO, ReverseLearningPersonalAttractorPSO, \
     ReverseLearningPSO
-from algorithm.SPPPSO import SPPPSO
-from algorithm.TDPSO import TDPSO
 from algorithm.hybrid_diverse import HybridPartialDisjointPSO, HybridFullDisjointPSO, HybridAdditivePSO, \
     HybridFullDisjointPSO_WithRandom, HybridPartialDisjointPSO_WithRandom, HybridAdditivePSO_WithRandom
 from algorithm.particles_with_roles import RebelPSO, RejectorPSO, RebelRejectorPSO, RRAPSO, ContrarianPSO, DefeatistPSO, \
@@ -41,7 +27,7 @@ from problem.fixed_varaibles.mccormick import McCormick
 from problem.fixed_varaibles.schaffer import SchafferN2
 from problem.fixed_varaibles.shekel import Shekel
 from problem.fixed_varaibles.shubert import Shubert
-from problem.hgbat import HGBat
+from problem.n_variables.hgbat import HGBat
 from problem.n_variables.CEC import RotatedHighConditionedElliptic, RotatedBentCigar, RotatedDiscus, \
     ShiftedRotatedRosenbrock, ShiftedRotatedAckley, ShiftedRastrigin, ShiftedRotatedRastrigin, ShiftedSchwefel, \
     ShiftedRotatedSchwefel, ShiftedRotatedKatsuura, ShiftedRotatedHappyCat, ShiftedRotatedHGBat, \
@@ -385,19 +371,19 @@ def factory_AAAPSO(p):
     return AAAPSO(
         problem=p,
         swarm_size=G_SOLUTIONS_SIZE,
-        c1=1.289749876747761,
-        c2=4.9065094037838595,
-        base_inertia=0.114157882091415,
-        min_inertia=0.068050062417605,
-        max_inertia=0.469635443616177,
-        random_strength=0.1,
-        anarchic_fraction=0.5,
-        amnesiac_fraction=0.5,
-        window_size=10,
-        max_anarchic_fraction=0.8,
-        max_amnesiac_fraction=0.8,
-        diversity_threshold=0.1,
-        improvement_threshold=0.01,
+        c1=0.790774912488224,
+        c2=5.552410713161935,
+        base_inertia=0.091445359341472,
+        min_inertia=0.075912859093488,
+        max_inertia=0.628221210339724,
+        anarchic_fraction=0.066778649836667,
+        amnesiac_fraction=0.089620440131471,
+        max_anarchic_fraction=0.088838865076925,
+        max_amnesiac_fraction=0.728022693617781,
+        diversity_threshold=0.02391452073353,
+        improvement_threshold=0.006969807524771,
+        random_strength=0.469952346008692,
+        window_size=44,
         constraint_handling_mode="clip",
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
@@ -419,17 +405,17 @@ def factory_NAPSO(p):
     return NAPSO(
         problem=p,
         swarm_size=G_SOLUTIONS_SIZE,
-        c1=1.289749876747761,
-        c2=4.9065094037838595,
-        base_inertia=0.114157882091415,
-        min_inertia=0.068050062417605,
-        max_inertia=0.469635443616177,
-        noise_strength=0.1,
-        noisy_fraction=0.5,
-        max_noisy_fraction=0.8,
-        window_size=10,
-        diversity_threshold=0.1,
-        improvement_threshold=0.01,
+        c1=2.913687469154542,
+        c2=2.909493273550172,
+        base_inertia=0.1012660398563355,
+        min_inertia=0.086888696778086,
+        max_inertia=0.218280616377528,
+        noise_strength=0.570005691598192,
+        noisy_fraction=0.078288888821339,
+        max_noisy_fraction=0.797594775981736,
+        window_size=47,
+        diversity_threshold=0.239934036427403,
+        improvement_threshold=0.039205662121256,
         constraint_handling_mode="clip",
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
@@ -564,27 +550,27 @@ def factory_HybridFullDisjointPSO_WithRandom(p):
     return HybridFullDisjointPSO_WithRandom(
         problem=p,
         swarm_size=G_SOLUTIONS_SIZE,
-        w=0.5,  # Default inertia weight
-        c1=1.5,  # Default cognitive coefficient
-        rejector_c=1.0,
-        defeatist_c=1.0,
-        escapist_c=1.0,
-        amnesiac_c=1.0,
-        c2=1.5,  # Default social coefficient
-        rebel_c=1.0,
-        contrarian_c=1.0,
-        eschewer_c=1.0,
-        anarchic_c=1.0,
-        rejector_fraction=0.0,
-        defeatist_fraction=0.0,
-        escapist_fraction=0.0,
-        amnesiac_fraction=0.0,
-        rebel_fraction=0.0,
-        contrarian_fraction=0.0,
-        eschewer_fraction=0.0,
-        anarchic_fraction=0.0,
+        w=0.045871171887412,
+        c1=0.04186456823808,
+        c2=3.3512603430983687,
+        rejector_c=1.6818015055543236,
+        defeatist_c=0.073048466909476,
+        escapist_c=4.295140040496995,
+        amnesiac_c=0.123202191476923,
+        rebel_c=1.046999188101443,
+        contrarian_c=1.0201315371765118,
+        eschewer_c=2.781363171836315,
+        anarchic_c=2.4146755146545096,
+        rejector_fraction=0.058218603922034,
+        defeatist_fraction=0.287604619139506,
+        escapist_fraction=0.150589334690724,
+        amnesiac_fraction=0.039872169395881,
+        rebel_fraction=0.536254030121648,
+        contrarian_fraction=0.692369927851304,
+        eschewer_fraction=0.160533277039762,
+        anarchic_fraction=0.201068690599398,
         constraint_handling_mode="clip",
-        assign_roles_every_iteration=False,
+        assign_roles_every_iteration=True,
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
 
@@ -593,57 +579,58 @@ def factory_HybridPartialDisjointPSO_WithRandom(p):
     return HybridPartialDisjointPSO_WithRandom(
         problem=p,
         swarm_size=G_SOLUTIONS_SIZE,
-        w=0.5,  # Default inertia weight
-        c1=1.5,  # Default cognitive coefficient
-        c2=1.5,  # Default social coefficient
-        rejector_c=1.0,
-        defeatist_c=1.0,
-        escapist_c=1.0,
-        rebel_c=1.0,
-        contrarian_c=1.0,
-        eschewer_c=1.0,
-        amnesiac_c=1.0,
-        anarchic_c=1.0,
-        rejector_fraction=0.0,
-        defeatist_fraction=0.0,
-        escapist_fraction=0.0,
-        amnesiac_fraction=0.0,
-        rebel_fraction=0.0,
-        contrarian_fraction=0.0,
-        eschewer_fraction=0.0,
-        anarchic_fraction=0.0,
+        w=0.032920866248212,
+        c1=3.471681455837407,
+        c2=1.2151276229152843,
+        rejector_c=0.376657552954615,
+        defeatist_c=0.055180455774964,
+        escapist_c=0.62896031560951,
+        rebel_c=0.427986984634051,
+        contrarian_c=1.699577316604754,
+        eschewer_c=3.6928779079599714,
+        amnesiac_c=4.98124490255147,
+        anarchic_c=5.342026988789787,
+        rejector_fraction=0.018857441494762,
+        defeatist_fraction=0.714529547920285,
+        escapist_fraction=0.346943732309136,
+        amnesiac_fraction=0.023634819035895,
+        rebel_fraction=0.373606012229191,
+        contrarian_fraction=0.175060180505544,
+        eschewer_fraction=0.241785605848191,
+        anarchic_fraction=0.045603668001108,
         constraint_handling_mode="clip",
-        assign_roles_every_iteration=False,
+        assign_roles_every_iteration=True,
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
+
 
 def factory_HybridAdditivePSO_WithRandom(p):
     return HybridAdditivePSO_WithRandom(
         problem=p,
         swarm_size=G_SOLUTIONS_SIZE,
-        w=0.5,  # Default inertia weight
-        c1=1.5,  # Default cognitive coefficient
-        rejector_c=1.0,
-        defeatist_c=1.0,
-        escapist_c=1.0,
-        amnesiac_c=1.0,
-        c2=1.5,  # Default social coefficient
-        rebel_c=1.0,
-        contrarian_c=1.0,
-        eschewer_c=1.0,
-        anarchic_c=1.0,
-        std_cognitive_prob=1.0,  # Default probability for standard cognitive role
-        rejector_prob=0.0,
-        defeatist_prob=0.0,
-        escapist_prob=0.0,
-        amnesiac_prob=0.0,
-        std_social_prob=1.0,  # Default probability for standard social role
-        rebel_prob=0.0,
-        contrarian_prob=0.0,
-        eschewer_prob=0.0,
-        anarchic_prob=0.0,
+        w=0.029152442728975,
+        c1=0.312354103872271,
+        c2=2.537451806033552,
+        rejector_c=0.435837108869733,
+        defeatist_c=4.27456352808514,
+        escapist_c=5.300136874325789,
+        rebel_c=4.626164727708544,
+        contrarian_c=1.8358205978065425,
+        eschewer_c=0.565041947981466,
+        anarchic_c=2.7414545378092856,
+        amnesiac_c=0.554749781031361,
+        std_cognitive_prob=0.921591357935905,
+        rejector_prob=0.967998524023063,
+        defeatist_prob=0.02678740199382,
+        escapist_prob=0.054471591028952,
+        amnesiac_prob=0.045923766989247,
+        std_social_prob=0.178282780413502,
+        rebel_prob=0.226833864067438,
+        contrarian_prob=0.420293816550519,
+        eschewer_prob=0.152088881967566,
+        anarchic_prob=0.102623833459703,
         constraint_handling_mode="clip",
-        assign_flags_every_iteration=False,
+        assign_flags_every_iteration=True,
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
 
@@ -731,21 +718,21 @@ def setup_experiment():
     # Define problems
     n_variables_problems = [
         # ##
-        # RotatedHighConditionedElliptic(number_of_variables),
-        # RotatedBentCigar(number_of_variables),
-        # RotatedDiscus(number_of_variables),
-        # ShiftedRotatedRosenbrock(number_of_variables),
-        # ShiftedRotatedAckley(number_of_variables),
-        # ShiftedRastrigin(number_of_variables),
-        # ShiftedRotatedRastrigin(number_of_variables),
-        # ShiftedSchwefel(number_of_variables),
-        # ShiftedRotatedSchwefel(number_of_variables),
-        # ShiftedRotatedHappyCat(number_of_variables),
-        # ShiftedRotatedHGBat(number_of_variables),
-        # ShiftedRotatedSchafferF7(number_of_variables),
+        RotatedHighConditionedElliptic(number_of_variables),
+        RotatedBentCigar(number_of_variables),
+        RotatedDiscus(number_of_variables),
+        ShiftedRotatedRosenbrock(number_of_variables),
+        ShiftedRotatedAckley(number_of_variables),
+        ShiftedRastrigin(number_of_variables),
+        ShiftedRotatedRastrigin(number_of_variables),
+        ShiftedSchwefel(number_of_variables),
+        ShiftedRotatedSchwefel(number_of_variables),
+        ShiftedRotatedHappyCat(number_of_variables),
+        ShiftedRotatedHGBat(number_of_variables),
+        ShiftedRotatedSchafferF7(number_of_variables),
         ShiftedRotatedWeierstrass(number_of_variables),
-        # ShiftedRotatedExpandedGriewankPlusRosenbrock(number_of_variables),
-        # ShiftedRotatedExpandedScafferF6(number_of_variables),
+        ShiftedRotatedExpandedGriewankPlusRosenbrock(number_of_variables),
+        ShiftedRotatedExpandedScafferF6(number_of_variables),
         # # ##
         # AlpineN1(number_of_variables),
         # AlpineN1Max(number_of_variables),

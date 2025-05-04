@@ -1,14 +1,59 @@
+import math
+
 import numpy as np
 import matplotlib.pyplot as plt
+from bs4.diagnose import benchmark_parsers
 # from mpl_toolkits.mplot3d import Axes3D
 from jmetal.core.solution import FloatSolution
+from jmetal.problem import Sphere
+from jmetal.problem.singleobjective.unconstrained import Rastrigin
 
+from problem.n_variables.hgbat import HGBat
 from experiment.setup import make_dir
+from problem.fixed_varaibles.quantum_speed import QSLTimeBoundProblem
+from problem.n_variables.CEC import RotatedHighConditionedElliptic, RotatedBentCigar, RotatedDiscus, \
+    ShiftedRotatedRosenbrock, ShiftedRotatedAckley, ShiftedRastrigin, ShiftedRotatedRastrigin, ShiftedSchwefel, \
+    ShiftedRotatedSchwefel, ShiftedRotatedKatsuura, ShiftedRotatedHappyCat, ShiftedRotatedHGBat, \
+    ShiftedRotatedExpandedGriewankPlusRosenbrock, ShiftedRotatedExpandedScafferF6, HybridFunction1, HybridFunction2, \
+    HybridFunction3, HybridFunction4, HybridFunction5, HybridFunction6, CompositionFunction1, CompositionFunction2, \
+    CompositionFunction3, CompositionFunction4, CompositionFunction5, CompositionFunction6, CompositionFunction7, \
+    CompositionFunction8, ShiftedRotatedSchafferF7
+from problem.n_variables.ackley import Ackley
+from problem.n_variables.alpine import AlpineN1, AlpineN2
+from problem.n_variables.bent_cigar import BentCigar
 from problem.n_variables.bird import Bird
 from problem.n_variables.cross import GeneralizedCrossInTray, CrownedCross, Cross, CrossLeggedTable
+from problem.n_variables.discus import Discus
+from problem.n_variables.dixon import DixonPrice, GeneralizedDixonPriceRosenbrock
+from problem.n_variables.eggholder import EggHolder
+from problem.n_variables.expanded_schaffer import ExpandedShaffer
+from problem.n_variables.griewank import Griewank
+from problem.n_variables.happy_cat import HappyCat
 from problem.n_variables.holders import GeneralizedHolderTable, CarromTable, TestTubeHolder, PenHolder
-from problem.n_variables.mishra import Mishra01, Mishra02, Mishra03, Mishra04, Mishra05, Mishra06, Mishra07, Mishra08, \
-    Mishra10, Mishra11
+from problem.n_variables.katsuura import Katsuura, ExpandedKatsuura
+from problem.n_variables.lenard_johnes_minimum_energy_cluster import LennardJonesMinimumEnergyCluster
+from problem.n_variables.levy import Levy
+from problem.n_variables.michalewicz import Michalewicz
+from problem.n_variables.mishra import Mishra01, Mishra02, Mishra03, Mishra04, Mishra05, Mishra06, Mishra11
+from problem.n_variables.penalized import GeneralizedPenalizedN1
+from problem.n_variables.plateau import Plateau
+from problem.n_variables.quantum_speed import QuantumSpeedLimit2D, GeneralizedQuantumSpeedLimit
+from problem.n_variables.quartic import Quartic
+from problem.n_variables.rosenbrock import Rosenbrock, RosenbrockModified01, RosenbrockModified02
+from problem.n_variables.salomon import Salomon
+from problem.n_variables.schaffer import GeneralizedSchafferN7, GeneralizedSchafferN1, GeneralizedSchafferN2, \
+    GeneralizedSchafferN3, GeneralizedSchafferN4
+from problem.n_variables.schmidt_vetters import GeneralizedSchmidtVetters
+from problem.n_variables.schwefel import SchwefelN26, SchwefelN21, SchwefelN22, SchwefelN6, SchwefelN20, \
+    SchwefelN36
+from problem.n_variables.shubert import ShubertN1, ShubertN3, ShubertN4
+from problem.n_variables.sine_envelope import SineEnvelope
+from problem.n_variables.step import StepN1, StepN2, StepN3
+from problem.n_variables.stochastic import Stochastic
+from problem.n_variables.strechedv import StretchedV
+from problem.n_variables.styblinski import StyblinskiTang
+from problem.n_variables.weierstrass import ShiftedRotatedWeierstrass
+from problem.n_variables.zakharov import Zakharov
 
 
 def plot_benchmark_function(func, resolution=100):

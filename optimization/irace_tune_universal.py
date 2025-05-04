@@ -57,81 +57,59 @@ problems = [
 
 parameter_spaces = {
     'AAAPSO': [
-        # Core PSO Params
-        Real("w", 0.01, 1.0),  # Inertia weight
-        Real("c1", 0.01, 6.0),  # Cognitive coefficient
-        Real("c2", 0.01, 6.0),  # Social coefficient
-        # Inertia Parameters
+        Real("c1", 0.01, 6.0),
+        Real("c2", 0.01, 6.0),
         Real("base_inertia", 0.01, 1.0),
         Real("min_inertia", 0.01, 1.0),
         Real("max_inertia", 0.01, 1.0),
-        # Role Fractions (Anarchic & Amnesiac)
-        Real("anarchic_fraction", 0.01, 0.8),  # Max anarchic fraction
-        Real("amnesiac_fraction", 0.01, 0.8),  # Max amnesiac fraction
-        Real("max_anarchic_fraction", 0.01, 0.98),  # Max limit for anarchic fraction
-        Real("max_amnesiac_fraction", 0.01, 0.98),  # Max limit for amnesiac fraction
-        # Adaptive Role Behavior Parameters
+        Real("random_strength", 0.01, 1.0),
+        Real("anarchic_fraction", 0.01, 0.8),
+        Real("amnesiac_fraction", 0.01, 0.8),
+        Integer("window_size", 10, 50),
+        Real("max_anarchic_fraction", 0.01, 0.98),
+        Real("max_amnesiac_fraction", 0.01, 0.98),
         Real("diversity_threshold", 0.001, 0.3),
         Real("improvement_threshold", 0.0001, 0.1),
-        # Constraint Handling
-        Real("random_strength", 0.01, 1.0),  # Strength of randomness (affects cognitive/social behaviors)
-        Bool("assign_roles_every_iteration"),  # Whether to assign roles in every iteration
-        # Termination criterion
-        Integer("window_size", 10, 50),  # Window size for adaptive behavior updates
     ],
     'NAPSO': [
-        # Core PSO Params
-        Real("w", 0.01, 1.0),  # Inertia weight
-        Real("c1", 0.01, 6.0),  # Cognitive coefficient
-        Real("c2", 0.01, 6.0),  # Social coefficient
-        # Inertia Parameters
+        Real("c1", 0.01, 6.0),
+        Real("c2", 0.01, 6.0),
         Real("base_inertia", 0.01, 1.0),
         Real("min_inertia", 0.01, 1.0),
         Real("max_inertia", 0.01, 1.0),
-        # Noise Parameters
-        Real("noise_strength", 0.01, 1.0),  # Strength of additive noise
-        Real("noisy_fraction", 0.01, 0.8),  # Fraction of particles to be affected by noise
-        Real("max_noisy_fraction", 0.01, 0.98),  # Maximum noisy fraction allowed for adaptation
-        # Adaptive Role Behavior Parameters
+        Real("noise_strength", 0.01, 1.0),
+        Real("noisy_fraction", 0.01, 0.8),
+        Real("max_noisy_fraction", 0.01, 0.98),
+        Integer("window_size", 10, 50),
         Real("diversity_threshold", 0.001, 0.3),
         Real("improvement_threshold", 0.0001, 0.1),
-        # Constraint Handling
-        Bool("assign_roles_every_iteration"),  # Whether to assign roles in every iteration
-        # Termination criterion
-        Integer("window_size", 10, 50),  # Window size for adaptive behavior updates
     ],
     'HybridFullDisjointPSO_WithRandom': [
-        # Core PSO Params
-        Real("w", 0.01, 1.0),  # Inertia weight
-        Real("c1", 0.01, 6.0),  # Standard cognitive coefficient
-        Real("c2", 0.01, 6.0),  # Standard social coefficient
-        # Special Role Coefficients
+        Real("w", 0.01, 1.0),
+        Real("c1", 0.01, 6.0),
+        Real("c2", 0.01, 6.0),
         Real("rejector_c", 0.01, 6.0),
         Real("defeatist_c", 0.01, 6.0),
         Real("escapist_c", 0.01, 6.0),
-        Real("amnesiac_c", 0.01, 6.0),  # Cognitive + Amnesiac coefficients
+        Real("amnesiac_c", 0.01, 6.0),
         Real("rebel_c", 0.01, 6.0),
         Real("contrarian_c", 0.01, 6.0),
         Real("eschewer_c", 0.01, 6.0),
-        Real("anarchic_c", 0.01, 6.0),  # Social + Anarchic coefficients
-        # Special Role Fractions (Require normalization in target-runner)
-        Real("rejector_fraction", 0.01, 0.73),  # Max value should allow sum <= 1 before normalization
+        Real("anarchic_c", 0.01, 6.0),
+        Real("rejector_fraction", 0.01, 0.73),
         Real("defeatist_fraction", 0.01, 0.73),
         Real("escapist_fraction", 0.01, 0.73),
-        Real("amnesiac_fraction", 0.01, 0.73),  # Amnesiac role fraction
+        Real("amnesiac_fraction", 0.01, 0.73),
         Real("rebel_fraction", 0.01, 0.73),
         Real("contrarian_fraction", 0.01, 0.73),
         Real("eschewer_fraction", 0.01, 0.73),
-        Real("anarchic_fraction", 0.01, 0.73),  # Anarchic role fraction
-        # Behavior Flags
+        Real("anarchic_fraction", 0.01, 0.73),
         Bool("assign_roles_every_iteration"),
     ],
     'HybridPartialDisjointPSO_WithRandom': [
-        # Core PSO Params
-        Real("w", 0.01, 1.0),  # Inertia weight
-        Real("c1", 0.01, 6.0),  # Standard cognitive coefficient
-        Real("c2", 0.01, 6.0),  # Standard social coefficient
-        # Special Role Coefficients
+        Real("w", 0.01, 1.0),
+        Real("c1", 0.01, 6.0),
+        Real("c2", 0.01, 6.0),
         Real("rejector_c", 0.01, 6.0),
         Real("defeatist_c", 0.01, 6.0),
         Real("escapist_c", 0.01, 6.0),
@@ -140,24 +118,20 @@ parameter_spaces = {
         Real("eschewer_c", 0.01, 6.0),
         Real("amnesiac_c", 0.01, 6.0),
         Real("anarchic_c", 0.01, 6.0),
-        # Special Role Fractions (Require normalization in target-runner)
-        Real("rejector_fraction", 0.01, 0.77),  # Max value should allow sum > 1 before normalization
+        Real("rejector_fraction", 0.01, 0.77),
         Real("defeatist_fraction", 0.01, 0.77),
         Real("escapist_fraction", 0.01, 0.77),
-        Real("amnesiac_fraction", 0.01, 0.77),  # Amnesiac role fraction
+        Real("amnesiac_fraction", 0.01, 0.77),
         Real("rebel_fraction", 0.01, 0.77),
         Real("contrarian_fraction", 0.01, 0.77),
         Real("eschewer_fraction", 0.01, 0.77),
-        Real("anarchic_fraction", 0.01, 0.77),  # Anarchic role fraction
-        # Behavior Flags
+        Real("anarchic_fraction", 0.01, 0.77),
         Bool("assign_roles_every_iteration"),
     ],
     'HybridAdditivePSO_WithRandom': [
-        # Core PSO Params
-        Real("w", 0.01, 1.0),  # Inertia weight
-        Real("c1", 0.01, 6.0),  # Standard cognitive coefficient
-        Real("c2", 0.01, 6.0),  # Standard social coefficient
-        # Special Role Coefficients
+        Real("w", 0.01, 1.0),
+        Real("c1", 0.01, 6.0),
+        Real("c2", 0.01, 6.0),
         Real("rejector_c", 0.01, 6.0),
         Real("defeatist_c", 0.01, 6.0),
         Real("escapist_c", 0.01, 6.0),
@@ -166,19 +140,17 @@ parameter_spaces = {
         Real("eschewer_c", 0.01, 6.0),
         Real("anarchic_c", 0.01, 6.0),
         Real("amnesiac_c", 0.01, 6.0),
-        # Role Activation Probabilities (Independent for each role)
-        Real("std_cognitive_prob", 0.01, 1.0),  # Probability of activating standard cognitive behavior
-        Real("rejector_prob", 0.01, 1.0),  # Probability of activating rejector role
-        Real("defeatist_prob", 0.01, 1.0),  # Probability of activating defeatist role
-        Real("escapist_prob", 0.01, 1.0),  # Probability of activating escapist role
-        Real("amnesiac_prob", 0.01, 1.0),  # Probability of activating amnesiac role
-        Real("std_social_prob", 0.01, 1.0),  # Probability of activating standard social behavior
-        Real("rebel_prob", 0.01, 1.0),  # Probability of activating rebel role
-        Real("contrarian_prob", 0.01, 1.0),  # Probability of activating contrarian role
-        Real("eschewer_prob", 0.01, 1.0),  # Probability of activating eschewer role
-        Real("anarchic_prob", 0.01, 1.0),  # Probability of activating anarchic role
-        # Behavior Flags
-        Bool("assign_flags_every_iteration"),  # Whether to assign flags for behaviors in each iteration
+        Real("std_cognitive_prob", 0.01, 1.0),
+        Real("rejector_prob", 0.01, 1.0),
+        Real("defeatist_prob", 0.01, 1.0),
+        Real("escapist_prob", 0.01, 1.0),
+        Real("amnesiac_prob", 0.01, 1.0),
+        Real("std_social_prob", 0.01, 1.0),
+        Real("rebel_prob", 0.01, 1.0),
+        Real("contrarian_prob", 0.01, 1.0),
+        Real("eschewer_prob", 0.01, 1.0),
+        Real("anarchic_prob", 0.01, 1.0),
+        Bool("assign_flags_every_iteration"),
     ],
 }
 
