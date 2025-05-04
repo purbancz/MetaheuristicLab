@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=new_algorithms_hard_problems_1000dim
+#SBATCH --job-name=new_algorithms_all_problems_100dim
 #SBATCH --output=slurm_logs/%x_%j.out # Log directory
 #SBATCH --error=slurm_logs/%x_%j.err  # Log directory
 #SBATCH --time=72:00:00           # Adjust time as needed
