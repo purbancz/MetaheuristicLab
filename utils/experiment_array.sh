@@ -1,9 +1,9 @@
 #!/bin/bash
-#SBATCH --job-name=new_algorithms_all_problems_100dim
+#SBATCH --job-name=final_algorithms_all_problems_100dim
 #SBATCH --output=slurm_logs/%x_%j.out # Log directory
 #SBATCH --error=slurm_logs/%x_%j.err  # Log directory
-#SBATCH --time=72:00:00           # Adjust time as needed
-#SBATCH --partition=plgrid
+#SBATCH --time=1:00:00           # Adjust time as needed
+#SBATCH --partition=plgrid-testing
 #SBATCH --account=plglscclass24-cpu # Your account
 
 # --- Request 1 task with multiple CPUs ---
