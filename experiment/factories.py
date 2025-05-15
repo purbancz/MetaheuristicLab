@@ -8,7 +8,7 @@ from algorithm.hybrid_diverse import HybridFullDisjointPSO, HybridPartialDisjoin
     HybridFullDisjointRestarterPSO, HybridPartialDisjointRestarterPSO, HybridAdditiveRestarterPSO
 from algorithm.particles_with_roles import RebelPSO, RejectorPSO, RebelRejectorPSO, RRAPSO, ContrarianPSO, DefeatistPSO, \
     ContrarianDefeatistPSO, CDAPSO, EschewerPSO, EscapistPSO, EschewerEscapistPSO, EEAPSO, CLAPSO, AnarchicPSO, \
-    AmnesiacPSO, WandererPSO, AAAPSO, NoisyPSO, NAPSO
+    AmnesiacPSO, WandererPSO, AAAPSO, NoisyPSO, NAPSO, DrifterPSO, DAPSO
 from algorithm.reinitialized_PSO import PartialResetPSO, CollectiveResetPSO, FRAPSO
 from algorithm.single_objective_PSO import SingleObjectivePSO, PerturbationPSO
 from experiment.globals import G_SOLUTIONS_SIZE, G_MAX_EVALUATIONS
@@ -391,6 +391,40 @@ def factory_PerturbationPSO(p):
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
 
+def factory_DrifterPSO(p):
+    return DrifterPSO(
+        problem=p,
+        swarm_size=G_SOLUTIONS_SIZE,
+        termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS),
+        w=0.637125109727299,
+        c1=2.5453875960820325,
+        c2=0.789097207083248,
+        drifter_fraction=0.2,
+        perturbation_scale=0.008133747975949,
+        perturbation_method="gaussian",
+        constraint_handling_mode="clip"
+    )
+
+
+def factory_DAPSO(p):
+    return DAPSO(
+        problem=p,
+        termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS),
+        swarm_size=G_SOLUTIONS_SIZE,
+        c1=2.5453875960820325,
+        c2=0.789097207083248,
+        base_inertia=0.637125109727299,
+        min_inertia=0.1,
+        max_inertia=1.0,
+        perturbation_scale=0.008133747975949,
+        drifter_fraction=0.2,
+        max_drifter_fraction=0.8,
+        window_size=10,
+        diversity_threshold=0.1,
+        improvement_threshold=0.01,
+        perturbation_method="gaussian",
+        constraint_handling_mode="clip"
+    )
 
 def factory_PartialResetPSO(p):
     return PartialResetPSO(

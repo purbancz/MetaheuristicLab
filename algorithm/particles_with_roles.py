@@ -8,7 +8,7 @@ from jmetal.core.solution import FloatSolution
 from jmetal.util.termination_criterion import TerminationCriterion
 
 from algorithm.WAPSO import WorstAwarePSO
-from algorithm.single_objective_PSO import SingleObjectivePSO
+from algorithm.single_objective_PSO import SingleObjectivePSO, PerturbationPSO
 
 S = TypeVar('S')
 
@@ -1000,7 +1000,6 @@ class AAAPSO(AdaptiveRoleMixin, RoleMixin, SingleObjectivePSO):  # Changed Order
                  improvement_threshold: float = 0.01,
                  constraint_handling_mode: str = "clip"):
 
-
         SingleObjectivePSO.__init__(
             self,
             problem=problem,
@@ -1046,7 +1045,6 @@ class AAAPSO(AdaptiveRoleMixin, RoleMixin, SingleObjectivePSO):  # Changed Order
             if 'is_anarchic' not in p.attributes: p.attributes['is_anarchic'] = False
             if 'is_amnesiac' not in p.attributes: p.attributes['is_amnesiac'] = False
         return solutions
-
 
     def update_velocity(self, swarm: List[S]) -> None:
         """Adapts parameters and then updates velocity based on anarchic/amnesiac roles."""
@@ -1154,6 +1152,7 @@ class NoisyPSO(SingleObjectivePSO, RoleMixin):
     def get_name(self) -> str:
         return "NoisyPSO"
 
+
 # ==============================================================================
 # Adaptive Noisy PSO (NAPSO)
 # ==============================================================================
@@ -1164,6 +1163,7 @@ class NAPSO(AdaptiveRoleMixin, RoleMixin, SingleObjectivePSO):
     The fraction of particles receiving noise ('is_noisy') and the inertia
     weight adapt based on swarm diversity and improvement rate.
     """
+
     def __init__(self,
                  problem: FloatProblem,
                  termination_criterion: TerminationCriterion,
@@ -1174,8 +1174,8 @@ class NAPSO(AdaptiveRoleMixin, RoleMixin, SingleObjectivePSO):
                  min_inertia: float,
                  max_inertia: float,
                  noise_strength: float,
-                 noisy_fraction: float, # Initial fraction
-                 max_noisy_fraction: float = 0.8, # Max limit for adaptation
+                 noisy_fraction: float,  # Initial fraction
+                 max_noisy_fraction: float = 0.8,  # Max limit for adaptation
                  window_size: int = 10,
                  diversity_threshold: float = 0.1,
                  improvement_threshold: float = 0.01,
@@ -1187,7 +1187,7 @@ class NAPSO(AdaptiveRoleMixin, RoleMixin, SingleObjectivePSO):
             swarm_size=swarm_size,
             c1=c1,
             c2=c2,
-            w=base_inertia, # Start with base_inertia
+            w=base_inertia,  # Start with base_inertia
             termination_criterion=termination_criterion,
             constraint_handling_mode=constraint_handling_mode
         )
@@ -1217,10 +1217,10 @@ class NAPSO(AdaptiveRoleMixin, RoleMixin, SingleObjectivePSO):
     def create_initial_solutions(self) -> List[S]:
         solutions = super().create_initial_solutions()
         for p in solutions:
-             if not hasattr(p, 'attributes'): p.attributes = {}
+            if not hasattr(p, 'attributes'): p.attributes = {}
         RoleMixin.mark_particles(solutions, self.original_fractions['is_noisy'], 'is_noisy')
         for p in solutions:
-             if 'is_noisy' not in p.attributes: p.attributes['is_noisy'] = False
+            if 'is_noisy' not in p.attributes: p.attributes['is_noisy'] = False
         return solutions
 
     # Override update_velocity
@@ -1238,7 +1238,8 @@ class NAPSO(AdaptiveRoleMixin, RoleMixin, SingleObjectivePSO):
             current_vel = np.array(particle.attributes['velocity'])
             p_best_pos = np.array(particle.attributes['best_position'])
 
-            r1 = random.random(); r2 = random.random()
+            r1 = random.random();
+            r2 = random.random()
             cognitive_vec = self.c1 * r1 * (p_best_pos - current_pos)
             social_vec = self.c2 * r2 * (g_best_pos - current_pos)
 
@@ -1260,21 +1261,22 @@ class NAPSO(AdaptiveRoleMixin, RoleMixin, SingleObjectivePSO):
 # ==============================================================================
 # Combined Learning Adaptive PSO (CLAPSO)
 # ==============================================================================
-class CLAPSO(AdaptiveRoleMixin, RoleMixin, WorstAwarePSO): # Inherit from WorstAwarePSO
+class CLAPSO(AdaptiveRoleMixin, RoleMixin, WorstAwarePSO):  # Inherit from WorstAwarePSO
     """
     Combined Learning Adaptive PSO (CLAPSO):
     Applies either standard PSO or Combined Learning PSO velocity update.
     The fraction of particles using the Combined Learning rule ('is_cl')
     and the inertia weight adapt based on swarm diversity and improvement rate.
     """
+
     def __init__(self,
                  problem: FloatProblem,
                  termination_criterion: TerminationCriterion,
                  swarm_size: int,
                  c1: float,
                  c2: float,
-                 cl_c1: float, # can be same as c1
-                 cl_c2: float, # can be same as c2
+                 cl_c1: float,  # can be same as c1
+                 cl_c2: float,  # can be same as c2
                  b1: float,
                  b2: float,
                  base_inertia: float,
@@ -1306,7 +1308,7 @@ class CLAPSO(AdaptiveRoleMixin, RoleMixin, WorstAwarePSO): # Inherit from WorstA
 
         cl_fraction = max(0.0, min(1.0, cl_fraction))
         AdaptiveRoleMixin._init_adaptive(
-            self, # Pass self
+            self,  # Pass self
             swarm_size=swarm_size,
             base_inertia=base_inertia,
             min_inertia=min_inertia,
@@ -1325,10 +1327,10 @@ class CLAPSO(AdaptiveRoleMixin, RoleMixin, WorstAwarePSO): # Inherit from WorstA
     def create_initial_solutions(self) -> List[S]:
         solutions = super().create_initial_solutions()
         for p in solutions:
-             if not hasattr(p, 'attributes'): p.attributes = {}
+            if not hasattr(p, 'attributes'): p.attributes = {}
         RoleMixin.mark_particles(solutions, self.original_fractions['is_cl'], 'is_cl')
         for p in solutions:
-             if 'is_cl' not in p.attributes: p.attributes['is_cl'] = False
+            if 'is_cl' not in p.attributes: p.attributes['is_cl'] = False
         return solutions
 
     # Override update_velocity
@@ -1344,7 +1346,7 @@ class CLAPSO(AdaptiveRoleMixin, RoleMixin, WorstAwarePSO): # Inherit from WorstA
 
         for particle in swarm:
             attrs = particle.attributes
-            required = ['velocity', 'best_position', 'worst_position', 'is_cl'] # is_cl added by marking
+            required = ['velocity', 'best_position', 'worst_position', 'is_cl']  # is_cl added by marking
             if not all(k in attrs for k in required): continue
 
             current_pos = np.array(particle.variables)
@@ -1380,3 +1382,105 @@ class CLAPSO(AdaptiveRoleMixin, RoleMixin, WorstAwarePSO): # Inherit from WorstA
 
     def get_name(self) -> str:
         return "CLAPSO"
+
+
+# ==============================================================================
+# Variant: DrifterPSO (Standard PSO + Added particles with perturbation)
+# ==============================================================================
+class DrifterPSO(PerturbationPSO, RoleMixin):
+
+    def __init__(self,
+                 problem: FloatProblem,
+                 swarm_size: int,
+                 termination_criterion: TerminationCriterion,
+                 w: float,
+                 c1: float,
+                 c2: float,
+                 drifter_fraction: float,
+                 perturbation_scale: float,
+                 perturbation_method: str = "gaussian",
+                 constraint_handling_mode: str = "clip"):
+        super().__init__(problem, swarm_size, c1, c2, w, termination_criterion, constraint_handling_mode)
+        self.c1 = c1
+        self.c2 = c2
+        self.w = w
+        self.perturbation_scale = perturbation_scale
+        self.drifter_fraction = max(0.0, min(1.0, drifter_fraction))
+
+    def create_initial_solutions(self) -> List[S]:
+        solutions = super().create_initial_solutions()
+        self.mark_particles(solutions, self.drifter_fraction, 'is_drifter')
+        return solutions
+
+    def perturbation(self, swarm: List[S]) -> None:
+        drifters: List[S] = [p for p in swarm if p.attributes.get('is_drifter', False)]
+        super().perturbation(drifters)
+
+    def get_name(self) -> str:
+        return "DrifterPSO"
+
+# ==============================================================================
+# Adaptive DrifterPSO (DAPSO)
+# ==============================================================================
+class DAPSO(DrifterPSO, RoleMixin, AdaptiveRoleMixin):
+
+    def __init__(self,
+                 problem: FloatProblem,
+                 termination_criterion: TerminationCriterion,
+                 swarm_size: int,
+                 c1: float,
+                 c2: float,
+                 base_inertia: float,
+                 min_inertia: float,
+                 max_inertia: float,
+                 perturbation_scale: float,
+                 drifter_fraction: float,
+                 max_drifter_fraction: float = 0.8,  # Max limit for adaptation
+                 window_size: int = 10,
+                 diversity_threshold: float = 0.1,
+                 improvement_threshold: float = 0.01,
+                 perturbation_method: str = "gaussian",
+                 constraint_handling_mode: str = "clip"):
+
+        DrifterPSO.__init__(
+            self,
+            problem=problem,
+            swarm_size=swarm_size,
+            c1=c1,
+            c2=c2,
+            w=base_inertia,
+            drifter_fraction=drifter_fraction,
+            perturbation_scale=perturbation_scale,
+            perturbation_method=perturbation_method,
+            termination_criterion=termination_criterion,
+            constraint_handling_mode=constraint_handling_mode
+        )
+        AdaptiveRoleMixin._init_adaptive(
+            self,
+            swarm_size=swarm_size,
+            base_inertia=base_inertia,
+            min_inertia=min_inertia,
+            max_inertia=max_inertia,
+            role_fractions={
+                'is_drifter': drifter_fraction,
+            },
+            max_role_fractions={
+                'is_drifter': max(drifter_fraction, min(1.0, max_drifter_fraction)),
+            },
+            diversity_threshold=diversity_threshold,
+            improvement_threshold=improvement_threshold,
+            window_size=window_size
+        )
+
+
+    def create_initial_solutions(self) -> List[S]:
+        solutions = super().create_initial_solutions()
+        for p in solutions:
+            if not hasattr(p, 'attributes'): p.attributes = {}
+        RoleMixin.mark_particles(solutions, self.original_fractions['is_drifter'], 'is_drifter')
+        for p in solutions:
+            if 'is_drifter' not in p.attributes: p.attributes['is_drifter'] = False
+        return solutions
+
+    def get_name(self) -> str:
+        return "DAPSO"

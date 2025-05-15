@@ -18,7 +18,8 @@ from algorithm.AdaptivePSO import CoAdaptativePSO, IndividualAdaptivePSO
 from algorithm.WAPSO import ReverseLearningGlobalAttractorPSO, CombinedLearningPSO, ReverseLearningPersonalAttractorPSO, \
     ReverseLearningPSO
 from algorithm.particles_with_roles import RebelPSO, RejectorPSO, RebelRejectorPSO, RRAPSO, ContrarianPSO, DefeatistPSO, \
-    ContrarianDefeatistPSO, EschewerPSO, EscapistPSO, EschewerEscapistPSO, CDAPSO, EEAPSO, AAAPSO, NAPSO, CLAPSO
+    ContrarianDefeatistPSO, EschewerPSO, EscapistPSO, EschewerEscapistPSO, CDAPSO, EEAPSO, AAAPSO, NAPSO, CLAPSO, \
+    DrifterPSO, DAPSO
 from algorithm.single_objective_PSO import SingleObjectivePSO
 from algorithm.reinitialized_PSO import FRAPSO
 from algorithm.NPSO import NPSO
@@ -153,99 +154,122 @@ parameter_spaces = {
     #     Real("anarchic_prob", 0.01, 1.0),
     #     Bool("assign_flags_every_iteration"),
     # ],
-    'CLAPSO': [
+
+    'DrifterPSO': [
         Real("c1", 0.01, 6.0),
         Real("c2", 0.01, 6.0),
-        Real("cl_c1", 0.01, 6.0),
-        Real("cl_c2", 0.01, 6.0),
-        Real("b1", 0.0, 1.0),
-        Real("b2", 0.0, 1.0),
+        Real("w", 0.01, 1.0),
+        Real("drifter_fraction", 0.01, 0.98),
+        Real("perturbation_scale", 0.0001, 0.10),
+    ],
+
+    'DAPSO': [
+        Real("c1", 0.01, 6.0),
+        Real("c2", 0.01, 6.0),
         Real("base_inertia", 0.01, 1.0),
         Real("min_inertia", 0.01, 1.0),
         Real("max_inertia", 0.01, 1.0),
-        Real("cl_fraction", 0.01, 0.98),
-        Real("max_cl_fraction", 0.01, 0.98),
+        Real("perturbation_scale", 0.0001, 0.1),
+        Real("drifter_fraction", 0.01, 0.98),
+        Real("max_drifter_fraction", 0.01, 0.98),
         Integer("window_size", 5, 50),
-        Real("diversity_threshold", 0.001, 0.3),
-        Real("improvement_threshold", 0.0001, 0.1),
+        Real("diversity_threshold", 0.001, 0.30),
+        Real("improvement_threshold", 0.0001, 0.10),
     ],
 
-    'HybridFullDisjointRestarterPSO': [
-        Real("w", 0.01, 1.0),
-        Real("c1", 0.01, 6.0),
-        Real("rejector_c", 0.01, 6.0),
-        Real("defeatist_c", 0.01, 6.0),
-        Real("escapist_c", 0.01, 6.0),
-        Real("amnesiac_c", 0.01, 6.0),
-        Real("c2", 0.01, 6.0),
-        Real("rebel_c", 0.01, 6.0),
-        Real("contrarian_c", 0.01, 6.0),
-        Real("eschewer_c", 0.01, 6.0),
-        Real("anarchic_c", 0.01, 6.0),
-        Real("rejector_fraction", 0.01, 0.71),
-        Real("defeatist_fraction", 0.01, 0.71),
-        Real("escapist_fraction", 0.01, 0.71),
-        Real("amnesiac_fraction", 0.01, 0.71),
-        Real("rebel_fraction", 0.01, 0.71),
-        Real("contrarian_fraction", 0.01, 0.71),
-        Real("eschewer_fraction", 0.01, 0.71),
-        Real("anarchic_fraction", 0.01, 0.71),
-        Bool("assign_roles_every_iteration"),
-        Real("restarter_fraction", 0.01, 0.71),
-        Real("convergence_threshold", 0.0001, 0.1),
-    ],
-
-    'HybridPartialDisjointRestarterPSO': [
-        Real("w", 0.01, 1.0),
-        Real("c1", 0.01, 6.0),
-        Real("c2", 0.01, 6.0),
-        Real("rejector_c", 0.01, 6.0),
-        Real("defeatist_c", 0.01, 6.0),
-        Real("escapist_c", 0.01, 6.0),
-        Real("amnesiac_c", 0.01, 6.0),
-        Real("rebel_c", 0.01, 6.0),
-        Real("contrarian_c", 0.01, 6.0),
-        Real("eschewer_c", 0.01, 6.0),
-        Real("anarchic_c", 0.01, 6.0),
-        Real("restarter_fraction", 0.01, 0.76),
-        Real("rejector_fraction", 0.01, 0.76),
-        Real("defeatist_fraction", 0.01, 0.76),
-        Real("escapist_fraction", 0.01, 0.76),
-        Real("amnesiac_fraction", 0.01, 0.76),
-        Real("rebel_fraction", 0.01, 0.76),
-        Real("contrarian_fraction", 0.01, 0.76),
-        Real("eschewer_fraction", 0.01, 0.76),
-        Real("anarchic_fraction", 0.01, 0.76),
-        Bool("assign_roles_every_iteration"),
-        Real("convergence_threshold", 0.0001, 0.1),
-    ],
-
-    'HybridAdditiveRestarterPSO': [
-        Real("w", 0.01, 1.0),
-        Real("c1", 0.01, 6.0),
-        Real("rejector_c", 0.01, 6.0),
-        Real("defeatist_c", 0.01, 6.0),
-        Real("escapist_c", 0.01, 6.0),
-        Real("amnesiac_c", 0.01, 6.0),
-        Real("c2", 0.01, 6.0),
-        Real("rebel_c", 0.01, 6.0),
-        Real("contrarian_c", 0.01, 6.0),
-        Real("eschewer_c", 0.01, 6.0),
-        Real("anarchic_c", 0.01, 6.0),
-        Real("std_cognitive_prob", 0.01, 1.0),
-        Real("rejector_prob", 0.01, 1.0),
-        Real("defeatist_prob", 0.01, 1.0),
-        Real("escapist_prob", 0.01, 1.0),
-        Real("amnesiac_prob", 0.01, 1.0),
-        Real("std_social_prob", 0.01, 1.0),
-        Real("rebel_prob", 0.01, 1.0),
-        Real("contrarian_prob", 0.01, 1.0),
-        Real("eschewer_prob", 0.01, 1.0),
-        Real("anarchic_prob", 0.01, 1.0),
-        Bool("assign_flags_every_iteration"),
-        Real("restarter_fraction", 0.01, 0.8),
-        Real("convergence_threshold", 0.0001, 0.1),
-    ],
+    # 'CLAPSO': [
+    #     Real("c1", 0.01, 6.0),
+    #     Real("c2", 0.01, 6.0),
+    #     Real("cl_c1", 0.01, 6.0),
+    #     Real("cl_c2", 0.01, 6.0),
+    #     Real("b1", 0.0, 1.0),
+    #     Real("b2", 0.0, 1.0),
+    #     Real("base_inertia", 0.01, 1.0),
+    #     Real("min_inertia", 0.01, 1.0),
+    #     Real("max_inertia", 0.01, 1.0),
+    #     Real("cl_fraction", 0.01, 0.98),
+    #     Real("max_cl_fraction", 0.01, 0.98),
+    #     Integer("window_size", 5, 50),
+    #     Real("diversity_threshold", 0.001, 0.3),
+    #     Real("improvement_threshold", 0.0001, 0.1),
+    # ],
+    #
+    # 'HybridFullDisjointRestarterPSO': [
+    #     Real("w", 0.01, 1.0),
+    #     Real("c1", 0.01, 6.0),
+    #     Real("rejector_c", 0.01, 6.0),
+    #     Real("defeatist_c", 0.01, 6.0),
+    #     Real("escapist_c", 0.01, 6.0),
+    #     Real("amnesiac_c", 0.01, 6.0),
+    #     Real("c2", 0.01, 6.0),
+    #     Real("rebel_c", 0.01, 6.0),
+    #     Real("contrarian_c", 0.01, 6.0),
+    #     Real("eschewer_c", 0.01, 6.0),
+    #     Real("anarchic_c", 0.01, 6.0),
+    #     Real("rejector_fraction", 0.01, 0.71),
+    #     Real("defeatist_fraction", 0.01, 0.71),
+    #     Real("escapist_fraction", 0.01, 0.71),
+    #     Real("amnesiac_fraction", 0.01, 0.71),
+    #     Real("rebel_fraction", 0.01, 0.71),
+    #     Real("contrarian_fraction", 0.01, 0.71),
+    #     Real("eschewer_fraction", 0.01, 0.71),
+    #     Real("anarchic_fraction", 0.01, 0.71),
+    #     Bool("assign_roles_every_iteration"),
+    #     Real("restarter_fraction", 0.01, 0.71),
+    #     Real("convergence_threshold", 0.0001, 0.1),
+    # ],
+    #
+    # 'HybridPartialDisjointRestarterPSO': [
+    #     Real("w", 0.01, 1.0),
+    #     Real("c1", 0.01, 6.0),
+    #     Real("c2", 0.01, 6.0),
+    #     Real("rejector_c", 0.01, 6.0),
+    #     Real("defeatist_c", 0.01, 6.0),
+    #     Real("escapist_c", 0.01, 6.0),
+    #     Real("amnesiac_c", 0.01, 6.0),
+    #     Real("rebel_c", 0.01, 6.0),
+    #     Real("contrarian_c", 0.01, 6.0),
+    #     Real("eschewer_c", 0.01, 6.0),
+    #     Real("anarchic_c", 0.01, 6.0),
+    #     Real("restarter_fraction", 0.01, 0.76),
+    #     Real("rejector_fraction", 0.01, 0.76),
+    #     Real("defeatist_fraction", 0.01, 0.76),
+    #     Real("escapist_fraction", 0.01, 0.76),
+    #     Real("amnesiac_fraction", 0.01, 0.76),
+    #     Real("rebel_fraction", 0.01, 0.76),
+    #     Real("contrarian_fraction", 0.01, 0.76),
+    #     Real("eschewer_fraction", 0.01, 0.76),
+    #     Real("anarchic_fraction", 0.01, 0.76),
+    #     Bool("assign_roles_every_iteration"),
+    #     Real("convergence_threshold", 0.0001, 0.1),
+    # ],
+    #
+    # 'HybridAdditiveRestarterPSO': [
+    #     Real("w", 0.01, 1.0),
+    #     Real("c1", 0.01, 6.0),
+    #     Real("rejector_c", 0.01, 6.0),
+    #     Real("defeatist_c", 0.01, 6.0),
+    #     Real("escapist_c", 0.01, 6.0),
+    #     Real("amnesiac_c", 0.01, 6.0),
+    #     Real("c2", 0.01, 6.0),
+    #     Real("rebel_c", 0.01, 6.0),
+    #     Real("contrarian_c", 0.01, 6.0),
+    #     Real("eschewer_c", 0.01, 6.0),
+    #     Real("anarchic_c", 0.01, 6.0),
+    #     Real("std_cognitive_prob", 0.01, 1.0),
+    #     Real("rejector_prob", 0.01, 1.0),
+    #     Real("defeatist_prob", 0.01, 1.0),
+    #     Real("escapist_prob", 0.01, 1.0),
+    #     Real("amnesiac_prob", 0.01, 1.0),
+    #     Real("std_social_prob", 0.01, 1.0),
+    #     Real("rebel_prob", 0.01, 1.0),
+    #     Real("contrarian_prob", 0.01, 1.0),
+    #     Real("eschewer_prob", 0.01, 1.0),
+    #     Real("anarchic_prob", 0.01, 1.0),
+    #     Bool("assign_flags_every_iteration"),
+    #     Real("restarter_fraction", 0.01, 0.8),
+    #     Real("convergence_threshold", 0.0001, 0.1),
+    # ],
 }
 
 current_algorithm = None
@@ -284,7 +308,8 @@ def repair_max_param_constraints_random(config: dict) -> dict:
         ("contrarian_fraction", "max_contrarian_fraction"), ("defeatist_fraction", "max_defeatist_fraction"),
         ("rebel_fraction", "max_rebel_fraction"), ("rejector_fraction", "max_rejector_fraction"),
         ("anarchic_fraction", "max_anarchic_fraction"), ("amnesiac_fraction", "max_amnesiac_fraction"),
-        ("noisy_fraction", "max_noisy_fraction"), ("cl_fraction", "max_cl_fraction") # Added CLAPSO
+        ("noisy_fraction", "max_noisy_fraction"), ("cl_fraction", "max_cl_fraction"),
+        ("drifter_fraction", "max_drifter_fraction")
     ]
     for param, max_param in constraints_to_check:
         if param in repaired_config and max_param in repaired_config:
@@ -453,7 +478,7 @@ if __name__ == "__main__":
         print(f"Optimizing parameters for {algo_name} ...")
 
         parameter_space = ParameterSpace(params=space_list)
-        scenario = Scenario(max_experiments=budget * len(space_list), seed=42, n_jobs=1)
+        scenario = Scenario(max_experiments=budget * len(space_list), seed=42, n_jobs=48)
 
         result = irace(target_runner, parameter_space, scenario, return_df=True, remove_metadata=True)
         best_configurations[algo_name] = result

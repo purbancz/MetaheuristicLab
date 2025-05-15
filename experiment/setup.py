@@ -2,7 +2,7 @@ import colorsys
 import os
 from itertools import chain
 import matplotlib.colors as mcolors
-
+from jmetal.problem.singleobjective.unconstrained import Rastrigin
 
 from experiment.factories import factory_PSO, factory_RebelPSO, factory_RejectorPSO, factory_RebelRejectorPSO, \
     factory_RRAPSO, factory_ContrarianPSO, factory_DefeatistPSO, factory_ContrarianDefeatistPSO, factory_CDAPSO, \
@@ -12,7 +12,7 @@ from experiment.factories import factory_PSO, factory_RebelPSO, factory_Rejector
     factory_PerturbationPSO, factory_PartialResetPSO, factory_CollectiveResetPSO, factory_FRAPSO, \
     factory_HybridFullDisjointPSO, factory_HybridPartialDisjointPSO, factory_HybridAdditivePSO, \
     factory_HybridFullDisjointRestarterPSO, factory_HybridPartialDisjointRestarterPSO, \
-    factory_HybridAdditiveRestarterPSO, factory_CAPSO, factory_IAPSO
+    factory_HybridAdditiveRestarterPSO, factory_CAPSO, factory_IAPSO, factory_DrifterPSO, factory_DAPSO
 from experiment.globals import NO_OF_RUNS, NUMBER_OF_VARIABLES, G_SOLUTIONS_SIZE, G_MAX_EVALUATIONS, RESULTS_DIR
 
 from algorithm.AdaptivePSO import CoAdaptativePSO, IndividualAdaptivePSO
@@ -113,6 +113,8 @@ def setup_experiment():
         'Baseline': [
             'PSO',
             'PerturbationPSO',
+            'DrifterPSO',
+            'DAPSO',
         ],
         'Rebel': [
             'RebelPSO',
@@ -207,6 +209,8 @@ def setup_experiment():
     # leave your two baseline colors exactly as before:
     algorithm_colors['PSO'] = 'xkcd:black'
     algorithm_colors['PerturbationPSO'] = 'xkcd:charcoal'
+    algorithm_colors['DrifterPSO'] = 'xkcd:blue grey'
+    algorithm_colors['DAPSO'] = 'xkcd:greenish grey'
 
     results_dir = RESULTS_DIR
     make_dir(results_dir)
@@ -283,7 +287,7 @@ def setup_experiment():
         # ExpandedKatsuura(number_of_variables), # too long
         # Katsuura(number_of_variables),  # too long
         # Ackley(number_of_variables), # irace
-        # Rastrigin(number_of_variables),  # irace
+        Rastrigin(number_of_variables),  # irace
         # Sphere(number_of_variables), # irace
 
         # ## uninterested results
@@ -347,45 +351,47 @@ def setup_experiment():
     problems = n_variables_problems + fixed_variables_problems
 
     algorithms = {
-        'PSO': factory_PSO,
-        'PerturbationPSO': factory_PerturbationPSO,
-        'RebelPSO': factory_RebelPSO,
-        'RejectorPSO': factory_RejectorPSO,
-        'RebelRejectorPSO': factory_RebelRejectorPSO,
-        'RRAPSO': factory_RRAPSO,
-        'ContrarianPSO': factory_ContrarianPSO,
-        'DefeatistPSO': factory_DefeatistPSO,
-        'ContrarianDefeatistPSO': factory_ContrarianDefeatistPSO,
-        'CDAPSO': factory_CDAPSO,
-        'EschewerPSO': factory_EschewerPSO,
-        'EscapistPSO': factory_EscapistPSO,
-        'EschewerEscapistPSO': factory_EschewerEscapistPSO,
-        'EEAPSO': factory_EEAPSO,
-        'ReverseLearningPSO': factory_ReverseLearningPSO,
-        'ReverseLearningGlobalAttractorPSO': factory_ReverseLearningGlobalAttractorPSO,
-        'ReverseLearningPersonalAttractorPSO': factory_ReverseLearningPersonalAttractorPSO,
-        'CombinedLearningPSO': factory_CombinedLearningPSO,
-        'CLAPSO': factory_CLAPSO,
-        'AnarchicPSO': factory_AnarchicPSO,
-        'AmnesiacPSO': factory_AmnesiacPSO,
-        'WandererPSO': factory_WandererPSO,
-        'AAAPSO': factory_AAAPSO,
-        'NoisyPSO': factory_NoisyPSO,
-        'NAPSO': factory_NoisyPSO,
-        'PartialResetPSO': factory_PartialResetPSO,
-        'CollectiveResetPSO': factory_CollectiveResetPSO,
-        'FRAPSO': factory_FRAPSO,
-        'HybridFullDisjointPSO': factory_HybridFullDisjointPSO,
-        'HybridPartialDisjointPSO': factory_HybridPartialDisjointPSO,
-        'HybridAdditivePSO': factory_HybridAdditivePSO,
-        'HybridFullDisjointPSO_WithRandom': factory_HybridFullDisjointPSO,
-        'HybridPartialDisjointPSO_WithRandom': factory_HybridPartialDisjointPSO,
-        'HybridAdditivePSO_WithRandom': factory_HybridAdditivePSO,
-        'HybridFullDisjointRestarterPSO': factory_HybridFullDisjointRestarterPSO,
-        'HybridPartialDisjointRestarterPSO': factory_HybridPartialDisjointRestarterPSO,
-        'HybridAdditiveRestarterPSO': factory_HybridAdditiveRestarterPSO,
-        'CAPSO': factory_CAPSO,
-        'IAPSO': factory_IAPSO
+        # 'PSO': factory_PSO,
+        # 'PerturbationPSO': factory_PerturbationPSO,
+        'DrifterPSO': factory_DrifterPSO,
+        'DAPSO': factory_DAPSO,
+        # 'RebelPSO': factory_RebelPSO,
+        # 'RejectorPSO': factory_RejectorPSO,
+        # 'RebelRejectorPSO': factory_RebelRejectorPSO,
+        # 'RRAPSO': factory_RRAPSO,
+        # 'ContrarianPSO': factory_ContrarianPSO,
+        # 'DefeatistPSO': factory_DefeatistPSO,
+        # 'ContrarianDefeatistPSO': factory_ContrarianDefeatistPSO,
+        # 'CDAPSO': factory_CDAPSO,
+        # 'EschewerPSO': factory_EschewerPSO,
+        # 'EscapistPSO': factory_EscapistPSO,
+        # 'EschewerEscapistPSO': factory_EschewerEscapistPSO,
+        # 'EEAPSO': factory_EEAPSO,
+        # 'ReverseLearningPSO': factory_ReverseLearningPSO,
+        # 'ReverseLearningGlobalAttractorPSO': factory_ReverseLearningGlobalAttractorPSO,
+        # 'ReverseLearningPersonalAttractorPSO': factory_ReverseLearningPersonalAttractorPSO,
+        # 'CombinedLearningPSO': factory_CombinedLearningPSO,
+        # 'CLAPSO': factory_CLAPSO,
+        # 'AnarchicPSO': factory_AnarchicPSO,
+        # 'AmnesiacPSO': factory_AmnesiacPSO,
+        # 'WandererPSO': factory_WandererPSO,
+        # 'AAAPSO': factory_AAAPSO,
+        # 'NoisyPSO': factory_NoisyPSO,
+        # 'NAPSO': factory_NoisyPSO,
+        # 'PartialResetPSO': factory_PartialResetPSO,
+        # 'CollectiveResetPSO': factory_CollectiveResetPSO,
+        # 'FRAPSO': factory_FRAPSO,
+        # 'HybridFullDisjointPSO': factory_HybridFullDisjointPSO,
+        # 'HybridPartialDisjointPSO': factory_HybridPartialDisjointPSO,
+        # 'HybridAdditivePSO': factory_HybridAdditivePSO,
+        # 'HybridFullDisjointPSO_WithRandom': factory_HybridFullDisjointPSO,
+        # 'HybridPartialDisjointPSO_WithRandom': factory_HybridPartialDisjointPSO,
+        # 'HybridAdditivePSO_WithRandom': factory_HybridAdditivePSO,
+        # 'HybridFullDisjointRestarterPSO': factory_HybridFullDisjointRestarterPSO,
+        # 'HybridPartialDisjointRestarterPSO': factory_HybridPartialDisjointRestarterPSO,
+        # 'HybridAdditiveRestarterPSO': factory_HybridAdditiveRestarterPSO,
+        # 'CAPSO': factory_CAPSO,
+        # 'IAPSO': factory_IAPSO
     }
 
     # helper to flatten some groups

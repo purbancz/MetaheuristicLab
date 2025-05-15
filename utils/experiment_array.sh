@@ -2,8 +2,8 @@
 #SBATCH --job-name=final_algorithms_all_problems_100dim
 #SBATCH --output=slurm_logs/%x_%j.out # Log directory
 #SBATCH --error=slurm_logs/%x_%j.err  # Log directory
-#SBATCH --time=1:00:00           # Adjust time as needed
-#SBATCH --partition=plgrid-testing
+#SBATCH --time=12:00:00           # Adjust time as needed
+#SBATCH --partition=plgrid-now
 #SBATCH --account=plglscclass24-cpu # Your account
 
 # --- Request 1 task with multiple CPUs ---
@@ -53,7 +53,7 @@ echo "PYTHON SCRIPT IS BEING EXECUTED (Single Instance with $SLURM_CPUS_PER_TASK
 # *** srun to launch the single task (still good practice) ***
 # or just run python directly here, as ntasks=1
 # python -u $HOME/GA-PSO_Hybrid/main.py
-srun python -u $HOME/GA-PSO_Hybrid/main_array.py
+srun python -u $HOME/GA-PSO_Hybrid/main_experiment.py
 
 EXIT_CODE=$?
 echo "Python script exited with code: $EXIT_CODE"
