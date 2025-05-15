@@ -12,7 +12,7 @@ from statsmodels.stats.multicomp import pairwise_tukeyhsd
 from scikit_posthocs import posthoc_dunn
 
 from experiment.plotting_utilities import plot_results, plot_results_with_std, plot_box_at_intervals, plot_final_box, \
-    plot_final_raincloud, plot_final_petit_prince, plot_results_with_annotations
+    plot_final_raincloud, plot_final_petit_prince, plot_results_with_annotations, plot_results_with_average
 from experiment.setup import setup_experiment, make_dir
 
 # Setup experiment to retrieve settings like algorithm_colors, max_evaluations, etc.
@@ -144,6 +144,40 @@ def load_data_from_pickle(filepath):
         print(f"Error loading pickle file {filepath}: {e}")
         return None
 
+from decimal import Decimal
+
+def incremental_mean(data_iter):
+    mean = Decimal(0)  # Initialize mean as a Decimal
+    count = 0
+    for x in data_iter:
+        count += 1
+        mean += (x - mean) / count
+    return mean
+
+
+
+def incremental_std_dev(data_iter, mean):
+    M2 = Decimal(0)  # Initialize as Decimal
+    count = 0
+    for x in data_iter:
+        count += 1
+        delta = x - mean
+        M2 += delta * (x - mean)  # Ensure all operations use Decimal
+    variance = M2 / count if count > 1 else Decimal('nan')  # Use Decimal equivalent of nan
+    return float(variance ** Decimal(0.5))  # Conve
+
+
+
+
+def calculate_incrementally(arr):
+    arr = [Decimal(x) for x in arr]
+    mean_dec = incremental_mean(arr)
+    std_dev    = incremental_std_dev(arr, mean_dec)
+
+    mean = float(mean_dec)
+    return mean, std_dev
+
+
 def combine_data(data_list):
     """
     Combines data from multiple experiment runs, handling different
@@ -258,8 +292,9 @@ def combine_data(data_list):
                  final_avg_fitness = np.mean(valid_final_fitness)
                  final_std_dev = np.std(valid_final_fitness)
             else:
-                 final_avg_fitness = float('inf')
-                 final_std_dev = float('nan')
+                print(f"Warning: No valid fitness values found for '{algo}' in problem '{problem_name}'.")
+                final_avg_fitness = float('inf')
+                final_std_dev = float('nan')
 
             valid_avg_times = [t for t in collected_data['avg_time_list'] if isinstance(t, (int, float)) and np.isfinite(t)]
             final_avg_time = np.mean(valid_avg_times) if valid_avg_times else 0.0
@@ -301,36 +336,36 @@ def plot_combined_data_from_pickles(pickle_files):
             continue
 
         # Directory to save plots for the specific problem
-        dimensions_dir = f"{results_dir}/dim{n_vars}_runs{total_runs}"
+        dimensions_dir = f"{results_dir}/dim{n_vars}_runs{total_runs}/plots"
         make_dir(dimensions_dir)
 
-        # Plotting all required graphs
-        plot_results(results, matched_problem, dimensions_dir, max_evaluations, total_runs, algorithm_colors)
-        plot_results_with_annotations(results, matched_problem, dimensions_dir, max_evaluations, total_runs,
-                                      algorithm_colors)
-        plot_results_with_std(results, matched_problem, dimensions_dir, max_evaluations, total_runs, algorithm_colors)
-        plot_box_at_intervals(results, matched_problem, max_evaluations=max_evaluations,
-                              no_of_runs=total_runs, algorithms_to_compare=algorithms.keys(),
-                              results_dir=dimensions_dir, algorithm_colors=algorithm_colors)
-
-        # Plotting box plots for each individual algorithm
-        for algorithm in algorithms.keys():
-            plot_box_at_intervals(results, matched_problem, max_evaluations=max_evaluations,
-                                  no_of_runs=total_runs, algorithms_to_compare=[algorithm],
-                                  results_dir=dimensions_dir, algorithm_colors=algorithm_colors)
-
-        # Plotting box plots comparing PGxHEA algorithms with GA and PSO
-        for algorithm in ['PGSHEA', 'PGPHEA', 'PGCHEA']:
-            plot_box_at_intervals(results, matched_problem, max_evaluations=max_evaluations,
-                                  no_of_runs=total_runs, algorithms_to_compare=[algorithm, 'GA', 'PSO'],
-                                  results_dir=dimensions_dir, algorithm_colors=algorithm_colors)
-
-        # Plotting final box plot comparing all algorithms
-        plot_final_box(results, matched_problem, dimensions_dir, algorithm_colors)
-        plot_final_raincloud(results, matched_problem, dimensions_dir, algorithm_colors)
-        plot_final_raincloud(results, matched_problem, dimensions_dir, algorithm_colors, adaptive_height=True)
-        plot_final_petit_prince(results, matched_problem, dimensions_dir, algorithm_colors)
-        plot_final_petit_prince(results, matched_problem, dimensions_dir, algorithm_colors, adaptive_width=True)
+        # # Plotting all required graphs
+        # plot_results(results, matched_problem, dimensions_dir, max_evaluations, total_runs, algorithm_colors)
+        # plot_results_with_annotations(results, matched_problem, dimensions_dir, max_evaluations, total_runs,
+        #                               algorithm_colors)
+        # plot_results_with_std(results, matched_problem, dimensions_dir, max_evaluations, total_runs, algorithm_colors)
+        # plot_box_at_intervals(results, matched_problem, max_evaluations=max_evaluations,
+        #                       no_of_runs=total_runs, algorithms_to_compare=algorithms.keys(),
+        #                       results_dir=dimensions_dir, algorithm_colors=algorithm_colors)
+        #
+        # # Plotting box plots for each individual algorithm
+        # for algorithm in algorithms.keys():
+        #     plot_box_at_intervals(results, matched_problem, max_evaluations=max_evaluations,
+        #                           no_of_runs=total_runs, algorithms_to_compare=[algorithm],
+        #                           results_dir=dimensions_dir, algorithm_colors=algorithm_colors)
+        #
+        # # # Plotting box plots comparing PGxHEA algorithms with GA and PSO
+        # # for algorithm in ['PGSHEA', 'PGPHEA', 'PGCHEA']:
+        # #     plot_box_at_intervals(results, matched_problem, max_evaluations=max_evaluations,
+        # #                           no_of_runs=total_runs, algorithms_to_compare=[algorithm, 'GA', 'PSO'],
+        # #                           results_dir=dimensions_dir, algorithm_colors=algorithm_colors)
+        #
+        # # Plotting final box plot comparing all algorithms
+        # plot_final_box(results, matched_problem, dimensions_dir, algorithm_colors)
+        # plot_final_raincloud(results, matched_problem, dimensions_dir, algorithm_colors)
+        # plot_final_raincloud(results, matched_problem, dimensions_dir, algorithm_colors, adaptive_height=True)
+        # plot_final_petit_prince(results, matched_problem, dimensions_dir, algorithm_colors)
+        # plot_final_petit_prince(results, matched_problem, dimensions_dir, algorithm_colors, adaptive_width=True)
 
         for group_name, algorithm_list in group_of_algorithms.items():
             filtered_results = {algo: problem_data['results'][algo] for algo in algorithm_list if
@@ -342,19 +377,21 @@ def plot_combined_data_from_pickles(pickle_files):
 
             plot_results(filtered_results, matched_problem, dimensions_dir, max_evaluations, total_runs,
                          algorithm_colors, group_name)
-            plot_results_with_annotations(filtered_results, matched_problem, dimensions_dir, max_evaluations,
-                                          total_runs, algorithm_colors, group_name)
-            plot_results_with_std(filtered_results, matched_problem, dimensions_dir, max_evaluations, total_runs,
-                                  algorithm_colors, group_name)
-            plot_box_at_intervals(filtered_results, matched_problem, max_evaluations=max_evaluations,
-                                  no_of_runs=total_runs,
-                                  algorithms_to_compare=list(filtered_results.keys()), results_dir=dimensions_dir,
-                                  algorithm_colors=algorithm_colors, group_name=group_name)
-            plot_final_box(filtered_results, matched_problem, dimensions_dir, algorithm_colors, group_name)
-            plot_final_raincloud(filtered_results, matched_problem, dimensions_dir, algorithm_colors, group_name)
-            plot_final_raincloud(filtered_results, matched_problem, dimensions_dir, algorithm_colors, group_name,
-                                 adaptive_height=True)
-            plot_final_petit_prince(filtered_results, matched_problem, dimensions_dir, algorithm_colors)
+            # plot_results_with_annotations(filtered_results, matched_problem, dimensions_dir, max_evaluations,
+            #                               total_runs, algorithm_colors, group_name)
+            # plot_results_with_std(filtered_results, matched_problem, dimensions_dir, max_evaluations, total_runs,
+            #                       algorithm_colors, group_name)
+            # plot_results_with_average(filtered_results, matched_problem, dimensions_dir, max_evaluations, total_runs,
+            #                       algorithm_colors, group_name)
+            # plot_box_at_intervals(filtered_results, matched_problem, max_evaluations=max_evaluations,
+            #                       no_of_runs=total_runs,
+            #                       algorithms_to_compare=list(filtered_results.keys()), results_dir=dimensions_dir,
+            #                       algorithm_colors=algorithm_colors, group_name=group_name)
+            # plot_final_box(filtered_results, matched_problem, dimensions_dir, algorithm_colors, group_name)
+            # plot_final_raincloud(filtered_results, matched_problem, dimensions_dir, algorithm_colors, group_name)
+            # plot_final_raincloud(filtered_results, matched_problem, dimensions_dir, algorithm_colors, group_name,
+            #                      adaptive_height=True)
+            # plot_final_petit_prince(filtered_results, matched_problem, dimensions_dir, algorithm_colors)
             plot_final_petit_prince(filtered_results, matched_problem, dimensions_dir, algorithm_colors,
                                     adaptive_width=True)
 

@@ -247,6 +247,10 @@ class PerturbationPSO(SingleObjectivePSO):
             particle.variables = new_pos.tolist()
             particle.attributes['velocity'] = new_vel.tolist()
 
+
+    def name(self) -> str:
+        return "PerturbationPSO"
+
 # class RebelPSO(SingleObjectivePSO):
 #     """PSO with rebel particles opposing global best"""
 #

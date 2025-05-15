@@ -4,6 +4,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib.colors as mcolors
 
+from experiment.setup import BASE_GROUP_COLORS, LINE_STYLES
+
 
 # from experiment.setup import setup_experiment
 
@@ -12,11 +14,12 @@ import matplotlib.colors as mcolors
 
 
 def plot_results(data_dict, problem, results_dir, max_evaluations, no_of_runs, algorithm_colors, group_name="all"):
-    plt.figure(figsize=(12, 6))
-    for label, fitness_data in data_dict.items():
+    plt.figure(figsize=(13.3, 7))
+    for i, (label, fitness_data) in enumerate(data_dict.items()):
         average_fitness = np.mean(fitness_data['data'], axis=0)
-        color = algorithm_colors.get(label, 'black')  # Use the global color dictionary
-        plt.plot(average_fitness, label=label, color=color)
+        color = algorithm_colors.get(label, 'black')
+        ls = LINE_STYLES[i % len(LINE_STYLES)]
+        plt.plot(average_fitness, label=label, linestyle=ls, color=color)
 
     plt.title(f'{problem.name()} ({problem.number_of_variables()} dimensions)')
     plt.xlabel(f'Evaluations ({max_evaluations})')
@@ -24,27 +27,110 @@ def plot_results(data_dict, problem, results_dir, max_evaluations, no_of_runs, a
     plt.legend(frameon=True, facecolor='white', framealpha=1)
     plt.grid()
     plt.tight_layout()
+
+    plt.legend(
+        loc='upper center',
+        bbox_to_anchor=(0.5, -0.15),  # halfway along the bottom
+        ncol=6,  # spread entries across four columns
+        frameon=True,
+        facecolor='white',
+        framealpha=1
+    )
+    # give a little more bottom margin so nothing gets clipped
+    plt.subplots_adjust(bottom=0.27)
+
     safe_group_name = group_name.replace(' ', '_').replace('-', '_')
     safe_problem_name = problem.name().replace(' ', '_').replace('-', '_')
     filename = f"{results_dir}/{datetime.now().strftime('%Y%m%d_%H%M%S')}_{safe_problem_name}_{safe_group_name}.png"
     plt.savefig(filename, dpi=300)
     plt.show()
 
+def plot_group_average(
+    ax,
+    data_dict,
+    group_name,
+    base_group_colors,
+    exclude_algos=('PSO','PerturbationPSO'),
+    default_color='grey',
+    linestyle='-',
+    linewidth=3
+):
+    # 1) collect non-baseline mean-curves
+    curves = []
+    for algo, fitness_data in data_dict.items():
+        if algo in exclude_algos:
+            continue
+        curves.append(np.mean(fitness_data['data'], axis=0))
+
+    if not curves:
+        # nothing to plot for this group
+        return
+
+    # 2) stack & average
+    stacked = np.vstack(curves)
+    group_avg = np.mean(stacked, axis=0)
+
+    # 3) pick a color for the group average
+    color = base_group_colors.get(group_name, default_color)
+
+    # 4) draw it
+    ax.plot(
+        group_avg,
+        label=f"{group_name} average",
+        color=color,
+        linestyle=linestyle,
+        linewidth=linewidth
+    )
+
+def plot_results_with_average(
+    data_dict,
+    problem,
+    results_dir,
+    max_evaluations,
+    no_of_runs,
+    algorithm_colors,
+    group_name="all"
+):
+    fig, ax = plt.subplots(figsize=(13.3, 7))
+
+    for i, (label, fitness_data) in enumerate(data_dict.items()):
+        avg_curve = np.mean(fitness_data['data'], axis=0)
+        color     = algorithm_colors.get(label, 'black')
+        ls = LINE_STYLES[i % len(LINE_STYLES)]
+        plt.plot(avg_curve, label=label, linestyle=ls, color=color)
+
+    plot_group_average(
+        ax,
+        data_dict,
+        group_name,
+        base_group_colors=BASE_GROUP_COLORS
+    )
+
+    ax.set_title(f"{problem.name()} ({problem.number_of_variables()} dims)")
+    ax.set_xlabel(f"Evaluations (up to {max_evaluations})")
+    ax.set_ylabel(f"Mean Best‐So‐Far Fitness over {no_of_runs} runs")
+    ax.legend(frameon=True, facecolor='white', framealpha=1)
+    ax.grid(True)
+    plt.tight_layout()
+
+    safe_group = group_name.replace(' ', '_')
+    safe_prob  = problem.name().replace(' ', '_')
+    fname = f"{results_dir}/{safe_prob}_{safe_group}_{max_evaluations}evals.png"
+    plt.savefig(fname, dpi=300)
+    plt.show()
+
 
 def plot_results_with_annotations(data_dict, problem, results_dir, max_evaluations, no_of_runs, algorithm_colors,
                                   group_name="all"):
-    # Create the figure and axes
-    fig, ax = plt.subplots(figsize=(12, 6))
-    # Reserve space on the right side so annotations at x>1.0 in axes fraction are visible
-    # Adjust 0.8 to a smaller or larger fraction if you have many algorithms or big boxes
+    fig, ax = plt.subplots(figsize=(13.3, 7))
     fig.subplots_adjust(right=0.8)
 
-    # 1) Plot each algorithm's average curve. Collect final fitness info.
     annot_info = []
-    for label, fitness_data in data_dict.items():
+    for i, (label, fitness_data) in enumerate(data_dict.items()):
         avg_fit = np.mean(fitness_data['data'], axis=0)
         color = algorithm_colors.get(label, 'black')
-        ax.plot(avg_fit, label=label, color=color)
+        ls = LINE_STYLES[i % len(LINE_STYLES)]
+        plt.plot(avg_fit, label=label, linestyle=ls, color=color)
 
         final_y = avg_fit[-1]  # final average fitness
         final_x = len(avg_fit) - 1  # last evaluation index
@@ -57,13 +143,10 @@ def plot_results_with_annotations(data_dict, problem, results_dir, max_evaluatio
     ax.legend(frameon=True, facecolor='white', framealpha=1)
     ax.grid(True)
 
-    # 2) Sort annotations by final fitness descending
     annot_info.sort(key=lambda x: x[2])
 
-    # 3) Place annotations from the bottom (highest final fitness) to top (lowest final fitness)
     total_algs = len(annot_info)
     if total_algs <= 1:
-        # trivial case => single annotation at about 0.1 fraction
         annotation_positions = [0.1]
     else:
         annotation_bottom = 0.05  # fraction from bottom
@@ -78,9 +161,6 @@ def plot_results_with_annotations(data_dict, problem, results_dir, max_evaluatio
                 for i in range(total_algs)
             ]
 
-    # 4) Annotate each curve
-    #    We'll place the annotation box at x=1.02 in axes fraction,
-    #    from bottom to top (descending final fitness).
     annotation_x = 1.02
     for (pos, (label, final_x, final_y, color)) in zip(annotation_positions, annot_info):
         arrow_color = color
@@ -108,6 +188,18 @@ def plot_results_with_annotations(data_dict, problem, results_dir, max_evaluatio
 
     # Final layout & saving
     plt.tight_layout()
+
+    plt.legend(
+        loc='upper center',
+        bbox_to_anchor=(0.5, -0.15),  # halfway along the bottom
+        ncol=6,  # spread entries across four columns
+        frameon=True,
+        facecolor='white',
+        framealpha=1
+    )
+    # give a little more bottom margin so nothing gets clipped
+    plt.subplots_adjust(bottom=0.25)
+
     safe_group_name = group_name.replace(' ', '_').replace('-', '_')
     safe_problem_name = problem.name().replace(' ', '_').replace('-', '_')
     filename = f"{results_dir}/{datetime.now().strftime('%Y%m%d_%H%M%S')}_{safe_problem_name}_{safe_group_name}.png"
@@ -117,12 +209,13 @@ def plot_results_with_annotations(data_dict, problem, results_dir, max_evaluatio
 
 def plot_results_with_std(data_dict, problem, results_dir, max_evaluations, no_of_runs, algorithm_colors,
                           group_name="all"):
-    plt.figure(figsize=(12, 6))
-    for label, fitness_data in data_dict.items():
+    plt.figure(figsize=(13.3, 7))
+    for i, (label, fitness_data) in enumerate(data_dict.items()):
         average_fitness = np.mean(fitness_data['data'], axis=0)
         std_dev_fitness = np.std(fitness_data['data'], axis=0)
         color = algorithm_colors.get(label, 'black')  # Use the global color dictionary
-        plt.plot(average_fitness, label=label, color=color)
+        ls = LINE_STYLES[i % len(LINE_STYLES)]
+        plt.plot(average_fitness, label=label, linestyle=ls, color=color)
         plt.fill_between(range(len(average_fitness)),
                          average_fitness - std_dev_fitness,
                          average_fitness + std_dev_fitness,
@@ -134,6 +227,18 @@ def plot_results_with_std(data_dict, problem, results_dir, max_evaluations, no_o
     plt.legend(frameon=True, facecolor='white', framealpha=1)
     plt.grid()
     plt.tight_layout()
+
+    plt.legend(
+        loc='upper center',
+        bbox_to_anchor=(0.5, -0.15),  # halfway along the bottom
+        ncol=6,  # spread entries across four columns
+        frameon=True,
+        facecolor='white',
+        framealpha=1
+    )
+    # give a little more bottom margin so nothing gets clipped
+    plt.subplots_adjust(bottom=0.27)
+
     safe_group_name = group_name.replace(' ', '_').replace('-', '_')
     safe_problem_name = problem.name().replace(' ', '_').replace('-', '_')
     filename = f'{results_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{safe_problem_name}_{safe_group_name}_with_stddev.png'
@@ -392,8 +497,12 @@ def plot_final_raincloud(data_dict, problem, results_dir, algorithm_colors,
     # ----------- Finishing touches -----------
     ax.set_yticks(positions)
     ax.set_yticklabels(labels)
+
+    ax.invert_yaxis()
+
     ax.set_title(f'{problem.name()} ({problem.number_of_variables()} dimensions)')
     ax.set_xlabel('Final Fitness Distribution')
+
 
     # Remove top and right spines
     ax.spines['top'].set_visible(False)

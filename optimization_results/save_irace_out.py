@@ -1,8 +1,12 @@
 import re
+import traceback
 from pathlib import Path
 import pandas as pd
 import ast
 import os
+
+from optimization.irace_tune_universal import normalize_fraction_sum, repair_max_param_constraints_random
+
 
 # Helper method for normalizing parameters
 def normalize_fractions(config, alg_name):
@@ -67,97 +71,151 @@ def repair_max_param_constraints(config: dict, verbose: bool = True) -> dict:
 
 
 def process_file(filepath):
-    with open(filepath, 'r', encoding='utf-8') as f:
-        content = f.read()
+    print(f"\n>>> Processing file: {filepath} <<<")
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            content = f.read()
+    except Exception as e:
+        print(f"Error reading file {filepath}: {e}"); return {}
 
-    segments = re.split(r'Optimizing parameters for\s+(.+?)\s*\n', content)
+    # Split by algorithm start marker
+    segments = re.split(r'Optimizing parameters for\s+([A-Za-z0-9_]+(?:_WithRandom|_DefaultStd|RestarterPSO)?)\s*(?:\.\.\.)?\s*\n', content)
 
     dataframes = {}
+    total_records_processed_file = 0
+    total_records_saved_file = 0
+
     for i in range(1, len(segments), 2):
         alg_name = segments[i].strip()
-        if alg_name.endswith("..."):
-            alg_name = alg_name[:-3].strip()
+        print(f"\n--- Processing Segment for Algorithm: '{alg_name}' ---")
+        if i + 1 >= len(segments): continue
         segment_text = segments[i + 1]
 
-        pattern_old = r"Evaluated config: OrderedDict\((\{.*?\})\) with average objective: ([0-9.]+)"
-        pattern_new = r"Evaluated config: OrderedDict\((\{.*?\})\).*?-> Final Avg Cost: ([0-9.]+)"
+        # --- More Robust Regex ---
+        # 1. Find "Evaluated config...OrderedDict("
+        # 2. Capture the dictionary content "{...}" (non-greedy)
+        # 3. Find "-> Final Avg Cost:" potentially much later
+        # 4. Capture the cost value (allowing inf/nan)
+        # Use MULTILINE flag as well as DOTALL
+        pattern_flexible = r"Evaluated config.*?OrderedDict\((.*?})\).*?-> Final Avg Cost:\s*([0-9.infNaNINF]+)"
+        # Explanation:
+        # Evaluated config.*?OrderedDict\(   : Find the start
+        # (\{.*?\})                         : Capture Group 1: The dict content {...} (non-greedy)
+        # \).*?                            : Match the closing paren and anything non-greedily until cost
+        # -> Final Avg Cost:\s*            : Match the cost marker
+        # ([0-9.infNaNINF]+)               : Capture Group 2: Digits, dot, inf, nan (case insensitive via flag)
 
-        matches_old = re.findall(pattern_old, segment_text)
-        if matches_old:
-            matches = matches_old
-        else:
-            matches_new = re.findall(pattern_new, segment_text, re.DOTALL)
-            matches = matches_new
+        try:
+            matches = re.findall(pattern_flexible, segment_text, re.DOTALL | re.IGNORECASE)
+        except Exception as regex_err:
+             print(f"Regex error for algorithm '{alg_name}': {regex_err}")
+             matches = []
+
+        print(f"Found {len(matches)} potential records for '{alg_name}'.")
 
         records = []
-        for config_str, avg_obj in matches:
-            try:
-                config_dict = ast.literal_eval(config_str)
-                repaired_config_dict = repair_max_param_constraints(config_dict, verbose=False)
-                normalized_config_dict = normalize_fractions(repaired_config_dict, alg_name)
-            except Exception as e:
-                print(f"Error processing configuration: {config_str}. Error: {e}")
+        processed_count_alg = 0
+        error_count_alg = 0
+
+        for match_tuple in matches:
+            processed_count_alg += 1
+            if len(match_tuple) != 2: # Ensure regex captured two groups
+                print(f"Warning: Regex match returned unexpected number of groups ({len(match_tuple)}) for {alg_name}. Skipping.")
+                error_count_alg += 1
                 continue
-            normalized_config_dict["average_objective"] = float(avg_obj)
+
+            config_str, avg_obj_str_match = match_tuple
+
+            try:
+                # --- Config Dictionary Parsing ---
+                # Add extra cleaning: ensure matching outer braces {}
+                config_str_cleaned = config_str.strip()
+                if not (config_str_cleaned.startswith('{') and config_str_cleaned.endswith('}')):
+                     print(f"Warning: Captured config string doesn't look like dict literal for {alg_name}. Skipping. String: '{config_str_cleaned[:50]}...'")
+                     error_count_alg += 1
+                     continue
+                try:
+                    config_dict_raw = ast.literal_eval(config_str_cleaned)
+                except (SyntaxError, ValueError) as eval_err:
+                     print(f"!!! Error (ast.literal_eval) processing config for {alg_name}: {eval_err}")
+                     print(f"    Problematic Config String: {config_str_cleaned}")
+                     error_count_alg += 1
+                     continue # Skip this record
+
+                if not isinstance(config_dict_raw, dict):
+                     print(f"Warning: ast.literal_eval did not return a dict for {alg_name}. Got type {type(config_dict_raw)}. Skipping record.")
+                     error_count_alg += 1
+                     continue
+                config_dict = dict(config_dict_raw) # Ensure regular dict
+
+                # --- Cost Conversion ---
+                cost_str_cleaned = avg_obj_str_match.strip().lower()
+                try:
+                    if cost_str_cleaned == 'inf': avg_obj = float('inf')
+                    elif cost_str_cleaned == 'nan': avg_obj = float('nan')
+                    else:
+                        # remove all ASCII letters
+                        numeric_part = re.sub(r'[A-Za-z]', '', cost_str_cleaned)
+                        # now match only digits, decimal point, sign and exponent
+                        if re.fullmatch(r'[+-]?\d+(\.\d*)?([eE][+-]?\d+)?', numeric_part):
+                            avg_obj = float(numeric_part)
+                        else:
+                         print(f"Warning: Could not convert cleaned cost string '{cost_str_cleaned}' to float for {alg_name}. Skipping record.")
+                         error_count_alg += 1
+                         continue
+                except ValueError:
+                     print(f"Warning: ValueError converting cost string '{cost_str_cleaned}' to float for {alg_name}. Skipping record.")
+                     error_count_alg += 1
+                     continue
+
+                # --- Repair and Normalize ---
+                repaired_config_dict = repair_max_param_constraints_random(config_dict) # Use the desired repair func
+                # Conditional normalization...
+                normalized_config_dict = repaired_config_dict # Default
+                # ... (Add back your specific normalization logic based on alg_name if needed) ...
+                # Example (needs full logic):
+                # if 'PartialDisjoint' in alg_name: ...
+                # elif 'FullDisjoint' in alg_name: ...
+
+            except Exception as e:
+                print(f"!!! Unexpected Error processing record #{processed_count_alg} for {alg_name}: {e}")
+                print(f"    Config String: {config_str}")
+                print(f"    Avg Obj String: {avg_obj_str_match}")
+                traceback.print_exc()
+                error_count_alg += 1
+                continue
+
+            # Append successfully processed record
+            normalized_config_dict["average_objective"] = avg_obj
             records.append(normalized_config_dict)
+            # --- DEBUG ---
+            # if processed_count_alg <= 5: # Print first few successful records
+            #     print(f"  Successfully processed record #{processed_count_alg} for {alg_name}. Cost: {avg_obj}")
+            # --- END DEBUG ---
+
+
+        print(f"Processed {processed_count_alg} potential records for '{alg_name}'. {len(records)} added successfully ({error_count_alg} errors).")
 
         if records:
-            df = pd.DataFrame(records)
-            df.drop_duplicates(inplace=True)
-            df.sort_values(by="average_objective", ascending=True, inplace=True)
-            dataframes[alg_name] = df
-            output_csv = f"{alg_name}_results.csv"
-            df.to_csv(output_csv, index=False)
-            print(f"Results for '{alg_name}' saved in {output_csv}")
-
-            df_top10 = df.head(10)
-            param_columns = [col for col in df_top10.columns if col != "average_objective"]
-            txt_lines = []
-            txt_lines.append(f"'{alg_name}': [")
-
-            for param in param_columns:
-                values = df_top10[param]
-                unique_vals = values.unique()
-
-                if pd.api.types.is_bool_dtype(values):
-                    txt_lines.append(f'    Bool("{param}"),')
-
-                elif pd.api.types.is_numeric_dtype(values):
-                    p_min, p_max = values.min(), values.max()
-                    p_range = p_max - p_min
-                    new_lower = p_min - 0.1 * p_range
-                    new_upper = p_max + 0.1 * p_range
-
-                    if pd.api.types.is_integer_dtype(values):
-                        new_lower = int(max(round(new_lower), values.min()))
-                        new_upper = int(min(round(new_upper), values.max()))
-                        txt_lines.append(f'    Integer("{param}", {new_lower}, {new_upper}),')
-                    else:
-                        txt_lines.append(f'    Real("{param}", {new_lower:.5f}, {new_upper:.5f}),')
-
-                elif pd.api.types.is_object_dtype(values) or values.dtype == "category":
-                    # Treat as categorical
-                    sorted_unique = sorted(set(unique_vals))
-                    options = ", ".join(f'"{v}"' for v in sorted_unique)
-                    txt_lines.append(f'    Categorical("{param}", [{options}]),')
-
-                else:
-                    print(f"Warning: unknown dtype for param '{param}' – skipped.")
-
-            txt_lines.append("],")
-            result_txt = "\n".join(txt_lines)
-
-            print("\nParameter ranges for 10 best results:")
-            print(result_txt)
-
-            output_txt = f"{alg_name}_results.txt"
-            with open(output_txt, 'w', encoding='utf-8') as txt_file:
-                txt_file.write(result_txt)
-            print(f"Ranges of best results saved in {output_txt}")
+             # --- Create DataFrame and Save ---
+            try:
+                df = pd.DataFrame(records)
+                # ... (rest of saving logic - check for empty after drop_duplicates etc.) ...
+                if df.empty: print(f"DataFrame empty after creation for '{alg_name}'"); continue
+                df.drop_duplicates(inplace=True);
+                if df.empty: print(f"DataFrame empty after drop_duplicates for '{alg_name}'"); continue
+                df.sort_values(by="average_objective", ascending=True, inplace=True)
+                # output_dir = Path(filepath).parent / "parsed_results"; output_dir.mkdir(parents=True, exist_ok=True)
+                output_csv = f"{alg_name}_parsed_results.csv"; df.to_csv(output_csv, index=False)
+                print(f"Results for '{alg_name}' saved in {output_csv}")
+                total_records_saved_file += len(df)
+                # ... (TXT generation) ...
+            except Exception as save_err: print(f"Error saving files for '{alg_name}': {save_err}")
         else:
-            print(f"No records for '{alg_name}'")
+            print(f"No records successfully processed/saved for '{alg_name}'")
 
-    return dataframes
+    print(f"\nFinished processing file {filepath}. Total records saved: {total_records_saved_file}")
+    return dataframes # Might be empty if errors occurred
 
 
 if __name__ == "__main__":
