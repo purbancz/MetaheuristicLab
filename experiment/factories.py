@@ -391,16 +391,17 @@ def factory_PerturbationPSO(p):
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
 
+
 def factory_DrifterPSO(p):
     return DrifterPSO(
         problem=p,
         swarm_size=G_SOLUTIONS_SIZE,
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS),
-        w=0.637125109727299,
-        c1=2.5453875960820325,
-        c2=0.789097207083248,
-        drifter_fraction=0.2,
-        perturbation_scale=0.008133747975949,
+        w=0.088711856756825,
+        c1=1.8564843990447324,
+        c2=4.154167631958623,
+        drifter_fraction=0.182009454005769,
+        perturbation_scale=0.098183963203318,
         perturbation_method="gaussian",
         constraint_handling_mode="clip"
     )
@@ -411,20 +412,21 @@ def factory_DAPSO(p):
         problem=p,
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS),
         swarm_size=G_SOLUTIONS_SIZE,
-        c1=2.5453875960820325,
-        c2=0.789097207083248,
-        base_inertia=0.637125109727299,
-        min_inertia=0.1,
-        max_inertia=1.0,
-        perturbation_scale=0.008133747975949,
-        drifter_fraction=0.2,
-        max_drifter_fraction=0.8,
-        window_size=10,
-        diversity_threshold=0.1,
-        improvement_threshold=0.01,
+        c1=0.849918319132478,
+        c2=4.685357255835426,
+        base_inertia=0.09887748582866825,
+        min_inertia=0.091426794132834,
+        max_inertia=0.100739664967222,
+        perturbation_scale=0.037160322082221,
+        drifter_fraction=0.219271367175397,
+        max_drifter_fraction=0.404505117115725,
+        window_size=28,
+        diversity_threshold=0.260324821841396,
+        improvement_threshold=0.05957390748379,
         perturbation_method="gaussian",
         constraint_handling_mode="clip"
     )
+
 
 def factory_PartialResetPSO(p):
     return PartialResetPSO(
