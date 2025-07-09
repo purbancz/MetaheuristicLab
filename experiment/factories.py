@@ -1,6 +1,8 @@
+from jmetal.algorithm.singleobjective import EvolutionStrategy
 from jmetal.util.termination_criterion import StoppingByEvaluations
 
 from algorithm.AdaptivePSO import CoAdaptativePSO, IndividualAdaptivePSO
+from algorithm.CMAES import CMAES
 from algorithm.WAPSO import ReverseLearningPSO, ReverseLearningGlobalAttractorPSO, ReverseLearningPersonalAttractorPSO, \
     CombinedLearningPSO
 from algorithm.hybrid_diverse import HybridFullDisjointPSO, HybridPartialDisjointPSO, HybridAdditivePSO, \
@@ -12,6 +14,17 @@ from algorithm.particles_with_roles import RebelPSO, RejectorPSO, RebelRejectorP
 from algorithm.reinitialized_PSO import PartialResetPSO, CollectiveResetPSO, FRAPSO
 from algorithm.single_objective_PSO import SingleObjectivePSO, PerturbationPSO
 from experiment.globals import G_SOLUTIONS_SIZE, G_MAX_EVALUATIONS
+
+
+def factory_CMAES(p):
+    lambda_param = G_SOLUTIONS_SIZE
+    mu_param = max(1, lambda_param // 2)
+    return CMAES(
+        problem=p,
+        mu=mu_param,
+        lambda_=lambda_param,
+        termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
+    )
 
 
 def factory_PSO(p):

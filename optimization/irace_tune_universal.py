@@ -20,6 +20,7 @@ from algorithm.WAPSO import ReverseLearningGlobalAttractorPSO, CombinedLearningP
 from algorithm.particles_with_roles import RebelPSO, RejectorPSO, RebelRejectorPSO, RRAPSO, ContrarianPSO, DefeatistPSO, \
     ContrarianDefeatistPSO, EschewerPSO, EscapistPSO, EschewerEscapistPSO, CDAPSO, EEAPSO, AAAPSO, NAPSO, CLAPSO, \
     DrifterPSO, DAPSO
+from algorithm.CMAES import CMAES
 from algorithm.single_objective_PSO import SingleObjectivePSO
 from algorithm.reinitialized_PSO import FRAPSO
 from algorithm.NPSO import NPSO
@@ -58,6 +59,11 @@ problems = [
 ]
 
 parameter_spaces = {
+    'CMAES': [
+        Integer("mu", 2, 100),
+        Integer("lambda_", 10, 200),
+    ],
+
     # 'AAAPSO': [
     #     Real("c1", 0.01, 6.0),
     #     Real("c2", 0.01, 6.0),
@@ -154,29 +160,29 @@ parameter_spaces = {
     #     Real("anarchic_prob", 0.01, 1.0),
     #     Bool("assign_flags_every_iteration"),
     # ],
-
-    'DrifterPSO': [
-        Real("c1", 0.01, 6.0),
-        Real("c2", 0.01, 6.0),
-        Real("w", 0.01, 1.0),
-        Real("drifter_fraction", 0.01, 0.98),
-        Real("perturbation_scale", 0.0001, 0.10),
-    ],
-
-    'DAPSO': [
-        Real("c1", 0.01, 6.0),
-        Real("c2", 0.01, 6.0),
-        Real("base_inertia", 0.01, 1.0),
-        Real("min_inertia", 0.01, 1.0),
-        Real("max_inertia", 0.01, 1.0),
-        Real("perturbation_scale", 0.0001, 0.1),
-        Real("drifter_fraction", 0.01, 0.98),
-        Real("max_drifter_fraction", 0.01, 0.98),
-        Integer("window_size", 5, 50),
-        Real("diversity_threshold", 0.001, 0.30),
-        Real("improvement_threshold", 0.0001, 0.10),
-    ],
-
+    #
+    # 'DrifterPSO': [
+    #     Real("c1", 0.01, 6.0),
+    #     Real("c2", 0.01, 6.0),
+    #     Real("w", 0.01, 1.0),
+    #     Real("drifter_fraction", 0.01, 0.98),
+    #     Real("perturbation_scale", 0.0001, 0.10),
+    # ],
+    #
+    # 'DAPSO': [
+    #     Real("c1", 0.01, 6.0),
+    #     Real("c2", 0.01, 6.0),
+    #     Real("base_inertia", 0.01, 1.0),
+    #     Real("min_inertia", 0.01, 1.0),
+    #     Real("max_inertia", 0.01, 1.0),
+    #     Real("perturbation_scale", 0.0001, 0.1),
+    #     Real("drifter_fraction", 0.01, 0.98),
+    #     Real("max_drifter_fraction", 0.01, 0.98),
+    #     Integer("window_size", 5, 50),
+    #     Real("diversity_threshold", 0.001, 0.30),
+    #     Real("improvement_threshold", 0.0001, 0.10),
+    # ],
+    #
     # 'CLAPSO': [
     #     Real("c1", 0.01, 6.0),
     #     Real("c2", 0.01, 6.0),
@@ -399,6 +405,11 @@ def target_runner(experiment: Experiment, scenario: Scenario) -> float:
         # Optional logging
         # frac_final_str = ", ".join([f"{k.split('_')[0][:3]}={final_params.get(k, 0.0):.2f}" for k in all_special_fraction_keys if k in final_params])
         # print(f"  Using FullDisjoint Fractions: [{frac_final_str}]")
+
+    if current_algorithm == 'CMAES':
+        if 'mu' in repaired_config and 'lambda_' in repaired_config:
+            if repaired_config['mu'] >= repaired_config['lambda_']:
+                repaired_config['mu'] = max(2, int(repaired_config['lambda_'] / 2))
 
 
     # --- No fraction normalization needed for Additive or other types ---
