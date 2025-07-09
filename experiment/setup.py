@@ -98,8 +98,11 @@ BASE_GROUP_COLORS = {
     'Reverse learning': '#826d8c',
 }
 
-LINE_STYLES = ['-', '--', '-.', ':', (0, (3, 1, 1, 1)), (0, (5, 1)), (0, (1, 1))]
 
+
+LINE_STYLES = ['-', '--', '-.', ':', (0, (3, 1, 1, 1)),
+               # (0, (5, 1)), (0, (1, 1))
+               ]
 
 
 def setup_experiment():
@@ -221,42 +224,27 @@ def setup_experiment():
         RotatedHighConditionedElliptic(number_of_variables),
         RotatedBentCigar(number_of_variables),
         RotatedDiscus(number_of_variables),
-        ShiftedRotatedRosenbrock(number_of_variables),
-        ShiftedRotatedAckley(number_of_variables),
-        ShiftedRastrigin(number_of_variables),
-        ShiftedRotatedRastrigin(number_of_variables),
         ShiftedSchwefel(number_of_variables),
-        ShiftedRotatedSchwefel(number_of_variables),
         ShiftedRotatedHappyCat(number_of_variables),
         ShiftedRotatedHGBat(number_of_variables),
-        ShiftedRotatedSchafferF7(number_of_variables),
         ShiftedRotatedWeierstrass(number_of_variables),
-        ShiftedRotatedExpandedGriewankPlusRosenbrock(number_of_variables),
-        ShiftedRotatedExpandedScafferF6(number_of_variables),
         ##
         AlpineN1(number_of_variables),
-        CrossLeggedTable(number_of_variables),
         CrownedCross(number_of_variables),
         EggHolder(number_of_variables),
         ExpandedShaffer(number_of_variables),
-        GeneralizedHolderTable(number_of_variables),
         GeneralizedSchafferN1(number_of_variables),
         GeneralizedSchafferN2(number_of_variables),
         GeneralizedSchafferN3(number_of_variables),
         GeneralizedSchafferN4(number_of_variables),
         GeneralizedSchmidtVetters(number_of_variables),
         LennardJonesMinimumEnergyCluster(number_of_variables),
-        Levy(number_of_variables),
         Michalewicz(number_of_variables),
         Mishra03(number_of_variables),
         Mishra04(number_of_variables),
-        Mishra05(number_of_variables),
-        Mishra06(number_of_variables),
         RosenbrockModified02(number_of_variables),
         Salomon(number_of_variables),
         SchwefelN20(number_of_variables),
-        SchwefelN21(number_of_variables),
-        SchwefelN26(number_of_variables),
         SchwefelN36(number_of_variables),
         SchwefelN6(number_of_variables),
         ShubertN3(number_of_variables),
@@ -265,6 +253,18 @@ def setup_experiment():
         Stochastic(number_of_variables),
         StretchedV(number_of_variables),
         StyblinskiTang(number_of_variables),
+
+        ## Rejected after experiment
+
+        # ShiftedRotatedAckley(number_of_variables),
+        # ShiftedRastrigin(number_of_variables),
+        # ShiftedRotatedRastrigin(number_of_variables),
+        # ShiftedRotatedSchafferF7(number_of_variables),
+        # CrossLeggedTable(number_of_variables),
+        # GeneralizedHolderTable(number_of_variables),
+        # Levy(number_of_variables),
+        # Mishra06(number_of_variables),
+        # SchwefelN21(number_of_variables),
 
         # ## Rejected
 
@@ -287,7 +287,7 @@ def setup_experiment():
         # ExpandedKatsuura(number_of_variables), # too long
         # Katsuura(number_of_variables),  # too long
         # Ackley(number_of_variables), # irace
-        Rastrigin(number_of_variables),  # irace
+        # Rastrigin(number_of_variables),  # irace
         # Sphere(number_of_variables), # irace
 
         # ## uninterested results
@@ -327,6 +327,15 @@ def setup_experiment():
         # ShubertN1(number_of_variables),
         # AlpineN2(number_of_variables),
 
+
+        ## final rejection
+        # ShiftedRotatedRosenbrock(number_of_variables),
+        # ShiftedRotatedSchwefel(number_of_variables),
+        # ShiftedRotatedExpandedGriewankPlusRosenbrock(number_of_variables),
+        # SchwefelN26(number_of_variables),
+        # Mishra05(number_of_variables),
+        ShiftedRotatedExpandedScafferF6(number_of_variables),
+
     ]
 
     fixed_variables_problems = [
@@ -351,39 +360,39 @@ def setup_experiment():
     problems = n_variables_problems + fixed_variables_problems
 
     algorithms = {
-        # 'PSO': factory_PSO,
-        # 'PerturbationPSO': factory_PerturbationPSO,
-        'DrifterPSO': factory_DrifterPSO,
-        'DAPSO': factory_DAPSO,
-        # 'RebelPSO': factory_RebelPSO,
-        # 'RejectorPSO': factory_RejectorPSO,
-        # 'RebelRejectorPSO': factory_RebelRejectorPSO,
+        'PSO': factory_PSO,
+        'PerturbationPSO': factory_PerturbationPSO,
+        # 'DrifterPSO': factory_DrifterPSO,
+        # 'DAPSO': factory_DAPSO,
+        'RebelPSO': factory_RebelPSO,
+        'RejectorPSO': factory_RejectorPSO,
+        'RebelRejectorPSO': factory_RebelRejectorPSO,
         # 'RRAPSO': factory_RRAPSO,
-        # 'ContrarianPSO': factory_ContrarianPSO,
-        # 'DefeatistPSO': factory_DefeatistPSO,
-        # 'ContrarianDefeatistPSO': factory_ContrarianDefeatistPSO,
+        'ContrarianPSO': factory_ContrarianPSO,
+        'DefeatistPSO': factory_DefeatistPSO,
+        'ContrarianDefeatistPSO': factory_ContrarianDefeatistPSO,
         # 'CDAPSO': factory_CDAPSO,
-        # 'EschewerPSO': factory_EschewerPSO,
-        # 'EscapistPSO': factory_EscapistPSO,
-        # 'EschewerEscapistPSO': factory_EschewerEscapistPSO,
+        'EschewerPSO': factory_EschewerPSO,
+        'EscapistPSO': factory_EscapistPSO,
+        'EschewerEscapistPSO': factory_EschewerEscapistPSO,
         # 'EEAPSO': factory_EEAPSO,
         # 'ReverseLearningPSO': factory_ReverseLearningPSO,
         # 'ReverseLearningGlobalAttractorPSO': factory_ReverseLearningGlobalAttractorPSO,
         # 'ReverseLearningPersonalAttractorPSO': factory_ReverseLearningPersonalAttractorPSO,
         # 'CombinedLearningPSO': factory_CombinedLearningPSO,
         # 'CLAPSO': factory_CLAPSO,
-        # 'AnarchicPSO': factory_AnarchicPSO,
-        # 'AmnesiacPSO': factory_AmnesiacPSO,
-        # 'WandererPSO': factory_WandererPSO,
+        'AnarchicPSO': factory_AnarchicPSO,
+        'AmnesiacPSO': factory_AmnesiacPSO,
+        'WandererPSO': factory_WandererPSO,
         # 'AAAPSO': factory_AAAPSO,
-        # 'NoisyPSO': factory_NoisyPSO,
+        'NoisyPSO': factory_NoisyPSO,
         # 'NAPSO': factory_NoisyPSO,
-        # 'PartialResetPSO': factory_PartialResetPSO,
-        # 'CollectiveResetPSO': factory_CollectiveResetPSO,
+        'PartialResetPSO': factory_PartialResetPSO,
+        'CollectiveResetPSO': factory_CollectiveResetPSO,
         # 'FRAPSO': factory_FRAPSO,
-        # 'HybridFullDisjointPSO': factory_HybridFullDisjointPSO,
-        # 'HybridPartialDisjointPSO': factory_HybridPartialDisjointPSO,
-        # 'HybridAdditivePSO': factory_HybridAdditivePSO,
+        'HybridFullDisjointPSO': factory_HybridFullDisjointPSO,
+        'HybridPartialDisjointPSO': factory_HybridPartialDisjointPSO,
+        'HybridAdditivePSO': factory_HybridAdditivePSO,
         # 'HybridFullDisjointPSO_WithRandom': factory_HybridFullDisjointPSO,
         # 'HybridPartialDisjointPSO_WithRandom': factory_HybridPartialDisjointPSO,
         # 'HybridAdditivePSO_WithRandom': factory_HybridAdditivePSO,
@@ -398,25 +407,34 @@ def setup_experiment():
     def flatten_group_keys(keys):
         return list(chain.from_iterable(groups[k] for k in keys))
 
-    exclude_groups = ['Reverse learning', 'Variable coefficient', 'Combined learning', 'Noisy']
+    exclude_groups = ['Reverse learning', 'Variable coefficient', 'Combined learning', 'Noisy', 'Anarchic', 'Reset']
+    adaptive_algorithms = ['RRAPSO', 'CDAPSO', 'EEAPSO', 'AAAPSO', 'CLAPSO', 'NAPSO', 'DAPSO']
     all_without_additive = flatten_group_keys(
         [g for g in groups if g not in exclude_groups]
     )
 
     additional_groups = {
-        # 'Adaptive algorithms': ['RRAPSO', 'CDAPSO', 'EEAPSO', 'AAAPSO', 'CLAPSO', 'NAPSO'],
+        # 'Adaptive algorithms': ['RRAPSO', 'CDAPSO', 'EEAPSO', 'AAAPSO', 'CLAPSO', 'NAPSO', 'DAPSO'],
         # 'Social change': ['RebelPSO', 'ContrarianPSO', 'EschewerPSO', 'AnarchicPSO'],
         # 'Cognitive change': ['RejectorPSO', 'DefeatistPSO', 'EscapistPSO', 'AmnesiacPSO'],
         # 'Social and cognitive change': ['RebelRejectorPSO', 'ContrarianDefeatistPSO', 'EschewerEscapistPSO', 'WandererPSO'],
 
-        'All without all reverse learning':
-            ['PerturbationPSO'] + flatten_group_keys([k for k in groups if k not in ['Reverse learning', 'Variable coefficient']]),
+        # 'Rebel': ['RebelPSO', 'RejectorPSO', 'RebelRejectorPSO', ],
+        # 'Contrarian': ['ContrarianPSO', 'DefeatistPSO', 'ContrarianDefeatistPSO', ],
+        # 'Eschewer': ['EschewerPSO', 'EscapistPSO', 'EschewerEscapistPSO', ],
+        # 'Anarchic': ['AnarchicPSO', 'AmnesiacPSO', 'WandererPSO', 'NoisyPSO', ],
+        # 'Reset': ['PartialResetPSO', 'CollectiveResetPSO', ],
+        # 'Hybrid': ['HybridFullDisjointPSO', 'HybridPartialDisjointPSO', 'HybridAdditivePSO', ],
 
-        'All without all additive':
-        ['PerturbationPSO'] + all_without_additive,
+        # 'All without all reverse learning':
+        #     ['PerturbationPSO'] + flatten_group_keys([k for k in groups if k not in ['Reverse learning', 'Variable coefficient', 'Adaptive algorithms']]),
+        #
+        # 'All without all additive':
+        # ['PerturbationPSO'] + all_without_additive,
 
-        'All without all additive and perturbation':
-            [alg for alg in all_without_additive if alg != 'PerturbationPSO'],
+        'All selected algorithms':
+            ['PerturbationPSO'] + [alg for alg in all_without_additive if
+                                   alg not in ['DrifterPSO', 'DAPSO', 'FRAPSO'] + adaptive_algorithms],
     }
 
     group_of_algorithms = {

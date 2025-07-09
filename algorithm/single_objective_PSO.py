@@ -248,7 +248,7 @@ class PerturbationPSO(SingleObjectivePSO):
             particle.attributes['velocity'] = new_vel.tolist()
 
 
-    def name(self) -> str:
+    def get_name(self) -> str:
         return "PerturbationPSO"
 
 # class RebelPSO(SingleObjectivePSO):

@@ -37,9 +37,12 @@ if __name__ == "__main__":
     # ]
 
     paths = [
-        # 'experiment_results/dim100_runs50',
+        'experiment_results/dim100_runs50',
         # 'experiment_results/dim500_runs50',
-        'experiment_results/dim1000_runs50',
+        # 'experiment_results/dim1000_runs50',
+        # 'experiment_results/wybrane/100',
+        # 'experiment_results/wybrane/500',
+        # 'experiment_results/wybrane/1000',
     ]
 
     pkl_files = collect_pickle_files_from_paths(paths)

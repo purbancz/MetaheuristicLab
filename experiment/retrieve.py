@@ -12,7 +12,8 @@ from statsmodels.stats.multicomp import pairwise_tukeyhsd
 from scikit_posthocs import posthoc_dunn
 
 from experiment.plotting_utilities import plot_results, plot_results_with_std, plot_box_at_intervals, plot_final_box, \
-    plot_final_raincloud, plot_final_petit_prince, plot_results_with_annotations, plot_results_with_average
+    plot_final_raincloud, plot_final_petit_prince, plot_results_with_annotations, plot_results_with_average, \
+    plot_results_with_annotations_legend
 from experiment.setup import setup_experiment, make_dir
 
 # Setup experiment to retrieve settings like algorithm_colors, max_evaluations, etc.
@@ -375,25 +376,45 @@ def plot_combined_data_from_pickles(pickle_files):
                 print(f"Skipping {group_name}, no valid algorithms found (only 'PSO' or empty).")
                 continue
 
-            plot_results(filtered_results, matched_problem, dimensions_dir, max_evaluations, total_runs,
-                         algorithm_colors, group_name)
+            # plot_results(filtered_results, matched_problem, dimensions_dir, max_evaluations, total_runs,
+            #              algorithm_colors, group_name)
+
             # plot_results_with_annotations(filtered_results, matched_problem, dimensions_dir, max_evaluations,
             #                               total_runs, algorithm_colors, group_name)
+
+            # plot_results_with_annotations_legend(filtered_results, matched_problem, dimensions_dir, max_evaluations,
+            #                               total_runs, algorithm_colors, group_name)
+
+            plot_results_with_annotations_legend(filtered_results, matched_problem, dimensions_dir, max_evaluations,
+                                                 total_runs, algorithm_colors, group_name, log_scale=True)
+
             # plot_results_with_std(filtered_results, matched_problem, dimensions_dir, max_evaluations, total_runs,
             #                       algorithm_colors, group_name)
+
             # plot_results_with_average(filtered_results, matched_problem, dimensions_dir, max_evaluations, total_runs,
             #                       algorithm_colors, group_name)
+
             # plot_box_at_intervals(filtered_results, matched_problem, max_evaluations=max_evaluations,
             #                       no_of_runs=total_runs,
             #                       algorithms_to_compare=list(filtered_results.keys()), results_dir=dimensions_dir,
             #                       algorithm_colors=algorithm_colors, group_name=group_name)
+
             # plot_final_box(filtered_results, matched_problem, dimensions_dir, algorithm_colors, group_name)
+
             # plot_final_raincloud(filtered_results, matched_problem, dimensions_dir, algorithm_colors, group_name)
+
             # plot_final_raincloud(filtered_results, matched_problem, dimensions_dir, algorithm_colors, group_name,
             #                      adaptive_height=True)
+
             # plot_final_petit_prince(filtered_results, matched_problem, dimensions_dir, algorithm_colors)
+
+            # plot_final_petit_prince(filtered_results, matched_problem, dimensions_dir, algorithm_colors)
+
             plot_final_petit_prince(filtered_results, matched_problem, dimensions_dir, algorithm_colors,
-                                    adaptive_width=True)
+                                    log_scale=True)
+
+            # plot_final_petit_prince(filtered_results, matched_problem, dimensions_dir, algorithm_colors,
+            #                         adaptive_width=True)
 
 
 def extract_best_algorithms_from_experiment_data(aggregated_data_dict):
@@ -433,7 +454,7 @@ def extract_best_algorithms_from_experiment_data(aggregated_data_dict):
     return best_algorithms_per_problem
 
 
-def kruskal_wallis_with_posthoc(pickle_files, perform_shapiro=False, perform_posthoc=True):
+def kruskal_wallis_with_posthoc(pickle_files, perform_shapiro=True, perform_posthoc=True):
     """
     Perform Kruskal-Wallis and posthoc tests using dynamically extracted
     the best algorithms from combined data.

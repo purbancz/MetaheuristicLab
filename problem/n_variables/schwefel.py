@@ -152,17 +152,6 @@ class SchwefelN6(FloatProblem):
     def number_of_constraints(self) -> int:
         return 0
 
-    # def create_solution(self) -> FloatSolution:
-    #     new_solution = FloatSolution(
-    #         self.lower_bound,
-    #         self.upper_bound,
-    #         self.number_of_objectives(),
-    #         self.number_of_constraints()
-    #     )
-    #     new_solution.variables = [
-    #         random.uniform(lb, ub) for lb, ub in zip(self.lower_bound, self.upper_bound)
-    #     ]
-    #     return new_solution
 
     def evaluate(self, solution: FloatSolution) -> FloatSolution:
         sum_x = sum(solution.variables)
@@ -201,18 +190,6 @@ class SchwefelN20(FloatProblem):
 
     def number_of_constraints(self) -> int:
         return 0
-
-    # def create_solution(self) -> FloatSolution:
-    #     new_solution = FloatSolution(
-    #         self.lower_bound,
-    #         self.upper_bound,
-    #         self.number_of_objectives(),
-    #         self.number_of_constraints()
-    #     )
-    #     new_solution.variables = [
-    #         random.uniform(lb, ub) for lb, ub in zip(self.lower_bound, self.upper_bound)
-    #     ]
-    #     return new_solution
 
     def evaluate(self, solution: FloatSolution) -> FloatSolution:
         cumulative = 0.0
@@ -255,17 +232,6 @@ class SchwefelN36(FloatProblem):
     def number_of_constraints(self) -> int:
         return 0
 
-    # def create_solution(self) -> FloatSolution:
-    #     new_solution = FloatSolution(
-    #         self.lower_bound,
-    #         self.upper_bound,
-    #         self.number_of_objectives(),
-    #         self.number_of_constraints()
-    #     )
-    #     new_solution.variables = [
-    #         random.uniform(lb, ub) for lb, ub in zip(self.lower_bound, self.upper_bound)
-    #     ]
-    #     return new_solution
 
     def evaluate(self, solution: FloatSolution) -> FloatSolution:
         d = self.number_of_variables()

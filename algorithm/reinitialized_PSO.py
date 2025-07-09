@@ -151,7 +151,6 @@ class CollectiveResetPSO(SingleObjectivePSO):
                  c1: float,
                  c2: float,
                  convergence_threshold: float = 1e-3,
-                 # max_refreshes: int = 5,
                  constraint_handling_mode: str = "clip"
                  ):
 
@@ -160,8 +159,7 @@ class CollectiveResetPSO(SingleObjectivePSO):
                          constraint_handling_mode=constraint_handling_mode)
 
         self.convergence_threshold = convergence_threshold
-        # self.max_refreshes = max_refreshes
-        # self.refresh_count = 0
+
 
     def converged(self) -> bool:
         positions = np.array([p.variables for p in self.solutions])
@@ -179,15 +177,10 @@ class CollectiveResetPSO(SingleObjectivePSO):
             particle.attributes['best_position'] = particle.variables.copy()
             particle.attributes['best_objective'] = particle.objectives[0]
 
-    # def swarm_decomposition(self):
-    #     if self.converged() and self.refresh_count < self.max_refreshes:
-    #         self.refresh_count += 1
-    #         self.reinitialize_swarm()
 
     def step(self):
         if self.converged():
             self.reinitialize_swarm()
-        # self.swarm_decomposition()
         super().step()
 
     def get_name(self) -> str:

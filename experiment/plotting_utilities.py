@@ -3,6 +3,7 @@ from datetime import datetime
 import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib.colors as mcolors
+from matplotlib.lines import Line2D
 
 from experiment.setup import BASE_GROUP_COLORS, LINE_STYLES
 
@@ -31,7 +32,7 @@ def plot_results(data_dict, problem, results_dir, max_evaluations, no_of_runs, a
     plt.legend(
         loc='upper center',
         bbox_to_anchor=(0.5, -0.15),  # halfway along the bottom
-        ncol=6,  # spread entries across four columns
+        ncol=5,  # spread entries across four columns
         frameon=True,
         facecolor='white',
         framealpha=1
@@ -41,19 +42,22 @@ def plot_results(data_dict, problem, results_dir, max_evaluations, no_of_runs, a
 
     safe_group_name = group_name.replace(' ', '_').replace('-', '_')
     safe_problem_name = problem.name().replace(' ', '_').replace('-', '_')
-    filename = f"{results_dir}/{datetime.now().strftime('%Y%m%d_%H%M%S')}_{safe_problem_name}_{safe_group_name}.png"
+    filename = (f"{results_dir}/"
+                # + f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_"
+                + f"{safe_problem_name}_{safe_group_name}_dim{problem.number_of_variables()}.png")
     plt.savefig(filename, dpi=300)
     plt.show()
 
+
 def plot_group_average(
-    ax,
-    data_dict,
-    group_name,
-    base_group_colors,
-    exclude_algos=('PSO','PerturbationPSO'),
-    default_color='grey',
-    linestyle='-',
-    linewidth=3
+        ax,
+        data_dict,
+        group_name,
+        base_group_colors,
+        exclude_algos=('PSO', 'PerturbationPSO'),
+        default_color='grey',
+        linestyle='-',
+        linewidth=3
 ):
     # 1) collect non-baseline mean-curves
     curves = []
@@ -82,20 +86,21 @@ def plot_group_average(
         linewidth=linewidth
     )
 
+
 def plot_results_with_average(
-    data_dict,
-    problem,
-    results_dir,
-    max_evaluations,
-    no_of_runs,
-    algorithm_colors,
-    group_name="all"
+        data_dict,
+        problem,
+        results_dir,
+        max_evaluations,
+        no_of_runs,
+        algorithm_colors,
+        group_name="all"
 ):
     fig, ax = plt.subplots(figsize=(13.3, 7))
 
     for i, (label, fitness_data) in enumerate(data_dict.items()):
         avg_curve = np.mean(fitness_data['data'], axis=0)
-        color     = algorithm_colors.get(label, 'black')
+        color = algorithm_colors.get(label, 'black')
         ls = LINE_STYLES[i % len(LINE_STYLES)]
         plt.plot(avg_curve, label=label, linestyle=ls, color=color)
 
@@ -114,15 +119,15 @@ def plot_results_with_average(
     plt.tight_layout()
 
     safe_group = group_name.replace(' ', '_')
-    safe_prob  = problem.name().replace(' ', '_')
-    fname = f"{results_dir}/{safe_prob}_{safe_group}_{max_evaluations}evals.png"
+    safe_prob = problem.name().replace(' ', '_')
+    fname = f"{results_dir}/{safe_prob}_{safe_group}_dim{problem.number_of_variables()}_avg.png"
     plt.savefig(fname, dpi=300)
     plt.show()
 
 
 def plot_results_with_annotations(data_dict, problem, results_dir, max_evaluations, no_of_runs, algorithm_colors,
                                   group_name="all"):
-    fig, ax = plt.subplots(figsize=(13.3, 7))
+    fig, ax = plt.subplots(figsize=(14, 6))
     fig.subplots_adjust(right=0.8)
 
     annot_info = []
@@ -137,7 +142,7 @@ def plot_results_with_annotations(data_dict, problem, results_dir, max_evaluatio
         annot_info.append((label, final_x, final_y, color))
 
     # Basic labeling & legend
-    ax.set_title(f'{problem.name()} ({problem.number_of_variables()} dimensions)')
+    # ax.set_title(f'{problem.name()} ({problem.number_of_variables()} dimensions)')
     ax.set_xlabel(f'Evaluations ({max_evaluations})')
     ax.set_ylabel(f'Average Best Fitness over {no_of_runs} runs')
     ax.legend(frameon=True, facecolor='white', framealpha=1)
@@ -150,12 +155,12 @@ def plot_results_with_annotations(data_dict, problem, results_dir, max_evaluatio
         annotation_positions = [0.1]
     else:
         annotation_bottom = 0.05  # fraction from bottom
-        annotation_top = 0.90  # fraction from top
+        annotation_top = 0.95  # fraction from top
         vertical_space = annotation_top - annotation_bottom
         if total_algs == 1:
             annotation_positions = [(annotation_bottom + annotation_top) / 2.0]
         else:
-            annotation_spacing = 0.06
+            annotation_spacing = 0.07
             annotation_positions = [
                 annotation_bottom + i * annotation_spacing
                 for i in range(total_algs)
@@ -189,21 +194,208 @@ def plot_results_with_annotations(data_dict, problem, results_dir, max_evaluatio
     # Final layout & saving
     plt.tight_layout()
 
-    plt.legend(
-        loc='upper center',
-        bbox_to_anchor=(0.5, -0.15),  # halfway along the bottom
-        ncol=6,  # spread entries across four columns
-        frameon=True,
-        facecolor='white',
-        framealpha=1
-    )
+    # plt.legend(
+    #     loc='upper center',
+    #     bbox_to_anchor=(0.5, -0.15),  # halfway along the bottom
+    #     ncol=5,  # spread entries across four columns
+    #     frameon=True,
+    #     facecolor='white',
+    #     framealpha=1
+    # )
+    plt.legend().set_visible(False)
+
     # give a little more bottom margin so nothing gets clipped
-    plt.subplots_adjust(bottom=0.25)
+    # plt.subplots_adjust(bottom=0.25)
 
     safe_group_name = group_name.replace(' ', '_').replace('-', '_')
     safe_problem_name = problem.name().replace(' ', '_').replace('-', '_')
-    filename = f"{results_dir}/{datetime.now().strftime('%Y%m%d_%H%M%S')}_{safe_problem_name}_{safe_group_name}.png"
-    plt.savefig(filename, dpi=300)
+    # filename = (f"{results_dir}/"
+    #             # + f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_"
+    #             + f"{safe_problem_name}_{safe_group_name}_dim{problem.number_of_variables()}_annot.png")
+    # plt.savefig(filename, dpi=300)
+    # plt.show()
+
+    filename = (f"{results_dir}/"
+                # + f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_"
+                + f"{safe_problem_name}_{safe_group_name}_dim{problem.number_of_variables()}_annot_legend.png")
+
+    try:
+        plt.savefig(filename, dpi=300)
+        print(f"Saved annot plot to {filename}")
+    except Exception as e:
+        print(f"Error annot plot: {e}")
+    plt.show()
+
+
+
+
+def plot_results_with_annotations_legend(data_dict, problem, results_dir, max_evaluations, no_of_runs, algorithm_colors,
+                                         group_name="all", log_scale=False):
+
+    alg_order = [
+        'PSO', 'PerturbationPSO', 'RebelPSO', 'RejectorPSO', 'RebelRejectorPSO',
+        'ContrarianPSO', 'DefeatistPSO', 'ContrarianDefeatistPSO',
+        'EschewerPSO', 'EscapistPSO', 'EschewerEscapistPSO',
+        'HybridFullDisjointPSO', 'HybridPartialDisjointPSO', 'HybridAdditivePSO'
+    ]
+    alg_number_map = {name: idx+1 for idx, name in enumerate(alg_order)}
+
+
+    fig, ax = plt.subplots(figsize=(14, 6))
+    # fig.subplots_adjust(right=0.8)
+
+    annot_info = []
+    for i, (label, fitness_data) in enumerate(data_dict.items()):
+        avg_fit = np.mean(fitness_data['data'], axis=0)
+        color = algorithm_colors.get(label, 'black')
+        ls = LINE_STYLES[i % len(LINE_STYLES)]
+        plt.plot(avg_fit, label=label, linestyle=ls, color=color)
+
+        final_y = avg_fit[-1]  # final average fitness
+        final_x = len(avg_fit) - 1  # last evaluation index
+        annot_info.append((label, final_x, final_y, color))
+
+    # Basic labeling & legend
+    ax.set_title(f'{problem.name()} ({problem.number_of_variables()} dimensions)')
+    ax.set_xlabel(f'Evaluations ({max_evaluations})')
+    ax.set_ylabel(f'Average Best Fitness over {no_of_runs} runs')
+    if log_scale:
+        ax.set_yscale('log')
+    ax.legend(frameon=True, facecolor='white', framealpha=1)
+    ax.grid(True)
+
+    annot_info.sort(key=lambda x: x[2])
+
+    total_algs = len(annot_info)
+    if total_algs <= 1:
+        annotation_positions = [0.1]
+    else:
+        annotation_bottom = 0.05  # fraction from bottom
+        annotation_top = 0.95  # fraction from top
+        vertical_space = annotation_top - annotation_bottom
+        if total_algs == 1:
+            annotation_positions = [(annotation_bottom + annotation_top) / 2.0]
+        else:
+            annotation_spacing = 0.055
+            annotation_positions = [
+                annotation_bottom + i * annotation_spacing
+                for i in range(total_algs)
+            ]
+
+    annotation_x = 1.02
+
+    # 1) podczas rysowania zbieraj Line2D
+    line_map = {}
+    for i, (label, fitness_data) in enumerate(data_dict.items()):
+        avg = np.mean(fitness_data['data'], axis=0)
+        color = algorithm_colors.get(label, 'black')
+        ls = LINE_STYLES[i % len(LINE_STYLES)]
+        line, = ax.plot(avg, label=label, linestyle=ls, color=color)
+        line_map[label] = line
+
+    # 2) stwórz legendę
+    ax.get_legend().set_visible(False)
+    # 3) przy annotacji używaj tego samego handle’a
+    # swatch_len = 0.03
+
+    fig.canvas.draw()
+    renderer = fig.canvas.get_renderer()
+
+    for (label, final_x, final_y, color), pos in zip(annot_info, annotation_positions):
+        handle = line_map[label]
+        sw_ls = handle.get_linestyle()
+        sw_color = handle.get_color()
+
+        # Adnotacja numeryczna
+        annotation_text = f"{final_y:.2f}"
+        annotation = ax.annotate(
+            text=annotation_text,
+            xy=(final_x, final_y),
+            xycoords='data',
+            xytext=(annotation_x, pos),
+            textcoords='axes fraction',
+            ha='left', va='center',
+            bbox=dict(boxstyle="round,pad=0.2", edgecolor=sw_color, facecolor="white"),
+            arrowprops=dict(arrowstyle="-", color="grey", connectionstyle="arc3,rad=0.1", relpos=(0., 0.5),
+                            shrinkA=0, shrinkB=0,
+                            ),
+            fontsize=10,
+            color="black",
+            clip_on=False,
+            zorder=2
+        )
+
+        bbox_text = annotation.get_window_extent(renderer=renderer)
+        bbox_text_axes = bbox_text.transformed(ax.transAxes.inverted())
+        text_x_end = bbox_text_axes.x1
+
+        # Teraz minimalny padding między tekstem a swatchem
+        minimal_padding = 0.02
+
+        swatch_x_start = text_x_end + minimal_padding
+        swatch_len = 0.03
+
+        # # Rysuj swatch (linię)
+        ax.hlines(
+            y=pos,
+            xmin=swatch_x_start,
+            xmax=swatch_x_start + swatch_len,
+            transform=ax.transAxes,
+            colors=sw_color,
+            linestyles=sw_ls,
+            linewidth=handle.get_linewidth(),
+            clip_on=False,
+            zorder=3
+        )
+
+        # Tekst algorytmu obok swatcha
+        ax.text(
+            swatch_x_start + swatch_len + minimal_padding,
+            pos,
+            label,
+            transform=ax.transAxes,
+            va='center',
+            fontsize=10,
+            color="black",
+            clip_on=False,
+            zorder=4
+        )
+        alg_number = alg_number_map.get(label, "-")
+        # ax.text(
+        #     # swatch_x_start + swatch_len + minimal_padding,
+        #     swatch_x_start,
+        #     pos,
+        #     # str(alg_number),
+        #     label,
+        #     transform=ax.transAxes,
+        #     va='center',
+        #     fontsize=10,
+        #     color="black",
+        #     clip_on=False,
+        #     zorder=4
+        # )
+
+    # right_margin_for_annotations = 0.001
+    # plt.tight_layout(rect=[0, 0, 1.0 - right_margin_for_annotations, 1.0])
+    plt.tight_layout()
+
+    safe_group_name = group_name.replace(' ', '_').replace('-', '_')
+    safe_problem_name = problem.name().replace(' ', '_').replace('-', '_')
+    # filename = (f"{results_dir}/"
+    #             # + f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_"
+    #             + f"{safe_problem_name}_{safe_group_name}_dim{problem.number_of_variables()}_annot_legend.png")
+    # plt.savefig(filename, dpi=300)
+    # plt.show()
+
+    filename = (f"{results_dir}/"
+                # + f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_"
+                + f"{safe_problem_name}_{safe_group_name}_dim{problem.number_of_variables()}_annot_legend.png")
+
+    try:
+        plt.savefig(filename, dpi=300)
+        print(f"Saved annot plot to {filename}")
+    except Exception as e:
+        print(f"Error annot plot: {e}")
     plt.show()
 
 
@@ -231,7 +423,7 @@ def plot_results_with_std(data_dict, problem, results_dir, max_evaluations, no_o
     plt.legend(
         loc='upper center',
         bbox_to_anchor=(0.5, -0.15),  # halfway along the bottom
-        ncol=6,  # spread entries across four columns
+        ncol=5,  # spread entries across four columns
         frameon=True,
         facecolor='white',
         framealpha=1
@@ -241,7 +433,9 @@ def plot_results_with_std(data_dict, problem, results_dir, max_evaluations, no_o
 
     safe_group_name = group_name.replace(' ', '_').replace('-', '_')
     safe_problem_name = problem.name().replace(' ', '_').replace('-', '_')
-    filename = f'{results_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{safe_problem_name}_{safe_group_name}_with_stddev.png'
+    filename = (f"{results_dir}/"
+                # + f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_"
+                + f"{safe_problem_name}_{safe_group_name}_dim{problem.number_of_variables()}_with_stddev.png")
     plt.savefig(filename, dpi=300)
     plt.show()
 
@@ -344,7 +538,10 @@ def plot_box_at_intervals(data_dict, problem, interval=10, max_evaluations=25000
         truncated_algorithm_names = algorithm_names
 
     safe_group_name = group_name.replace(' ', '_').replace('-', '_') if group_name else truncated_algorithm_names
-    filename = f"{base_filename}_{safe_group_name}_box_intervals.png"
+
+    filename = (f"{results_dir}/"
+                # + f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_"
+                + f"{safe_problem_name}_{safe_group_name}_dim{problem.number_of_variables()}_box_intervals.png")
 
     plt.savefig(filename, dpi=300)
     plt.show()
@@ -372,7 +569,12 @@ def plot_final_box(data_dict, problem, results_dir, algorithm_colors, group_name
     plt.tick_params(axis='x', which='both', bottom=False, top=False)
     safe_group_name = group_name.replace(' ', '_').replace('-', '_')
     safe_problem_name = problem.name().replace(' ', '_').replace('-', '_')
-    filename = f'{results_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{safe_problem_name}_{safe_group_name}_final_box.png'
+    # filename = f'{results_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{safe_problem_name}_{safe_group_name}_final_box.png'
+
+    filename = (f"{results_dir}/"
+                # + f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_"
+                + f"{safe_problem_name}_{safe_group_name}_dim{problem.number_of_variables()}_final_box.png")
+
     plt.savefig(filename, dpi=300)
     plt.show()
 
@@ -432,9 +634,9 @@ def plot_final_raincloud(data_dict, problem, results_dir, algorithm_colors,
     positions = np.arange(1, num_groups + 1)
 
     # Define parameters for the box/violin and scatter placements.
-    box_width = 0.2       # thinner boxes
-    scatter_offset = 0.25 # moves scatter points below the violin and box
-    halfwidth = 0.05      # half the vertical range for systematic scatter distribution
+    box_width = 0.2  # thinner boxes
+    scatter_offset = 0.25  # moves scatter points below the violin and box
+    halfwidth = 0.05  # half the vertical range for systematic scatter distribution
 
     # Compute figure size:
     fig_width = 12
@@ -503,7 +705,6 @@ def plot_final_raincloud(data_dict, problem, results_dir, algorithm_colors,
     ax.set_title(f'{problem.name()} ({problem.number_of_variables()} dimensions)')
     ax.set_xlabel('Final Fitness Distribution')
 
-
     # Remove top and right spines
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
@@ -513,7 +714,12 @@ def plot_final_raincloud(data_dict, problem, results_dir, algorithm_colors,
     # Save the figure with a filename incorporating the current timestamp and group name.
     safe_group_name = group_name.replace(' ', '_').replace('-', '_')
     safe_problem_name = problem.name().replace(' ', '_').replace('-', '_')
-    filename = f'{results_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{safe_problem_name}_{safe_group_name}_raincloud.png'
+
+    # filename = f'{results_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{safe_problem_name}_{safe_group_name}_raincloud.png'
+    filename = (f"{results_dir}/"
+                # + f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_"
+                + f"{safe_problem_name}_{safe_group_name}_dim{problem.number_of_variables()}_raincloud.png")
+
     plt.savefig(filename, dpi=300)
     plt.show()
 
@@ -524,7 +730,8 @@ def plot_final_raincloud(data_dict, problem, results_dir, algorithm_colors,
 import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib.colors as mcolors
-from datetime import datetime # Make sure datetime is imported
+from datetime import datetime  # Make sure datetime is imported
+
 
 # ...(Keep other plotting functions and helpers like lighten_color as they are)...
 
@@ -533,7 +740,8 @@ from datetime import datetime # Make sure datetime is imported
 # ---------------------------------------------------------------------
 def plot_final_petit_prince(data_dict, problem, results_dir, algorithm_colors,
                             group_name="all", scatter_mode="systematic_spread",
-                            adaptive_width=False, side_split=True, side_offset=0.25):
+                            adaptive_width=False, side_split=True, side_offset=0.25,
+                            log_scale=False):
     """
     Create a vertical raincloud plot, handling cases with zero variance in data.
     (Rest of docstring is the same)
@@ -553,14 +761,14 @@ def plot_final_petit_prince(data_dict, problem, results_dir, algorithm_colors,
 
     # Plotting parameters.
     box_width = 0.2
-    halfwidth = 0.05 # For systematic scatter
+    halfwidth = 0.05  # For systematic scatter
 
     # Figure size: Fixed height (6 inches) and adaptive width if desired.
-    fig_height = 8 # Increased default height slightly
+    fig_height = 6  # Increased default height slightly
     if adaptive_width:
-        fig_width = max(8, 0.5 * num_groups + 5) # Adjusted adaptive formula
+        fig_width = max(8, 0.5 * num_groups + 5)  # Adjusted adaptive formula
     else:
-        fig_width = 12
+        fig_width = 14
 
     fig, ax = plt.subplots(figsize=(fig_width, fig_height))
 
@@ -569,7 +777,7 @@ def plot_final_petit_prince(data_dict, problem, results_dir, algorithm_colors,
     for i, data in enumerate(rain_data):
         # Ensure data is a numpy array for std calculation
         data_arr = np.asarray(data)
-        if len(data_arr) > 1 and np.std(data_arr) < 1e-9: # Check if std dev is effectively zero
+        if len(data_arr) > 1 and np.std(data_arr) < 1e-9:  # Check if std dev is effectively zero
             print(f"Warning: Zero variance detected for algorithm '{labels[i]}'. Adding jitter for violin plot.")
             # Add small Gaussian noise. Scale noise based on data magnitude or use a small fixed value.
             data_mean = np.mean(data_arr)
@@ -578,19 +786,19 @@ def plot_final_petit_prince(data_dict, problem, results_dir, algorithm_colors,
             jittered_data = data_arr + np.random.normal(0, noise_std, size=data_arr.shape)
             jittered_rain_data.append(jittered_data)
         else:
-            jittered_rain_data.append(data_arr) # Use original data if variance > 0 or only 1 point
+            jittered_rain_data.append(data_arr)  # Use original data if variance > 0 or only 1 point
+
 
     # ----- Plot the vertical boxplots (use ORIGINAL data) -----
-    bp = ax.boxplot(rain_data, patch_artist=True, vert=True, showfliers=False, # Hide fliers, scatter shows points
+    bp = ax.boxplot(rain_data, patch_artist=True, vert=True, showfliers=False,  # Hide fliers, scatter shows points
                     positions=positions, widths=box_width)
     for patch, color in zip(bp['boxes'], box_colors):
         patch.set_facecolor(color)
         patch.set_alpha(0.4)
     # Optionally style median lines etc.
     for median in bp['medians']:
-         median.set_color('yellow')
-         median.set_linewidth(1.5)
-
+        median.set_color('yellow')
+        median.set_linewidth(1.5)
 
     # ----- Plot the vertical half-violin plots (use JITTERED data) -----
     try:
@@ -599,30 +807,29 @@ def plot_final_petit_prince(data_dict, problem, results_dir, algorithm_colors,
         for idx, body in enumerate(vp['bodies']):
             vertices = body.get_paths()[0].vertices
             if side_split:
-                lower_bound = positions[idx] - 0.5 # Draw violin to the left
+                lower_bound = positions[idx] - 0.5  # Draw violin to the left
                 upper_bound = positions[idx]
             else:
-                lower_bound = positions[idx] # Draw violin to the right
+                lower_bound = positions[idx]  # Draw violin to the right
                 upper_bound = positions[idx] + 0.5
             vertices[:, 0] = np.clip(vertices[:, 0], lower_bound, upper_bound)
             body.set_color(violin_colors[idx])
             body.set_alpha(0.7)
-    except Exception as e: # Catch potential errors during violin plotting
+    except Exception as e:  # Catch potential errors during violin plotting
         print(f"Warning: Violin plot failed. Skipping violins. Error: {e}")
 
-
     # ----- Plot the scatter points (use ORIGINAL data) -----
-    for idx, data in enumerate(rain_data): # Iterate ORIGINAL data
+    for idx, data in enumerate(rain_data):  # Iterate ORIGINAL data
         if side_split:
-            base_x = positions[idx] + side_offset # Shift scatter to the right
+            base_x = positions[idx] + side_offset  # Shift scatter to the right
         else:
-            base_x = positions[idx] - side_offset # Shift scatter to the left
+            base_x = positions[idx] - side_offset  # Shift scatter to the left
         n_points = len(data)
 
-        if n_points == 0: continue # Skip if no data points
+        if n_points == 0: continue  # Skip if no data points
 
         if scatter_mode == "jitter":
-            x_values = np.full(n_points, base_x) + np.random.uniform(-0.03, 0.03, size=n_points) # Slightly more jitter
+            x_values = np.full(n_points, base_x) + np.random.uniform(-0.03, 0.03, size=n_points)  # Slightly more jitter
         elif scatter_mode == "organized":
             x_values = np.full(n_points, base_x)
         elif scatter_mode == "systematic_spread":
@@ -631,28 +838,38 @@ def plot_final_petit_prince(data_dict, problem, results_dir, algorithm_colors,
             else:
                 offsets = np.array([0.0])
             x_values = np.full(n_points, base_x) + offsets
-        else: # Fallback or raise error
-             print(f"Warning: Unknown scatter_mode '{scatter_mode}'. Using organized.")
-             x_values = np.full(n_points, base_x)
+        else:  # Fallback or raise error
+            print(f"Warning: Unknown scatter_mode '{scatter_mode}'. Using organized.")
+            x_values = np.full(n_points, base_x)
 
-        ax.scatter(x_values, data, s=12, c=[scatter_colors[idx]], alpha=0.8, edgecolor='k', linewidth=0.3) # Added black edge
+        ax.scatter(x_values, data, s=12, c=[scatter_colors[idx]], alpha=0.8, edgecolor='k',
+                   linewidth=0.3)  # Added black edge
 
     # ----- Finishing touches -----
     ax.set_xticks(positions)
-    ax.set_xticklabels(labels, rotation=45, ha="right", fontsize=10) # Ensure readable font size
+    ax.set_xticklabels(labels, rotation=45, ha="right", fontsize=10)  # Ensure readable font size
     ax.set_title(f'{problem.name()} ({problem.number_of_variables()} dimensions)')
     ax.set_ylabel('Final Fitness Distribution')
-    ax.set_xlabel('Algorithms')
+    if log_scale:
+        ax.set_yscale('log')
+    # ax.set_xlabel('Algorithms')
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
-    ax.grid(axis='y', linestyle=':', alpha=0.6) # Add light horizontal grid
+    ax.grid(axis='y', linestyle=':', alpha=0.6)  # Add light horizontal grid
 
-    plt.tight_layout(rect=[0, 0.05, 1, 0.97]) # Adjust rect to give labels space
+    # plt.tight_layout(rect=[0, 0.05, 1, 0.97])  # Adjust rect to give labels space
+    plt.tight_layout()  # Adjust rect to give labels space
 
     # Save the figure
     safe_group_name = group_name.replace(' ', '_').replace('-', '_')
     safe_problem_name = problem.name().replace(' ', '_').replace('-', '_')
-    filename = f'{results_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{safe_problem_name}_{safe_group_name}_raincloud_vertical.png'
+
+    # filename = f'{results_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_{safe_problem_name}_{safe_group_name}_raincloud_vertical.png'
+
+    filename = (f"{results_dir}/"
+                # + f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_"
+                + f"{safe_problem_name}_{safe_group_name}_dim{problem.number_of_variables()}_raincloud_vertical.png")
+
     try:
         plt.savefig(filename, dpi=300)
         print(f"Saved vertical raincloud plot to {filename}")

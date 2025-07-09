@@ -73,9 +73,15 @@ def generate_parallel_coordinates_plot(df, target_col, algo_name, plots_folder):
         df_custom_normalized[col] = (df[col] - custom_min) / (custom_max - custom_min)
 
     # Prepare dataframe for plotting
-    df_custom_normalized["color"] = (df[target_col] - df[target_col].min()) / (
-            df[target_col].max() - df[target_col].min()
-    )
+    if df[target_col].nunique() == 1:
+        df_custom_normalized["color"] = 0
+    else:
+        df_custom_normalized["color"] = (df[target_col] - df[target_col].min()) / (
+                    df[target_col].max() - df[target_col].min())
+
+    # df_custom_normalized["color"] = (df[target_col] - df[target_col].min()) / (
+    #         df[target_col].max() - df[target_col].min()
+    # )
     df_sorted = df_custom_normalized.sort_values(by="color", ascending=False)  # Reverse sorting
 
     # Create the figure
@@ -93,7 +99,7 @@ def generate_parallel_coordinates_plot(df, target_col, algo_name, plots_folder):
 
     # Set title
     title = f"Parallel coordinates plot for {algo_name} parameters"
-    plt.title(title)
+    # plt.title(title)
     plt.xlabel("Parameters")
     plt.xticks(rotation=45, ha='right', rotation_mode='anchor')
 
@@ -115,6 +121,7 @@ def generate_parallel_coordinates_plot(df, target_col, algo_name, plots_folder):
                                norm=mcolors.Normalize(vmin=df[target_col].min(), vmax=df[target_col].max()))
     cbar = fig.colorbar(sm, ax=ax, aspect=20)
     cbar.set_label("Average objective")
+    plt.tight_layout()
 
     # Save & Show the plot
     save_fig(title, plots_folder)
@@ -141,8 +148,9 @@ def generate_correlation_matrix_plot(df, algo_name, plots_folder):
     sns.heatmap(df_encoded.corr(), annot=True, cmap="coolwarm", fmt=".2f")
     # sns.heatmap(df.corr(), annot=True, cmap="coolwarm", fmt=".2f")
     title = f"Correlation matrix for {algo_name} parameters"
-    plt.title(title)
+    # plt.title(title)
     save_fig(title, plots_folder)
+    plt.tight_layout()
     plt.show()
 
 
@@ -256,7 +264,7 @@ if __name__ == "__main__":
         df = pd.read_csv(new_csv_path)
         target_col = "average_objective"
 
-        generate_correlation_matrix_plot(df, algo_name, plots_folder)
-        generate_scatter_plots(df, target_col, algo_name, plots_folder)
-        generate_rf_dependent_plots(df, target_col, algo_name, plots_folder)
+        # generate_correlation_matrix_plot(df, algo_name, plots_folder)
+        # generate_scatter_plots(df, target_col, algo_name, plots_folder)
+        # generate_rf_dependent_plots(df, target_col, algo_name, plots_folder)
         generate_parallel_coordinates_plot(df, target_col, algo_name, plots_folder)
