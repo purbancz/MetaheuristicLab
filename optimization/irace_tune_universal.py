@@ -58,12 +58,17 @@ problems = [
     Ackley(number_of_variables)
 ]
 
-parameter_spaces = {
-    'CMAES': [
-        Integer("mu", 2, 100),
-        Integer("lambda_", 10, 200),
-    ],
+cmaes_mu = Integer("mu", 2, 100)
+cmaes_lambda = Integer("lambda_", 10, 200)
 
+parameter_spaces = {
+    'CMAES': {
+        'params': [
+            cmaes_mu,
+            cmaes_lambda
+        ],
+        'forbidden': ["mu >= lambda_"]
+    },
     # 'AAAPSO': [
     #     Real("c1", 0.01, 6.0),
     #     Real("c2", 0.01, 6.0),
@@ -484,18 +489,22 @@ if __name__ == "__main__":
     best_configurations = {}
     output_file = "irace_best_configurations.json"
 
-    for algo_name, space_list in parameter_spaces.items():
+    for algo_name, space_config in parameter_spaces.items():
         current_algorithm = algo_name
         print(f"Optimizing parameters for {algo_name} ...")
 
-        parameter_space = ParameterSpace(params=space_list)
-        scenario = Scenario(max_experiments=budget * len(space_list), seed=42, n_jobs=48)
+        # Unpack the parameters list and the forbidden expression from the config
+        params_list = space_config['params']
+        forbidden_expression = space_config.get('forbidden', None)  # .get is safer
+
+        # Create the ParameterSpace using the extracted components
+        parameter_space = ParameterSpace(params=params_list, forbidden=forbidden_expression)
+
+        scenario = Scenario(max_experiments=budget * len(params_list), seed=42, n_jobs=48)
 
         result = irace(target_runner, parameter_space, scenario, return_df=True, remove_metadata=True)
         best_configurations[algo_name] = result
 
-        # Save results **after each algorithm**
+        # Save results after each algorithm
         with open(output_file, "w") as f:
             json.dump({k: v.to_json() for k, v in best_configurations.items()}, f, indent=4)
-
-        print(f"Saved best configuration for {algo_name} to {output_file}")
