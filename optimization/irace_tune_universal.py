@@ -411,10 +411,10 @@ def target_runner(experiment: Experiment, scenario: Scenario) -> float:
         # frac_final_str = ", ".join([f"{k.split('_')[0][:3]}={final_params.get(k, 0.0):.2f}" for k in all_special_fraction_keys if k in final_params])
         # print(f"  Using FullDisjoint Fractions: [{frac_final_str}]")
 
-    if current_algorithm == 'CMAES':
-        if 'mu' in repaired_config and 'lambda_' in repaired_config:
-            if repaired_config['mu'] >= repaired_config['lambda_']:
-                repaired_config['mu'] = max(2, int(repaired_config['lambda_'] / 2))
+    # if current_algorithm == 'CMAES':
+    #     if 'mu' in repaired_config and 'lambda_' in repaired_config:
+    #         if repaired_config['mu'] >= repaired_config['lambda_']:
+    #             repaired_config['mu'] = max(2, int(repaired_config['lambda_'] / 2))
 
 
     # --- No fraction normalization needed for Additive or other types ---
@@ -500,7 +500,7 @@ if __name__ == "__main__":
         # Create the ParameterSpace using the extracted components
         parameter_space = ParameterSpace(params=params_list, forbidden=forbidden_expression)
 
-        scenario = Scenario(max_experiments=budget * len(params_list), seed=42, n_jobs=48)
+        scenario = Scenario(max_experiments=budget * len(params_list), seed=42, n_jobs=48, verbose=1, log_file="irace.log")
 
         result = irace(target_runner, parameter_space, scenario, return_df=True, remove_metadata=True)
         best_configurations[algo_name] = result
