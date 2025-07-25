@@ -501,7 +501,7 @@ if __name__ == "__main__":
         # Create the ParameterSpace using the extracted components
         parameter_space = ParameterSpace(params=params_list, forbidden=forbidden_expression)
 
-        scenario = Scenario(max_experiments=budget * len(params_list), seed=42, n_jobs=48, log_file="irace.log")
+        scenario = Scenario(max_experiments=budget * len(params_list), seed=42, n_jobs=1)
 
         result = irace(target_runner, parameter_space, scenario, return_df=True, remove_metadata=True)
         best_configurations[algo_name] = result
