@@ -1,7 +1,7 @@
 import os
 from multiprocessing import cpu_count
 
-from experiment.runner import run_all_experiments_multi
+from experiment.runner import run_all_experiments_multi, run_all_experiments
 from experiment.setup import setup_experiment
 
 
@@ -38,3 +38,4 @@ if __name__ == "__main__":
      solutions_size, max_evaluations, frequency, algorithm_colors, results_dir) = setup_experiment()
 
     run_all_experiments_multi(num_parallel_workers=num_workers)
+    # run_all_experiments()

@@ -343,7 +343,6 @@ def setup_experiment():
         # ShiftedRotatedExpandedGriewankPlusRosenbrock(number_of_variables),
         # SchwefelN26(number_of_variables),
         # Mishra05(number_of_variables),
-        ShiftedRotatedExpandedScafferF6(number_of_variables),
 
     ]
 
@@ -369,7 +368,7 @@ def setup_experiment():
     problems = n_variables_problems + fixed_variables_problems
 
     algorithms = {
-        'PSO': factory_PSO,
+        # 'PSO': factory_PSO,
         # 'PerturbationPSO': factory_PerturbationPSO,
         # 'DrifterPSO': factory_DrifterPSO,
         # 'DAPSO': factory_DAPSO,

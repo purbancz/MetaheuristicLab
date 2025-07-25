@@ -1,16 +1,21 @@
+from typing import List
+
 from jmetal.core.observer import Observer
 
 
 class FitnessObserver(Observer):
     def __init__(self, interval: int = 1) -> None:
-        """Initialize observer with a specific update frequency."""
-        self.display_interval = interval
-        self.best_fitness_history = []
+        self.interval = interval
+        # the next eval count at which we want to sample
+        self.next_eval = interval
+        self.best_fitness_history: List[float] = []
 
     def update(self, *args, **kwargs):
-        solutions = kwargs["SOLUTIONS"]
+        solutions   = kwargs["SOLUTIONS"]
         evaluations = kwargs["EVALUATIONS"]
+        best_f       = solutions.objectives[0]
 
-        if evaluations % self.display_interval == 0:
-            self.best_fitness_history.append(solutions.objectives[0])
-            # print(f"Evaluations: {evaluations}, Best Fitness: {solutions.objectives[0]}")
+        # once we hit or exceed the next threshold, record and bump it
+        if evaluations >= self.next_eval:
+            self.best_fitness_history.append(best_f)
+            self.next_eval += self.interval
