@@ -7,6 +7,7 @@ import numpy as np
 from datetime import datetime
 import inspect  # Need inspect for filtering params
 
+import rpy2
 from jmetal.problem import Sphere
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
@@ -500,10 +501,16 @@ if __name__ == "__main__":
         # Create the ParameterSpace using the extracted components
         parameter_space = ParameterSpace(params=params_list, forbidden=forbidden_expression)
 
-        scenario = Scenario(max_experiments=budget * len(params_list), seed=42, n_jobs=48, verbose=1, log_file="irace.log")
+        scenario = Scenario(max_experiments=budget * len(params_list), seed=42, n_jobs=48, log_file="irace.log")
 
         result = irace(target_runner, parameter_space, scenario, return_df=True, remove_metadata=True)
         best_configurations[algo_name] = result
+
+        # 2. Load that RData into R’s global env (it creates `iraceResults`)
+        robjects.r['load']("irace.log")
+
+        # 3. Tell IRACE to dump the human‑readable log to a .txt file
+        robjects.r['save_irace_logfile'](robjects.r['iraceResults'], "irace.txt")
 
         # Save results after each algorithm
         with open(output_file, "w") as f:
