@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=drifter_algorithms_all_problems_1000dim
+#SBATCH --job-name=CMAES_100dim
 #SBATCH --output=slurm_logs/%x_%j.out # Log directory
 #SBATCH --error=slurm_logs/%x_%j.err  # Log directory
 #SBATCH --time=12:00:00           # Adjust time as needed
