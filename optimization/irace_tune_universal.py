@@ -22,6 +22,7 @@ from algorithm.particles_with_roles import RebelPSO, RejectorPSO, RebelRejectorP
     ContrarianDefeatistPSO, EschewerPSO, EscapistPSO, EschewerEscapistPSO, CDAPSO, EEAPSO, AAAPSO, NAPSO, CLAPSO, \
     DrifterPSO, DAPSO
 from algorithm.CMAES import CMAES
+from algorithm.LSHADE import LSHADE
 from algorithm.single_objective_PSO import SingleObjectivePSO
 from algorithm.reinitialized_PSO import FRAPSO
 from algorithm.NPSO import NPSO
@@ -59,17 +60,24 @@ problems = [
     Ackley(number_of_variables)
 ]
 
-cmaes_mu = Integer("mu", 2, 100)
-cmaes_lambda = Integer("lambda_", 10, 200)
-
 parameter_spaces = {
-    'CMAES': {
+    'LSHADE': {
         'params': [
-            cmaes_mu,
-            cmaes_lambda
-        ],
-        'forbidden': ["mu >= lambda_"]
+            Integer("pop_size_factor", 1, 50),
+            Integer("memory_size", 10, 200),
+            Real("p_best_rate", 0.05, 0.25),
+            Real("archive_rate", 1.0, 4.0)
+        ]
     },
+
+    # 'CMAES': {
+    #     'params': [
+    #         Integer("mu", 2, 100),
+    #         Integer("lambda_", 10, 200)
+    #     ],
+    #     'forbidden': ["mu >= lambda_"]
+    # },
+
     # 'AAAPSO': [
     #     Real("c1", 0.01, 6.0),
     #     Real("c2", 0.01, 6.0),

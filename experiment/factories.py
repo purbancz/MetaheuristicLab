@@ -3,6 +3,7 @@ from jmetal.util.termination_criterion import StoppingByEvaluations
 
 from algorithm.AdaptivePSO import CoAdaptativePSO, IndividualAdaptivePSO
 from algorithm.CMAES import CMAES
+from algorithm.LSHADE import LSHADE
 from algorithm.WAPSO import ReverseLearningPSO, ReverseLearningGlobalAttractorPSO, ReverseLearningPersonalAttractorPSO, \
     CombinedLearningPSO
 from algorithm.hybrid_diverse import HybridFullDisjointPSO, HybridPartialDisjointPSO, HybridAdditivePSO, \
@@ -13,7 +14,19 @@ from algorithm.particles_with_roles import RebelPSO, RejectorPSO, RebelRejectorP
     AmnesiacPSO, WandererPSO, AAAPSO, NoisyPSO, NAPSO, DrifterPSO, DAPSO
 from algorithm.reinitialized_PSO import PartialResetPSO, CollectiveResetPSO, FRAPSO
 from algorithm.single_objective_PSO import SingleObjectivePSO, PerturbationPSO
-from experiment.globals import G_SOLUTIONS_SIZE, G_MAX_EVALUATIONS
+from experiment.globals import G_SOLUTIONS_SIZE, G_MAX_EVALUATIONS, NUMBER_OF_VARIABLES
+
+
+def factory_LSHADE(p):
+    return LSHADE(
+        problem=p,
+        # initial_population_size=G_SOLUTIONS_SIZE,  # Or problem.number_of_variables * 18 as suggested in some contexts
+        pop_size_factor= 18,  # Or problem.number_of_variables * 18 as suggested in some contexts
+        termination_criterion=StoppingByEvaluations(G_MAX_EVALUATIONS), # Or max_evaluations=p.number_of_variables * 10000
+        memory_size=100,
+        p_best_rate=0.11,
+        archive_size_rate=2.6
+    )
 
 
 def factory_CMAES(p):

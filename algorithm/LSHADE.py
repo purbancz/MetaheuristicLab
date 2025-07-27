@@ -1,0 +1,209 @@
+import math
+import random
+import time
+from typing import List, Tuple, TypeVar
+
+import numpy as np
+
+from jmetal.config import store
+from jmetal.core.algorithm import Algorithm
+from jmetal.core.problem import FloatProblem
+from jmetal.core.solution import FloatSolution
+from jmetal.util.comparator import ObjectiveComparator
+from jmetal.util.evaluator import Evaluator
+from jmetal.util.termination_criterion import (StoppingByEvaluations,
+                                               TerminationCriterion)
+
+S = TypeVar("S", bound=FloatSolution)
+R = TypeVar("R")
+
+
+class LSHADE(Algorithm[S, R]):
+    """
+    A complete and corrected implementation of the L-SHADE algorithm,
+    fully compatible with the jmetalpy Algorithm class.
+    """
+
+    def __init__(
+            self,
+            problem: FloatProblem,
+            termination_criterion: TerminationCriterion,
+            evaluator: Evaluator = store.default_evaluator,
+            initial_population_size: int = 0,
+            pop_size_factor: int = 18,
+            memory_size: int = 100,
+            p_best_rate: float = 0.11,
+            archive_size_rate: float = 2.6,
+    ):
+        super().__init__()
+        self.problem = problem
+        self.initial_population_size = problem.number_of_variables() * pop_size_factor if initial_population_size == 0\
+            else initial_population_size
+        self.population_size = self.initial_population_size
+        self.termination_criterion = termination_criterion
+        self.evaluator = evaluator
+        self.observable.register(self.termination_criterion)
+        self.comparator = ObjectiveComparator(0)
+
+        # L-SHADE specific parameters
+        self.memory_size = memory_size
+        self.p_best_rate = p_best_rate
+        self.archive_size_rate = archive_size_rate
+
+        self.archive: List[S] = []
+        self.memory_cr = [0.5] * self.memory_size
+        self.memory_f = [0.5] * self.memory_size
+        self.memory_pos = 0
+
+    def create_initial_solutions(self) -> List[S]:
+        """Creates the initial list of solutions."""
+        return [self.problem.create_solution() for _ in range(self.initial_population_size)]
+
+    def evaluate(self, solution_list: List[S]) -> List[S]:
+        """Evaluates a solution list."""
+        return self.evaluator.evaluate(solution_list, self.problem)
+
+    def stopping_condition_is_met(self) -> bool:
+        """Checks if the termination criterion is met."""
+        return self.termination_criterion.is_met
+
+    def init_progress(self) -> None:
+        """Initializes the progress variables of the algorithm."""
+        self.evaluations = self.initial_population_size
+        observable_data = self.observable_data()
+        self.observable.notify_all(**observable_data)
+
+    def step(self) -> None:
+        """Performs one iteration of the L-SHADE algorithm."""
+        reproduction_output = self.reproduction(self.solutions)
+        offspring_population = [item[0] for item in reproduction_output]
+        self.evaluate(offspring_population)
+        self.solutions = self.replacement(self.solutions, reproduction_output)
+
+    def update_progress(self) -> None:
+        """
+        Updates the progress variables of the algorithm. This is called
+        by the `run()` method after each `step()`.
+        """
+        # The number of new evaluations is the current population size.
+        self.evaluations += self.population_size
+        observable_data = self.observable_data()
+        self.observable.notify_all(**observable_data)
+
+    def reproduction(self, population: List[S]) -> List[Tuple[S, float, float]]:
+        """
+        Generates offspring and returns them with their CR/F values.
+        """
+        reproduction_result: List[Tuple[S, float, float]] = []
+        for i in range(self.population_size):
+            mem_rand_index = random.randint(0, self.memory_size - 1)
+            mu_cr = self.memory_cr[mem_rand_index]
+            mu_f = self.memory_f[mem_rand_index]
+
+            cr = np.clip(np.random.normal(mu_cr, 0.1), 0, 1)
+
+            while True:
+                f = np.random.standard_cauchy() * 0.1 + mu_f
+                if f > 0:
+                    break
+            f = min(f, 1.0)
+
+            num_p_best = max(1, math.ceil(self.population_size * self.p_best_rate))
+            p_best_index = random.randint(0, num_p_best - 1)
+            p_best = sorted(population, key=lambda s: s.objectives[0])[p_best_index]
+
+            combined_pop = population + self.archive
+            r1_index, r2_index = random.sample(range(len(combined_pop)), 2)
+            r1, r2 = combined_pop[r1_index], combined_pop[r2_index]
+
+            mutant = self.problem.create_solution()
+            current_vars, pbest_vars = population[i].variables, p_best.variables
+            r1_vars, r2_vars = r1.variables, r2.variables
+
+            for j in range(self.problem.number_of_variables()):
+                mutant.variables[j] = current_vars[j] + f * (pbest_vars[j] - current_vars[j]) + f * (
+                        r1_vars[j] - r2_vars[j])
+
+            trial = self.problem.create_solution()
+            j_rand = random.randrange(self.problem.number_of_variables())
+            for j in range(self.problem.number_of_variables()):
+                if random.random() < cr or j == j_rand:
+                    trial.variables[j] = mutant.variables[j]
+                else:
+                    trial.variables[j] = current_vars[j]
+
+            # --- DELETED ---
+            # self.problem.evaluate_constraints(trial)
+
+            # +++ ADDED: Manual bound checking +++
+            trial.variables = np.clip(trial.variables, self.problem.lower_bound, self.problem.upper_bound).tolist()
+
+            reproduction_result.append((trial, cr, f))
+        return reproduction_result
+
+    def replacement(self, population: List[S], offspring_data: List[Tuple[S, float, float]]) -> List[S]:
+        """
+        Determines the next generation, updates archive/memory, and performs LPSR.
+        """
+        new_population = []
+        successful_f = []
+        successful_cr = []
+        fitness_improvements = []
+
+        for i in range(self.population_size):
+            parent = population[i]
+            offspring_solution, cr, f = offspring_data[i]
+            if self.comparator.compare(offspring_solution, parent) < 0:
+                new_population.append(offspring_solution)
+                self.archive.append(parent)
+                fitness_imp = parent.objectives[0] - offspring_solution.objectives[0]
+                successful_f.append(f)
+                successful_cr.append(cr)
+                fitness_improvements.append(fitness_imp)
+            else:
+                new_population.append(parent)
+
+        archive_size_limit = int(self.initial_population_size * self.archive_size_rate)
+        while len(self.archive) > archive_size_limit:
+            self.archive.pop(random.randrange(len(self.archive)))
+
+        if successful_cr:
+            if sum(fitness_improvements) > 0:
+                weights = np.array(fitness_improvements) / sum(fitness_improvements)
+                mean_f = np.sum(weights * np.array(successful_f) ** 2) / np.sum(weights * np.array(successful_f))
+                mean_cr = np.sum(weights * np.array(successful_cr))
+            else:  # Handle case where all improvements are zero
+                mean_f = np.mean(successful_f)
+                mean_cr = np.mean(successful_cr)
+
+            self.memory_f[self.memory_pos] = mean_f
+            self.memory_cr[self.memory_pos] = mean_cr
+            self.memory_pos = (self.memory_pos + 1) % self.memory_size
+
+        if isinstance(self.termination_criterion, StoppingByEvaluations):
+            max_evals = self.termination_criterion.max_evaluations
+            current_evals = self.evaluations
+            next_pop_size = round(
+                ((4 - self.initial_population_size) / max_evals) * current_evals + self.initial_population_size)
+            next_pop_size = max(4, next_pop_size)
+
+            if next_pop_size < self.population_size:
+                self.population_size = next_pop_size
+                new_population = sorted(new_population, key=lambda s: s.objectives[0])[:self.population_size]
+        return new_population
+
+    def result(self) -> R:
+        """Returns the best solution found so far."""
+        return min(self.solutions, key=lambda s: s.objectives[0])
+
+    def get_name(self) -> str:
+        return "L-SHADE"
+
+    def observable_data(self) -> dict:
+        return {
+            "PROBLEM": self.problem,
+            "EVALUATIONS": self.evaluations,
+            "SOLUTIONS": self.result(),
+            "POPULATION_SIZE": self.population_size,
+            "COMPUTING_TIME": time.time() - self.start_computing_time,
+        }

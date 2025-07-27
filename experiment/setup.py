@@ -12,7 +12,8 @@ from experiment.factories import factory_PSO, factory_RebelPSO, factory_Rejector
     factory_PerturbationPSO, factory_PartialResetPSO, factory_CollectiveResetPSO, factory_FRAPSO, \
     factory_HybridFullDisjointPSO, factory_HybridPartialDisjointPSO, factory_HybridAdditivePSO, \
     factory_HybridFullDisjointRestarterPSO, factory_HybridPartialDisjointRestarterPSO, \
-    factory_HybridAdditiveRestarterPSO, factory_CAPSO, factory_IAPSO, factory_DrifterPSO, factory_DAPSO, factory_CMAES
+    factory_HybridAdditiveRestarterPSO, factory_CAPSO, factory_IAPSO, factory_DrifterPSO, factory_DAPSO, factory_CMAES, \
+    factory_LSHADE
 from experiment.globals import NO_OF_RUNS, NUMBER_OF_VARIABLES, G_SOLUTIONS_SIZE, G_MAX_EVALUATIONS, RESULTS_DIR
 
 from algorithm.AdaptivePSO import CoAdaptativePSO, IndividualAdaptivePSO
@@ -175,6 +176,7 @@ def setup_experiment():
         ],
         'SOTA': [
             'CMAES',
+            'LSHADE',
         ]
     }
 
@@ -409,7 +411,8 @@ def setup_experiment():
         # 'HybridAdditiveRestarterPSO': factory_HybridAdditiveRestarterPSO,
         # 'CAPSO': factory_CAPSO,
         # 'IAPSO': factory_IAPSO,
-        'CMAES': factory_CMAES,
+        # 'CMAES': factory_CMAES,
+        'LSHADE': factory_LSHADE,
     }
 
     # helper to flatten some groups
