@@ -132,10 +132,6 @@ class LSHADE(Algorithm[S, R]):
                 else:
                     trial.variables[j] = current_vars[j]
 
-            # --- DELETED ---
-            # self.problem.evaluate_constraints(trial)
-
-            # +++ ADDED: Manual bound checking +++
             trial.variables = np.clip(trial.variables, self.problem.lower_bound, self.problem.upper_bound).tolist()
 
             reproduction_result.append((trial, cr, f))

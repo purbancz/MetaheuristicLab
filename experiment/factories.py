@@ -20,12 +20,12 @@ from experiment.globals import G_SOLUTIONS_SIZE, G_MAX_EVALUATIONS, NUMBER_OF_VA
 def factory_LSHADE(p):
     return LSHADE(
         problem=p,
-        # initial_population_size=G_SOLUTIONS_SIZE,  # Or problem.number_of_variables * 18 as suggested in some contexts
-        pop_size_factor= 18,  # Or problem.number_of_variables * 18 as suggested in some contexts
+        initial_population_size=G_SOLUTIONS_SIZE,  # Or problem.number_of_variables * 18 as suggested in some contexts
+        # pop_size_factor= 18,  # Or problem.number_of_variables * 18 as suggested in some contexts
         termination_criterion=StoppingByEvaluations(G_MAX_EVALUATIONS), # Or max_evaluations=p.number_of_variables * 10000
-        memory_size=100,
-        p_best_rate=0.11,
-        archive_size_rate=2.6
+        memory_size=25,
+        p_best_rate=0.158,
+        archive_size_rate=2.237
     )
 
 
