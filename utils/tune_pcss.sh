@@ -14,8 +14,7 @@
 
 # Load modules and activate the conda environment
 module load miniconda3
-conda init
-eval "$(conda shell.bash hook)"
+source ~/.bashrc
 conda activate jmetal12
 
 # Log start time

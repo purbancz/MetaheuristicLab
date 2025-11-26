@@ -28,8 +28,8 @@ echo "Loading modules..."
 module load miniconda3
 
 echo "Activating Conda environment..."
-source $(conda info --base)/etc/profile.d/conda.sh
-conda activate jmetal12 # Your environment name
+source ~/.bashrc
+conda activate jmetal12
 echo "Python executable: $(which python)"
 echo "Conda env: $CONDA_DEFAULT_ENV"
 
