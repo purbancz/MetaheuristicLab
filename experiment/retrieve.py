@@ -2,12 +2,12 @@ import csv
 import glob
 import os
 import pickle
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from datetime import datetime
 import numpy as np
 import scikit_posthocs as sp
 import pandas as pd
-from scipy.stats import kruskal, f_oneway, shapiro
+from scipy.stats import kruskal, f_oneway, shapiro, mannwhitneyu
 from statsmodels.stats.multicomp import pairwise_tukeyhsd
 from scikit_posthocs import posthoc_dunn
 
@@ -382,11 +382,11 @@ def plot_combined_data_from_pickles(pickle_files):
             # plot_results_with_annotations(filtered_results, matched_problem, dimensions_dir, max_evaluations,
             #                               total_runs, algorithm_colors, group_name)
 
-            # plot_results_with_annotations_legend(filtered_results, matched_problem, dimensions_dir, max_evaluations,
-            #                               total_runs, algorithm_colors, group_name)
-
             plot_results_with_annotations_legend(filtered_results, matched_problem, dimensions_dir, max_evaluations,
-                                                 total_runs, algorithm_colors, group_name, log_scale=True)
+                                          total_runs, algorithm_colors, group_name)
+
+            # plot_results_with_annotations_legend(filtered_results, matched_problem, dimensions_dir, max_evaluations,
+            #                                      total_runs, algorithm_colors, group_name, log_scale=True)
 
             # plot_results_with_std(filtered_results, matched_problem, dimensions_dir, max_evaluations, total_runs,
             #                       algorithm_colors, group_name)
@@ -408,10 +408,10 @@ def plot_combined_data_from_pickles(pickle_files):
 
             # plot_final_petit_prince(filtered_results, matched_problem, dimensions_dir, algorithm_colors)
 
-            # plot_final_petit_prince(filtered_results, matched_problem, dimensions_dir, algorithm_colors)
+            plot_final_petit_prince(filtered_results, matched_problem, dimensions_dir, algorithm_colors)
 
-            plot_final_petit_prince(filtered_results, matched_problem, dimensions_dir, algorithm_colors,
-                                    log_scale=True)
+            # plot_final_petit_prince(filtered_results, matched_problem, dimensions_dir, algorithm_colors,
+            #                         log_scale=True)
 
             # plot_final_petit_prince(filtered_results, matched_problem, dimensions_dir, algorithm_colors,
             #                         adaptive_width=True)
@@ -763,3 +763,213 @@ def extract_results_to_csv(pickle_files, output_prefix="aggregated_results", bas
         except Exception as e: print(f"  An unexpected error occurred during CSV generation for group (Dim={dimension}, Runs={effective_runs}): {e}")
 
     print("\nFinished processing all groups.")
+
+
+# ---------------------------------------------
+# Wilcoxon (rank-sum) vs PSO baselines – Better/Worse/Similar
+# ---------------------------------------------
+def wilcoxon_rank_sum_vs_baselines(
+    pickle_files,
+    baselines_display_to_key = OrderedDict([
+        ("Canonical PSO", "PSO"),
+        ("PerturbationPSO", "PerturbationPSO")
+    ]),
+    alpha=0.05,
+    lower_is_better=True,
+    min_group_size=2,
+    output_prefix="wilcoxon_summary",
+    base_results_dir=results_dir,
+    algo_groups=None,
+    print_examples=False,
+):
+
+    allowed_set = (set(algo_groups.keys()) if algo_groups else set()) \
+                  | set(baselines_display_to_key.values())
+
+    print("Loading data from pickle files...")
+    data_list = [load_data_from_pickle(fp) for fp in pickle_files]
+    valid_data_list = [d for d in data_list if d is not None]
+    if not valid_data_list:
+        print("Error: No valid data loaded from any pickle files.")
+        return None
+
+    print("Combining loaded data...")
+    combined_data_dict, total_runs = combine_data(valid_data_list)
+    if not combined_data_dict:
+        print("Error: Data combination resulted in empty dictionary.")
+        return None
+    print(f"Data combined successfully. Total effective runs: {total_runs}")
+
+    def _final_values_from_algo_data(algo_data):
+        if 'data' not in algo_data or not isinstance(algo_data['data'], np.ndarray):
+            return None
+        arr = algo_data['data']
+        if arr.size == 0:
+            return None
+        if arr.ndim == 2:
+            final_vals = arr[:, -1]
+        elif arr.ndim == 1:
+            final_vals = arr
+        else:
+            return None
+        final_vals = final_vals[np.isfinite(final_vals)]
+        return final_vals if final_vals.size > 0 else None
+
+
+    counts = defaultdict(lambda: {disp: {"better": 0, "worse": 0, "similar": 0}
+                                  for disp in baselines_display_to_key.keys()})
+    total_test_cases_by_baseline = {disp: 0 for disp in baselines_display_to_key.keys()}
+
+    print("\nStarting Wilcoxon (rank-sum) analysis...")
+    for problem_name, problem_data in combined_data_dict.items():
+        dim = problem_data.get('n_vars', 'Unknown')
+        results = problem_data.get('results', {})
+        if not results:
+            continue
+
+        finals = {}
+        for algo, a_data in results.items():
+            if algo not in allowed_set:
+                continue  # pomijamy intruzów
+            v = _final_values_from_algo_data(a_data)
+            if v is not None and v.size >= min_group_size:
+                finals[algo] = v
+
+        baseline_vectors = {}
+        for disp, key in baselines_display_to_key.items():
+            if key in finals:
+                baseline_vectors[disp] = finals[key]
+
+        if not baseline_vectors:
+            continue
+
+        for algo, vals in finals.items():
+            if algo in baselines_display_to_key.values():
+                continue
+
+            for disp, base_vals in baseline_vectors.items():
+                total_test_cases_by_baseline[disp] += 1
+
+                try:
+                    stat = mannwhitneyu(vals, base_vals, alternative='two-sided', method='auto')
+                    p = stat.pvalue
+                except Exception as e:
+                    print(f"[WARN] mannwhitneyu failed on {problem_name} (dim={dim}) {algo} vs {disp}: {e}")
+                    counts[algo][disp]["similar"] += 1
+                    continue
+
+                algo_med = np.median(vals)
+                base_med = np.median(base_vals)
+
+                if p < alpha:
+                    if lower_is_better:
+                        if algo_med < base_med:
+                            counts[algo][disp]["better"] += 1
+                            if print_examples:
+                                print(f"[+] {algo} better than {disp} on {problem_name} (dim={dim}) p={p:.3g} med {algo_med:.4g}<{base_med:.4g}")
+                        elif algo_med > base_med:
+                            counts[algo][disp]["worse"]  += 1
+                            if print_examples:
+                                print(f"[-] {algo} worse  than {disp} on {problem_name} (dim={dim}) p={p:.3g} med {algo_med:.4g}>{base_med:.4g}")
+                        else:
+                            counts[algo][disp]["similar"] += 1
+                    else:
+                        if algo_med > base_med:
+                            counts[algo][disp]["better"] += 1
+                        elif algo_med < base_med:
+                            counts[algo][disp]["worse"]  += 1
+                        else:
+                            counts[algo][disp]["similar"] += 1
+                else:
+                    counts[algo][disp]["similar"] += 1
+
+    col_tuples = []
+    for disp in baselines_display_to_key.keys():
+        col_tuples.extend([
+            (f"vs. {disp}", "Better (+)"),
+            (f"vs. {disp}", "Worse (-)"),
+            (f"vs. {disp}", "Similar (=)"),
+        ])
+    columns = pd.MultiIndex.from_tuples(col_tuples)
+
+    algos_sorted = sorted(counts.keys())
+    data_rows = []
+    for algo in algos_sorted:
+        row = []
+        for disp in baselines_display_to_key.keys():
+            c = counts[algo][disp]
+            row.extend([c["better"], c["worse"], c["similar"]])
+        data_rows.append(row)
+
+    summary_df = pd.DataFrame(data_rows, index=algos_sorted, columns=columns)
+
+    out_dir = os.path.join(base_results_dir, "wilcoxon_vs_baselines")
+    make_dir(out_dir)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    csv_path = os.path.join(out_dir, f"{output_prefix}_{timestamp}.csv")
+    summary_df.to_csv(csv_path, encoding="utf-8")
+    print(f"\nSaved Wilcoxon summary CSV to: {csv_path}")
+
+    latex_str = None
+    if algo_groups is not None and len(algo_groups) > 0:
+        grouped = OrderedDict()
+        for algo in algos_sorted:
+            grp = algo_groups.get(algo, "Other")
+            grouped.setdefault(grp, []).append(algo)
+
+        left_col_name = r"\textbf{Algorithm}"
+        header = []
+        header.append(r"\begin{table}[h!]")
+        header.append(r"\centering")
+        header.append(r"\caption{Summary of Wilcoxon rank-sum test results ($p<%.3g$) for all proposed algorithms against PSO baselines.}" % alpha)
+        header.append(r"\label{tab:wilcoxon-summary}")
+        header.append(r"\resizebox{\textwidth}{!}{")
+        header.append(r"\begin{tabular}{l" + "ccc"*len(baselines_display_to_key) + "}")
+        header.append(r"\toprule")
+
+        upper = [""]
+        for disp in baselines_display_to_key.keys():
+            upper.append(r"\multicolumn{3}{c}{\textbf{vs. %s}}" % disp)
+        header.append(" & ".join(upper) + r" \\")
+        cmis = []
+        start_col = 2
+        for i in range(len(baselines_display_to_key)):
+            end_col = start_col + 2
+            cmis.append(r"\cmidrule(lr){%d-%d}" % (start_col, end_col))
+            start_col = end_col + 1
+        header.append(" ".join(cmis))
+
+        lower = [left_col_name]
+        for _ in baselines_display_to_key.keys():
+            lower.extend([r"\textbf{Better (+)}", r"\textbf{Worse (-)}", r"\textbf{Similar (=)}"])
+        header.append(" & ".join(lower) + r" \\")
+        header.append(r"\midrule")
+
+        rows = []
+        for grp, algos in grouped.items():
+            rows.append(r"\textbf{%s} \\" % grp)
+            for algo in algos:
+                fields = [algo]
+                for disp in baselines_display_to_key.keys():
+                    c = counts[algo][disp]
+                    fields.extend([str(c["better"]), str(c["worse"]), str(c["similar"])])
+                rows.append(" & ".join(fields) + r" \\")
+            rows.append(r"\midrule")
+
+        footer = [r"\bottomrule", r"\end{tabular}", r"}", r"\end{table}"]
+
+        latex_str = "\n".join(header + rows + footer)
+        tex_path = os.path.join(out_dir, f"{output_prefix}_{timestamp}.tex")
+        with open(tex_path, "w", encoding="utf-8") as f:
+            f.write(latex_str)
+        print(f"Saved LaTeX table to: {tex_path}")
+
+    print("\nTotal test cases per baseline (problem × dimension where both had data):")
+    for disp, n in total_test_cases_by_baseline.items():
+        print(f"  {disp}: {n}")
+
+    return {
+        "summary_df": summary_df,
+        "csv_path": csv_path,
+        "latex": latex_str
+    }

@@ -2,7 +2,7 @@ import os
 from multiprocessing import cpu_count
 
 from experiment.retrieve import plot_all_from_pickle, plot_combined_data_from_pickles, kruskal_wallis_with_posthoc, \
-    extract_results_to_csv, collect_pickle_files_from_paths
+    extract_results_to_csv, collect_pickle_files_from_paths, wilcoxon_rank_sum_vs_baselines
 from experiment.runner import run_all_experiments, run_all_experiments_multi
 
 if __name__ == "__main__":
@@ -49,8 +49,44 @@ if __name__ == "__main__":
 
 
     # plot_all_from_pickle(pkl_files[0])
-    plot_combined_data_from_pickles(pkl_files)
+    # plot_combined_data_from_pickles(pkl_files)
 
     # kruskal_wallis_with_posthoc(pkl_files)
+    # wilcoxon_rank_sum_vs_baselines(pkl_files)
+
+    algo_groups = {
+        # Opposing-Best Strategies
+        "RebelPSO": "Opposing-Best Strategies",
+        "RejectorPSO": "Opposing-Best Strategies",
+        "RebelRejectorPSO": "Opposing-Best Strategies",
+
+        # Attraction-to-Worst Strategies
+        "ContrarianPSO": "Attraction-to-Worst Strategies",
+        "DefeatistPSO": "Attraction-to-Worst Strategies",
+        "ContrarianDefeatistPSO": "Attraction-to-Worst Strategies",
+
+        # Opposing-Worst Strategies
+        "EschewerPSO": "Opposing-Worst Strategies",
+        "EscapistPSO": "Opposing-Worst Strategies",
+        "EschewerEscapistPSO": "Opposing-Worst Strategies",
+
+        # Multi-Hybrid Strategies
+        "HybridFullDisjointPSO": "Multi-Hybrid Strategies",
+        "HybridPartialDisjointPSO": "Multi-Hybrid Strategies",
+        "HybridAdditivePSO": "Multi-Hybrid Strategies",
+
+        # SOTA
+        "CMAES": "SOTA",
+        "LSHADE": "SOTA",
+    }
+
+    wilcoxon_rank_sum_vs_baselines(
+        pkl_files,
+        algo_groups=algo_groups,
+        lower_is_better=True,
+        alpha=0.05,
+        print_examples=False
+    )
+
 
     # extract_results_to_csv(pkl_files, output_prefix="all_algorithms_all_problems")
