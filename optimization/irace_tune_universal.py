@@ -20,7 +20,7 @@ from algorithm.WAPSO import ReverseLearningGlobalAttractorPSO, CombinedLearningP
     ReverseLearningPSO
 from algorithm.particles_with_roles import RebelPSO, RejectorPSO, RebelRejectorPSO, RRAPSO, ContrarianPSO, DefeatistPSO, \
     ContrarianDefeatistPSO, EschewerPSO, EscapistPSO, EschewerEscapistPSO, CDAPSO, EEAPSO, AAAPSO, NAPSO, CLAPSO, \
-    DrifterPSO, DAPSO
+    DrifterPSO, DAPSO, AnarchicAmnesiacPSO
 from algorithm.CMAES import CMAES
 from algorithm.LSHADE import LSHADE
 from algorithm.single_objective_PSO import SingleObjectivePSO
@@ -61,14 +61,24 @@ problems = [
 ]
 
 parameter_spaces = {
-    'LSHADE': {
-        'params': [
-            Integer("pop_size_factor", 1, 50),
-            Integer("memory_size", 10, 200),
-            Real("p_best_rate", 0.05, 0.25),
-            Real("archive_rate", 1.0, 4.0)
-        ]
-    },
+    'AnarchicAmnesiacPSO': [
+        Real("c1", 0.01, 6.0),
+        Real("c2", 0.01, 6.0),
+        Real("w", 0.01, 1.0),
+        Real("anarchic_fraction", 0.01, 0.98),
+        Real("amnesiac_fraction", 0.01, 0.98),
+        Real("random_strength_social", 0.01, 6.0),
+        Real("random_strength_cognitive", 0.01, 6.0),
+    ],
+
+    # 'LSHADE': {
+    #     'params': [
+    #         Integer("pop_size_factor", 1, 50),
+    #         Integer("memory_size", 10, 200),
+    #         Real("p_best_rate", 0.05, 0.25),
+    #         Real("archive_rate", 1.0, 4.0)
+    #     ]
+    # },
 
     # 'CMAES': {
     #     'params': [

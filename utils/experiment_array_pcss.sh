@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=experiment_test
-#SBATCH --output=%x_%j.out
-#SBATCH --error=%x_%j.err
+#SBATCH --job-name=informed_and_uninformed_diversity_PSO
+#SBATCH --output=slurm_logs/%x_%j.out
+#SBATCH --error=slurm_logs/%x_%j.err
 #SBATCH --time=1:00:00
 #SBATCH --partition=fast          # standard/fast/long/tesla
 #SBATCH --account=pl0590-01

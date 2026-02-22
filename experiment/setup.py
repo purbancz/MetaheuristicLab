@@ -13,7 +13,7 @@ from experiment.factories import factory_PSO, factory_RebelPSO, factory_Rejector
     factory_HybridFullDisjointPSO, factory_HybridPartialDisjointPSO, factory_HybridAdditivePSO, \
     factory_HybridFullDisjointRestarterPSO, factory_HybridPartialDisjointRestarterPSO, \
     factory_HybridAdditiveRestarterPSO, factory_CAPSO, factory_IAPSO, factory_DrifterPSO, factory_DAPSO, factory_CMAES, \
-    factory_LSHADE
+    factory_LSHADE, factory_AnarchicAmnesiacPSO
 from experiment.globals import NO_OF_RUNS, NUMBER_OF_VARIABLES, G_SOLUTIONS_SIZE, G_MAX_EVALUATIONS, RESULTS_DIR
 
 from algorithm.AdaptivePSO import CoAdaptativePSO, IndividualAdaptivePSO
@@ -100,8 +100,6 @@ BASE_GROUP_COLORS = {
     'SOTA': '#ff7f0e',  # orange
 }
 
-
-
 LINE_STYLES = ['-', '--', '-.', ':', (0, (3, 1, 1, 1)),
                # (0, (5, 1)), (0, (1, 1))
                ]
@@ -147,6 +145,7 @@ def setup_experiment():
             'AnarchicPSO',
             'AmnesiacPSO',
             'WandererPSO',
+            'AnarchicAmnesiacPSO'
             'AAAPSO',
             'NoisyPSO',
             'NAPSO',
@@ -338,7 +337,6 @@ def setup_experiment():
         # ShubertN1(number_of_variables),
         # AlpineN2(number_of_variables),
 
-
         ## final rejection
         # ShiftedRotatedRosenbrock(number_of_variables),
         # ShiftedRotatedSchwefel(number_of_variables),
@@ -370,7 +368,7 @@ def setup_experiment():
     problems = n_variables_problems + fixed_variables_problems
 
     algorithms = {
-        'PSO': factory_PSO,
+        # 'PSO': factory_PSO,
         # 'PerturbationPSO': factory_PerturbationPSO,
         # 'DrifterPSO': factory_DrifterPSO,
         # 'DAPSO': factory_DAPSO,
@@ -393,6 +391,7 @@ def setup_experiment():
         # 'CLAPSO': factory_CLAPSO,
         # 'AnarchicPSO': factory_AnarchicPSO,
         # 'AmnesiacPSO': factory_AmnesiacPSO,
+        'AnarchicAmnesiacPSO': factory_AnarchicAmnesiacPSO,
         # 'WandererPSO': factory_WandererPSO,
         # 'AAAPSO': factory_AAAPSO,
         # 'NoisyPSO': factory_NoisyPSO,
@@ -419,7 +418,11 @@ def setup_experiment():
     def flatten_group_keys(keys):
         return list(chain.from_iterable(groups[k] for k in keys))
 
-    exclude_groups = ['Reverse learning', 'Variable coefficient', 'Combined learning', 'Noisy', 'Anarchic', 'Reset']
+    exclude_groups = ['Reverse learning', 'Variable coefficient', 'Combined learning', 'Reset',
+                      # 'Noisy',
+                      # 'Anarchic',
+                      'SOTA', 'Hybrid'
+                      ]
     adaptive_algorithms = ['RRAPSO', 'CDAPSO', 'EEAPSO', 'AAAPSO', 'CLAPSO', 'NAPSO', 'DAPSO']
     all_without_additive = flatten_group_keys(
         [g for g in groups if g not in exclude_groups]
@@ -446,7 +449,9 @@ def setup_experiment():
 
         'All selected algorithms':
             ['PerturbationPSO'] + [alg for alg in all_without_additive if
-                                   alg not in ['DrifterPSO', 'DAPSO', 'FRAPSO'] + adaptive_algorithms],
+                                   alg not in [
+                                       # 'DrifterPSO',
+                                               'DAPSO', 'FRAPSO'] + adaptive_algorithms],
     }
 
     group_of_algorithms = {

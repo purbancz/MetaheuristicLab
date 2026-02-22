@@ -37,9 +37,9 @@ if __name__ == "__main__":
     # ]
 
     paths = [
-        'experiment_results/dim100_runs50',
+        # 'experiment_results/dim100_runs50',
         # 'experiment_results/dim500_runs50',
-        # 'experiment_results/dim1000_runs50',
+        'experiment_results/dim1000_runs50',
         # 'experiment_results/wybrane/100',
         # 'experiment_results/wybrane/500',
         # 'experiment_results/wybrane/1000',
@@ -70,14 +70,22 @@ if __name__ == "__main__":
         "EscapistPSO": "Opposing-Worst Strategies",
         "EschewerEscapistPSO": "Opposing-Worst Strategies",
 
-        # Multi-Hybrid Strategies
-        "HybridFullDisjointPSO": "Multi-Hybrid Strategies",
-        "HybridPartialDisjointPSO": "Multi-Hybrid Strategies",
-        "HybridAdditivePSO": "Multi-Hybrid Strategies",
+        #Random Strategies
+        "AnarchicPSO": "Explicit Randomization Strategies",
+        "AmnesiacPSO": "Explicit Randomization Strategies",
+        "WandererPSO": "Explicit Randomization Strategies",
+        "NoisyPSO": "Explicit Randomization Strategies",
+        "DrifterPSO": "Explicit Randomization Strategies",
+        "PerturbationPSO": "Explicit Randomization Strategies",
 
-        # SOTA
-        "CMAES": "SOTA",
-        "LSHADE": "SOTA",
+        # # Multi-Hybrid Strategies
+        # "HybridFullDisjointPSO": "Multi-Hybrid Strategies",
+        # "HybridPartialDisjointPSO": "Multi-Hybrid Strategies",
+        # "HybridAdditivePSO": "Multi-Hybrid Strategies",
+        #
+        # # SOTA
+        # "CMAES": "SOTA",
+        # "LSHADE": "SOTA",
     }
 
     wilcoxon_rank_sum_vs_baselines(
@@ -89,4 +97,4 @@ if __name__ == "__main__":
     )
 
 
-    # extract_results_to_csv(pkl_files, output_prefix="all_algorithms_all_problems")
+    extract_results_to_csv(pkl_files, output_prefix="all_algorithms_all_problems")

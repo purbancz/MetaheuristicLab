@@ -911,6 +911,93 @@ class AmnesiacPSO(SingleObjectivePSO, RoleMixin):
         return "AmnesiacPSO"
 
 
+class AnarchicAmnesiacPSO(SingleObjectivePSO, RoleMixin):
+    """
+    PSO with both anarchic and amnesiac particles (disjoint roles).
+
+    - Anarchic particles replace the social component with a scaled random vector.
+    - Amnesiac particles replace the cognitive component with a scaled random vector.
+    - Others follow standard PSO update.
+    """
+
+    def __init__(self,
+                 problem: FloatProblem,
+                 swarm_size: int,
+                 termination_criterion: TerminationCriterion,
+                 w: float,
+                 c1: float,
+                 c2: float,
+                 random_strength_social: float,
+                 random_strength_cognitive: float,
+                 anarchic_fraction: float,
+                 amnesiac_fraction: float,
+                 constraint_handling_mode: str = "clip"):
+
+        super().__init__(problem, swarm_size, c1, c2, w, termination_criterion, constraint_handling_mode)
+
+        self.w = w
+        self.c1 = c1
+        self.c2 = c2
+
+        self.random_strength_social = random_strength_social
+        self.random_strength_cognitive = random_strength_cognitive
+
+        self.anarchic_fraction = max(0.0, min(1.0, anarchic_fraction))
+        self.amnesiac_fraction = max(0.0, min(1.0, amnesiac_fraction))
+
+    def _mark_special_particles(self, swarm: List[S]) -> None:
+        # Mark anarchics first
+        self.mark_particles(swarm, self.anarchic_fraction, 'is_anarchic')
+
+        # Mark amnesiacs among the remaining (disjoint sets)
+        total = len(swarm)
+        desired_amnesiacs = max(1, int(total * self.amnesiac_fraction))
+
+        num_anarchics = sum(1 for p in swarm if p.attributes.get('is_anarchic', False))
+        non_anarchic_count = total - num_anarchics
+
+        effective_fraction = (desired_amnesiacs / non_anarchic_count) if non_anarchic_count > 0 else 1.0
+        effective_fraction = min(1.0, effective_fraction)
+
+        non_anarchics = [p for p in swarm if not p.attributes.get('is_anarchic', False)]
+        self.mark_particles(non_anarchics, effective_fraction, 'is_amnesiac')
+
+    def create_initial_solutions(self) -> List[S]:
+        solutions = super().create_initial_solutions()
+        self._mark_special_particles(solutions)
+        return solutions
+
+    def update_velocity(self, swarm: List[S]) -> None:
+        g_best = np.array(self.best_global.variables)
+        dim = self.problem.number_of_variables()
+
+        for particle in swarm:
+            current_pos = np.array(particle.variables)
+            current_vel = np.array(particle.attributes['velocity'])
+            p_best = np.array(particle.attributes['best_position'])
+
+            # Cognitive
+            if particle.attributes.get('is_amnesiac', False):
+                rand_vec = np.random.uniform(-1.0, 1.0, dim)
+                cognitive_vec = self.random_strength_cognitive * rand_vec
+            else:
+                r1 = random.random()
+                cognitive_vec = self.c1 * r1 * (p_best - current_pos)
+
+            # Social
+            if particle.attributes.get('is_anarchic', False):
+                rand_vec = np.random.uniform(-1.0, 1.0, dim)
+                social_vec = self.random_strength_social * rand_vec
+            else:
+                r2 = random.random()
+                social_vec = self.c2 * r2 * (g_best - current_pos)
+
+            new_velocity = self.w * current_vel + cognitive_vec + social_vec
+            particle.attributes['velocity'] = new_velocity.tolist()
+
+    def get_name(self) -> str:
+        return "AnarchicAmnesiacPSO"
+
 # ==============================================================================
 # Variant 3: WandererPSO (Random Direction Only)
 # ==============================================================================
