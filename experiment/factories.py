@@ -338,13 +338,13 @@ def factory_AnarchicAmnesiacPSO(p):
     return AnarchicAmnesiacPSO(
         problem=p,
         swarm_size=G_SOLUTIONS_SIZE,
-        w=0.1,
-        c1=0.3,
-        c2=0.3,
-        random_strength_social=0.3,
-        random_strength_cognitive=0.3,
-        anarchic_fraction=0.05,
-        amnesiac_fraction=0.05,
+        w=0.091236956472647,
+        c1=4.522803205994748,
+        c2=1.755962797723315,
+        random_strength_social=0.763185707895226,
+        random_strength_cognitive=4.2799235012880095,
+        anarchic_fraction=0.084672896214155,
+        amnesiac_fraction=0.289013979624548,
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
 

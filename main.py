@@ -73,6 +73,7 @@ if __name__ == "__main__":
         #Random Strategies
         "AnarchicPSO": "Explicit Randomization Strategies",
         "AmnesiacPSO": "Explicit Randomization Strategies",
+        "AnarchicAmnesiacPSO": "Explicit Randomization Strategies",
         "WandererPSO": "Explicit Randomization Strategies",
         "NoisyPSO": "Explicit Randomization Strategies",
         "DrifterPSO": "Explicit Randomization Strategies",
