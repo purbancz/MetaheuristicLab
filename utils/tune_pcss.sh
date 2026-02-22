@@ -13,7 +13,6 @@
 
 
 # Load modules and activate the conda environment
-module load miniconda3
 source ~/.bashrc
 conda activate jmetal12
 

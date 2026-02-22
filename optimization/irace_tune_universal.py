@@ -61,15 +61,18 @@ problems = [
 ]
 
 parameter_spaces = {
-    'AnarchicAmnesiacPSO': [
-        Real("c1", 0.01, 6.0),
-        Real("c2", 0.01, 6.0),
-        Real("w", 0.01, 1.0),
-        Real("anarchic_fraction", 0.01, 0.98),
-        Real("amnesiac_fraction", 0.01, 0.98),
-        Real("random_strength_social", 0.01, 6.0),
-        Real("random_strength_cognitive", 0.01, 6.0),
-    ],
+
+    'AnarchicAmnesiacPSO': {
+        'params': [
+            Real("c1", 0.01, 6.0),
+            Real("c2", 0.01, 6.0),
+            Real("w", 0.01, 1.0),
+            Real("anarchic_fraction", 0.01, 0.98),
+            Real("amnesiac_fraction", 0.01, 0.98),
+            Real("random_strength_social", 0.01, 6.0),
+            Real("random_strength_cognitive", 0.01, 6.0),
+        ],
+    }
 
     # 'LSHADE': {
     #     'params': [

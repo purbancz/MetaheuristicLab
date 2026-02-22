@@ -24,8 +24,6 @@ echo "SLURM_NTASKS: $SLURM_NTASKS"
 echo "SLURM_CPUS_PER_TASK: $SLURM_CPUS_PER_TASK"
 echo "-------------------------------------------"
 
-echo "Loading modules..."
-module load miniconda3
 
 echo "Activating Conda environment..."
 source ~/.bashrc
