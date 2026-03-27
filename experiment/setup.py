@@ -13,7 +13,8 @@ from experiment.factories import factory_PSO, factory_RebelPSO, factory_Rejector
     factory_HybridFullDisjointPSO, factory_HybridPartialDisjointPSO, factory_HybridAdditivePSO, \
     factory_HybridFullDisjointRestarterPSO, factory_HybridPartialDisjointRestarterPSO, \
     factory_HybridAdditiveRestarterPSO, factory_CAPSO, factory_IAPSO, factory_DrifterPSO, factory_DAPSO, factory_CMAES, \
-    factory_LSHADE, factory_AnarchicAmnesiacPSO
+    factory_LSHADE, factory_AnarchicAmnesiacPSO, factory_HybridDisjointPSO_WithWanderer, \
+    factory_HybridAdditivePSO_WithWanderer
 from experiment.globals import NO_OF_RUNS, NUMBER_OF_VARIABLES, G_SOLUTIONS_SIZE, G_MAX_EVALUATIONS, RESULTS_DIR
 
 from algorithm.AdaptivePSO import CoAdaptativePSO, IndividualAdaptivePSO
@@ -95,6 +96,7 @@ BASE_GROUP_COLORS = {
     'Noisy': '#c20078',  # light‐pink (paler than Anarchic)
     'Reset': '#ff7f0e',  # orange
     'Hybrid': '#d62728',  # red
+    'RandomComplex': '#653700', #brown
     'Variable coefficient': '#8c564b',
     'Reverse learning': '#826d8c',
     'SOTA': '#ff7f0e',  # orange
@@ -164,6 +166,10 @@ def setup_experiment():
             'HybridPartialDisjointPSO',
             'HybridAdditivePSO',
         ],
+        'RandomComplex': [
+            'HybridDisjointPSO_WithWanderer',
+            'HybridAdditivePSO_WithWanderer',
+        ],
         'Variable coefficient': [
             'CAPSO',
             'IAPSO',
@@ -230,46 +236,46 @@ def setup_experiment():
 
     # Define problems
     n_variables_problems = [
-        ##
-        RotatedBentCigar(number_of_variables),
-        RotatedDiscus(number_of_variables),
-        RotatedHighConditionedElliptic(number_of_variables),
-        ShiftedSchwefel(number_of_variables),
-        ShiftedRotatedHappyCat(number_of_variables),
-        ShiftedRotatedHGBat(number_of_variables),
-        ShiftedRotatedWeierstrass(number_of_variables),
-        ##
-        AlpineN1(number_of_variables),
-        CrownedCross(number_of_variables),
-        EggHolder(number_of_variables),
-        ExpandedShaffer(number_of_variables),
-        GeneralizedSchafferN1(number_of_variables),
-        GeneralizedSchafferN2(number_of_variables),
-        GeneralizedSchafferN3(number_of_variables),
-        GeneralizedSchafferN4(number_of_variables),
-        GeneralizedSchmidtVetters(number_of_variables),
-        LennardJonesMinimumEnergyCluster(number_of_variables),
-        Michalewicz(number_of_variables),
-        Mishra03(number_of_variables),
-        Mishra04(number_of_variables),
-        RosenbrockModified02(number_of_variables),
-        Salomon(number_of_variables),
-        SchwefelN20(number_of_variables),
-        SchwefelN36(number_of_variables),
-        SchwefelN6(number_of_variables),
-        ShubertN3(number_of_variables),
-        ShubertN4(number_of_variables),
-        SineEnvelope(number_of_variables),
-        Stochastic(number_of_variables),
-        StretchedV(number_of_variables),
-        StyblinskiTang(number_of_variables),
+        # ##
+        # RotatedBentCigar(number_of_variables),
+        # RotatedDiscus(number_of_variables),
+        # RotatedHighConditionedElliptic(number_of_variables),
+        # ShiftedSchwefel(number_of_variables),
+        # ShiftedRotatedHappyCat(number_of_variables),
+        # ShiftedRotatedHGBat(number_of_variables),
+        # ShiftedRotatedWeierstrass(number_of_variables),
+        # ##
+        # AlpineN1(number_of_variables),
+        # CrownedCross(number_of_variables),
+        # EggHolder(number_of_variables),
+        # ExpandedShaffer(number_of_variables),
+        # GeneralizedSchafferN1(number_of_variables),
+        # GeneralizedSchafferN2(number_of_variables),
+        # GeneralizedSchafferN3(number_of_variables),
+        # GeneralizedSchafferN4(number_of_variables),
+        # GeneralizedSchmidtVetters(number_of_variables),
+        # LennardJonesMinimumEnergyCluster(number_of_variables),
+        # Michalewicz(number_of_variables),
+        # Mishra03(number_of_variables),
+        # Mishra04(number_of_variables),
+        # RosenbrockModified02(number_of_variables),
+        # Salomon(number_of_variables),
+        # SchwefelN20(number_of_variables),
+        # SchwefelN36(number_of_variables),
+        # SchwefelN6(number_of_variables),
+        # ShubertN3(number_of_variables),
+        # ShubertN4(number_of_variables),
+        # SineEnvelope(number_of_variables),
+        # Stochastic(number_of_variables),
+        # StretchedV(number_of_variables),
+        # StyblinskiTang(number_of_variables),
+        # ShiftedRotatedSchafferF7(number_of_variables),
 
         ## Rejected after experiment
 
         # ShiftedRotatedAckley(number_of_variables),
         # ShiftedRastrigin(number_of_variables),
         # ShiftedRotatedRastrigin(number_of_variables),
-        ShiftedRotatedSchafferF7(number_of_variables),
         # CrossLeggedTable(number_of_variables),
         # GeneralizedHolderTable(number_of_variables),
         # Levy(number_of_variables),
@@ -297,7 +303,7 @@ def setup_experiment():
         # ExpandedKatsuura(number_of_variables), # too long
         # Katsuura(number_of_variables),  # too long
         # Ackley(number_of_variables), # irace
-        # Rastrigin(number_of_variables),  # irace
+        Rastrigin(number_of_variables),  # irace
         # Sphere(number_of_variables), # irace
 
         # ## uninterested results
@@ -391,7 +397,7 @@ def setup_experiment():
         # 'CLAPSO': factory_CLAPSO,
         # 'AnarchicPSO': factory_AnarchicPSO,
         # 'AmnesiacPSO': factory_AmnesiacPSO,
-        'AnarchicAmnesiacPSO': factory_AnarchicAmnesiacPSO,
+        # 'AnarchicAmnesiacPSO': factory_AnarchicAmnesiacPSO,
         # 'WandererPSO': factory_WandererPSO,
         # 'AAAPSO': factory_AAAPSO,
         # 'NoisyPSO': factory_NoisyPSO,
@@ -405,6 +411,8 @@ def setup_experiment():
         # 'HybridFullDisjointPSO_WithRandom': factory_HybridFullDisjointPSO,
         # 'HybridPartialDisjointPSO_WithRandom': factory_HybridPartialDisjointPSO,
         # 'HybridAdditivePSO_WithRandom': factory_HybridAdditivePSO,
+        'HybridDisjointPSO_WithWanderer': factory_HybridDisjointPSO_WithWanderer,
+        'HybridAdditivePSO_WithWanderer': factory_HybridAdditivePSO_WithWanderer,
         # 'HybridFullDisjointRestarterPSO': factory_HybridFullDisjointRestarterPSO,
         # 'HybridPartialDisjointRestarterPSO': factory_HybridPartialDisjointRestarterPSO,
         # 'HybridAdditiveRestarterPSO': factory_HybridAdditiveRestarterPSO,

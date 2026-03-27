@@ -1,9 +1,5 @@
-import os
-from multiprocessing import cpu_count
-
-from experiment.retrieve import plot_all_from_pickle, plot_combined_data_from_pickles, kruskal_wallis_with_posthoc, \
-    extract_results_to_csv, collect_pickle_files_from_paths, wilcoxon_rank_sum_vs_baselines
-from experiment.runner import run_all_experiments, run_all_experiments_multi
+from experiment.retrieve import collect_pickle_files_from_paths, \
+    friedman_wilcoxon_algorithm_groups, head_to_head_champions, all_vs_all_algorithm_stats, many_to_one_vs_baseline
 
 if __name__ == "__main__":
     # try:
@@ -37,9 +33,9 @@ if __name__ == "__main__":
     # ]
 
     paths = [
-        # 'experiment_results/dim100_runs50',
+        'experiment_results/dim100_runs50',
         # 'experiment_results/dim500_runs50',
-        'experiment_results/dim1000_runs50',
+        # 'experiment_results/dim1000_runs50',
         # 'experiment_results/wybrane/100',
         # 'experiment_results/wybrane/500',
         # 'experiment_results/wybrane/1000',
@@ -58,44 +54,56 @@ if __name__ == "__main__":
         # Opposing-Best Strategies
         "RebelPSO": "Opposing-Best Strategies",
         "RejectorPSO": "Opposing-Best Strategies",
-        "RebelRejectorPSO": "Opposing-Best Strategies",
+        # "RebelRejectorPSO": "Opposing-Best Strategies",
 
         # Attraction-to-Worst Strategies
         "ContrarianPSO": "Attraction-to-Worst Strategies",
         "DefeatistPSO": "Attraction-to-Worst Strategies",
-        "ContrarianDefeatistPSO": "Attraction-to-Worst Strategies",
+        # "ContrarianDefeatistPSO": "Attraction-to-Worst Strategies",
 
         # Opposing-Worst Strategies
         "EschewerPSO": "Opposing-Worst Strategies",
         "EscapistPSO": "Opposing-Worst Strategies",
-        "EschewerEscapistPSO": "Opposing-Worst Strategies",
+        # "EschewerEscapistPSO": "Opposing-Worst Strategies",
 
         #Random Strategies
         "AnarchicPSO": "Explicit Randomization Strategies",
         "AmnesiacPSO": "Explicit Randomization Strategies",
-        "AnarchicAmnesiacPSO": "Explicit Randomization Strategies",
+        # "AnarchicAmnesiacPSO": "Explicit Randomization Strategies",
         "WandererPSO": "Explicit Randomization Strategies",
         "NoisyPSO": "Explicit Randomization Strategies",
         "DrifterPSO": "Explicit Randomization Strategies",
-        "PerturbationPSO": "Explicit Randomization Strategies",
+        # "PerturbationPSO": "Explicit Randomization Strategies",
 
         # # Multi-Hybrid Strategies
-        # "HybridFullDisjointPSO": "Multi-Hybrid Strategies",
-        # "HybridPartialDisjointPSO": "Multi-Hybrid Strategies",
-        # "HybridAdditivePSO": "Multi-Hybrid Strategies",
-        #
+        "HybridFullDisjointPSO": "Multi-Hybrid Strategies",
+        "HybridPartialDisjointPSO": "Multi-Hybrid Strategies",
+        "HybridAdditivePSO": "Multi-Hybrid Strategies",
+
+
+
         # # SOTA
         # "CMAES": "SOTA",
         # "LSHADE": "SOTA",
     }
 
-    wilcoxon_rank_sum_vs_baselines(
-        pkl_files,
-        algo_groups=algo_groups,
-        lower_is_better=True,
-        alpha=0.05,
-        print_examples=False
-    )
+    # wilcoxon_rank_sum_vs_baselines(
+    #     pkl_files,
+    #     algo_groups=algo_groups,
+    #     lower_is_better=True,
+    #     alpha=0.05,
+    #     print_examples=False
+    # )
+
+    # friedman_wilcoxon_algorithm_groups(pkl_files, algo_groups)
+    # head_to_head_champions(pkl_files)
+    # all_vs_all_algorithm_stats(pkl_files)
+    algos_to_compare = [
+        'NoisyPSO', 'WandererPSO', 'AmnesiacPSO', 'DefeatistPSO', 'RebelPSO',
+        'EschewerPSO', 'ContrarianPSO', 'RejectorPSO', 'AnarchicPSO',
+        'EscapistPSO', 'DrifterPSO'
+    ]
+    many_to_one_vs_baseline(pkl_files, algos_to_compare)
 
 
-    extract_results_to_csv(pkl_files, output_prefix="all_algorithms_all_problems")
+    # extract_results_to_csv(pkl_files, output_prefix="all_algorithms_all_problems")

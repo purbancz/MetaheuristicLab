@@ -62,17 +62,39 @@ problems = [
 
 parameter_spaces = {
 
-    'AnarchicAmnesiacPSO': {
-        'params': [
-            Real("c1", 0.01, 6.0),
-            Real("c2", 0.01, 6.0),
-            Real("w", 0.01, 1.0),
-            Real("anarchic_fraction", 0.01, 0.98),
-            Real("amnesiac_fraction", 0.01, 0.98),
-            Real("random_strength_social", 0.01, 6.0),
-            Real("random_strength_cognitive", 0.01, 6.0),
-        ],
-    }
+        'HybridDisjointPSO_WithWanderer': {
+            'params': [
+                Real("w", 0.01, 1.0),
+                Real("c1", 0.01, 6.0),
+                Real("c2", 0.01, 6.0),
+                Real("wanderer_c", 0.01, 6.0),
+                Real("wanderer_fraction", 0.0, 0.98),
+            ],
+        },
+
+        'HybridAdditivePSO_WithWanderer': {
+            'params': [
+                Real("w", 0.01, 1.0),
+                Real("c1", 0.01, 6.0),
+                Real("c2", 0.01, 6.0),
+                Real("wanderer_c", 0.01, 6.0),
+                Real("std_cognitive_prob", 0.0, 1.0),
+                Real("std_social_prob", 0.0, 1.0),
+                Real("wanderer_prob", 0.0, 1.0),
+            ],
+        },
+
+    # 'AnarchicAmnesiacPSO': {
+    #     'params': [
+    #         Real("c1", 0.01, 6.0),
+    #         Real("c2", 0.01, 6.0),
+    #         Real("w", 0.01, 1.0),
+    #         Real("anarchic_fraction", 0.01, 0.98),
+    #         Real("amnesiac_fraction", 0.01, 0.98),
+    #         Real("random_strength_social", 0.01, 6.0),
+    #         Real("random_strength_cognitive", 0.01, 6.0),
+    #     ],
+    # }
 
     # 'LSHADE': {
     #     'params': [
@@ -422,7 +444,7 @@ def target_runner(experiment: Experiment, scenario: Scenario) -> float:
         # print(f"  Using PartialDisjoint Fractions: Cog=[{cog_final_str}] Soc=[{soc_final_str}]")
 
     # --- Normalization for Full Disjoint Variants ---
-    elif current_algorithm in ['HybridFullDisjointPSO', 'HybridFullDisjointPSO_WithRandom', 'HybridFullDisjointRestarterPSO']:
+    elif current_algorithm in ['HybridFullDisjointPSO', 'HybridFullDisjointPSO_WithRandom', 'HybridFullDisjointRestarterPSO', 'HybridDisjointPSO_WithWanderer']:
         # Normalize sum of ALL special fractions to be <= 1.0
         all_special_fractions = {k: repaired_config.get(k, 0.0) for k in all_special_fraction_keys if k in repaired_config}
         if all_special_fractions:

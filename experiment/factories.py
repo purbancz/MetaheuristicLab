@@ -8,7 +8,8 @@ from algorithm.WAPSO import ReverseLearningPSO, ReverseLearningGlobalAttractorPS
     CombinedLearningPSO
 from algorithm.hybrid_diverse import HybridFullDisjointPSO, HybridPartialDisjointPSO, HybridAdditivePSO, \
     HybridFullDisjointPSO_WithRandom, HybridPartialDisjointPSO_WithRandom, HybridAdditivePSO_WithRandom, \
-    HybridFullDisjointRestarterPSO, HybridPartialDisjointRestarterPSO, HybridAdditiveRestarterPSO
+    HybridFullDisjointRestarterPSO, HybridPartialDisjointRestarterPSO, HybridAdditiveRestarterPSO, \
+    HybridDisjointPSO_WithWanderer, HybridAdditivePSO_WithWanderer
 from algorithm.particles_with_roles import RebelPSO, RejectorPSO, RebelRejectorPSO, RRAPSO, ContrarianPSO, DefeatistPSO, \
     ContrarianDefeatistPSO, CDAPSO, EschewerPSO, EscapistPSO, EschewerEscapistPSO, EEAPSO, CLAPSO, AnarchicPSO, \
     AmnesiacPSO, WandererPSO, AAAPSO, NoisyPSO, NAPSO, DrifterPSO, DAPSO, AnarchicAmnesiacPSO
@@ -665,6 +666,40 @@ def factory_HybridAdditivePSO_WithRandom(p):
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
 
+def factory_HybridDisjointPSO_WithWanderer(p):
+    return HybridDisjointPSO_WithWanderer(
+        problem=p,
+        swarm_size=G_SOLUTIONS_SIZE,
+        w=0.032920866248212,
+        c1=3.471681455837407,
+        c2=1.2151276229152843,
+        wanderer_c=5.1616359456706284,
+        wanderer_fraction=0.9700105036720561,
+        constraint_handling_mode="clip",
+        assign_roles_every_iteration=True,
+        termination_criterion=StoppingByEvaluations(
+            max_evaluations=G_MAX_EVALUATIONS
+        )
+    )
+
+
+def factory_HybridAdditivePSO_WithWanderer(p):
+    return HybridAdditivePSO_WithWanderer(
+        problem=p,
+        swarm_size=G_SOLUTIONS_SIZE,
+        w=0.032920866248212,
+        c1=3.471681455837407,
+        c2=1.2151276229152843,
+        wanderer_c=5.1616359456706284,
+        std_cognitive_prob=1.0,
+        std_social_prob=1.0,
+        wanderer_prob=0.9700105036720561,
+        constraint_handling_mode="clip",
+        assign_flags_every_iteration=True,
+        termination_criterion=StoppingByEvaluations(
+            max_evaluations=G_MAX_EVALUATIONS
+        )
+    )
 
 def factory_HybridFullDisjointRestarterPSO(p):
     return HybridFullDisjointRestarterPSO(

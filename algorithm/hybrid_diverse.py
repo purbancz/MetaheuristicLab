@@ -1458,6 +1458,268 @@ class HybridPartialDisjointRestarterPSO(HybridPartialDisjointPSO_WithRandom):
         self.update_particle_best(self.solutions)
 
 
+
+
+class HybridDisjointPSO_WithWanderer(WorstAwarePSO, RoleMixin):
+    """
+    Hybrid Partial Disjoint PSO with a single special role: wanderer.
+
+    Partial-disjoint meaning here:
+    - particle is either wanderer or standard
+    - wanderer ignores both cognitive and social terms
+    - standard uses normal PSO update
+
+    Velocity update:
+        standard:  w*v + c1*r1*(p_best-current) + c2*r2*(g_best-current)
+        wanderer:  w*v + wanderer_c * U(-1,1)
+    """
+
+    def __init__(self,
+                 problem: FloatProblem, swarm_size: int, termination_criterion: TerminationCriterion, w: float,
+                 c1: float = 1.5, c2: float = 1.5,
+                 wanderer_c: float = 1.0,
+                 wanderer_fraction: float = 0.0,
+                 constraint_handling_mode: str = "clip",
+                 assign_roles_every_iteration: bool = True):
+
+        super().__init__(problem, swarm_size, c1, c2, w, termination_criterion, constraint_handling_mode)
+
+        self.c1 = c1
+        self.c2 = c2
+        self.wanderer_c = wanderer_c
+        self.wanderer_fraction = max(0.0, min(1.0, wanderer_fraction))
+        self.assign_roles_every_iteration = assign_roles_every_iteration
+
+    def _assign_roles(self, swarm: List[S]) -> None:
+        n = len(swarm)
+        if n == 0:
+            return
+
+        for p in swarm:
+            if not hasattr(p, 'attributes') or p.attributes is None:
+                p.attributes = {}
+
+        indices = list(range(n))
+        random.shuffle(indices)
+
+        wanderer_count = int(n * self.wanderer_fraction)
+
+        for i, idx in enumerate(indices):
+            if i < wanderer_count:
+                swarm[idx].attributes['assigned_role'] = 'wanderer'
+            else:
+                swarm[idx].attributes['assigned_role'] = 'standard'
+
+    def create_initial_solutions(self) -> List[S]:
+        solutions = super().create_initial_solutions()
+        self._assign_roles(solutions)
+        return solutions
+
+    def step(self):
+        if self.assign_roles_every_iteration:
+            self._assign_roles(self.solutions)
+
+        self.update_velocity(self.solutions)
+        self.update_position(self.solutions)
+        self.perturbation(self.solutions)
+        self.solutions = self.evaluate(self.solutions)
+        self.update_global_best(self.solutions)
+        self.update_particle_best(self.solutions)
+
+    def update_particle_best(self, swarm: List[S]) -> None:
+        super().update_particle_best(swarm)
+
+    def update_global_best(self, swarm: List[S]) -> None:
+        super().update_global_best(swarm)
+
+    def update_velocity(self, swarm: List[S]) -> None:
+        if self.best_global is None or not swarm:
+            return
+
+        g_best = np.array(self.best_global.variables)
+
+        for particle in swarm:
+            attrs = particle.attributes
+            required_attrs = ['velocity', 'best_position', 'assigned_role']
+            if not all(attr in attrs for attr in required_attrs):
+                continue
+
+            current = np.array(particle.variables)
+            velocity = np.array(attrs['velocity'])
+            p_best = np.array(attrs['best_position'])
+            assigned_role = attrs['assigned_role']
+
+            if assigned_role == 'wanderer':
+                random_vec = self.wanderer_c * np.random.uniform(
+                    -1.0, 1.0, self.problem.number_of_variables()
+                )
+                new_velocity = self.w * velocity + random_vec
+            else:
+                r1 = random.random()
+                r2 = random.random()
+                cognitive_vec = self.c1 * r1 * (p_best - current)
+                social_vec = self.c2 * r2 * (g_best - current)
+                new_velocity = self.w * velocity + cognitive_vec + social_vec
+
+            particle.attributes['velocity'] = new_velocity.tolist()
+
+    def get_name(self) -> str:
+        return "HybridDisjointPSO_WithWanderer"
+
+
+class HybridAdditivePSO_WithWanderer(WorstAwarePSO, RoleMixin):
+    """
+    Hybrid Additive PSO with wanderer as an additive random component.
+
+    If is_wanderer is active:
+        - random vector is ADDED on top of the normal update equation
+
+    Velocity:
+        w*v + cognitive_component + social_component + wanderer_component
+    """
+
+    def __init__(self,
+                 problem: FloatProblem, swarm_size: int, termination_criterion: TerminationCriterion, w: float,
+                 c1: float = 1.5, c2: float = 1.5,
+                 wanderer_c: float = 1.0,
+                 std_cognitive_prob: float = 1.0,
+                 std_social_prob: float = 1.0,
+                 wanderer_prob: float = 0.0,
+                 constraint_handling_mode: str = "clip",
+                 assign_flags_every_iteration: bool = True):
+
+        super().__init__(problem, swarm_size, c1, c2, w, termination_criterion, constraint_handling_mode)
+
+        self.coefficients = {
+            'is_std_cognitive': c1,
+            'is_std_social': c2,
+            'is_wanderer': wanderer_c
+        }
+
+        prob_params = {
+            'std_cognitive': std_cognitive_prob,
+            'std_social': std_social_prob,
+            'wanderer': wanderer_prob
+        }
+
+        self.role_probabilities = {}
+        for role_base_name, prob in prob_params.items():
+            flag_name = f"is_{role_base_name}"
+            if not (0.0 <= prob <= 1.0):
+                raise ValueError(f"Probability for {role_base_name} invalid.")
+            if flag_name not in self.coefficients:
+                raise ValueError(f"Flag {flag_name} missing coeff.")
+            self.role_probabilities[flag_name] = prob
+
+        self.assign_flags_every_iteration = assign_flags_every_iteration
+        logger.info("Initializing HAPSO+W.")
+
+    def _assign_role_flags_to_swarm(self, swarm: List[S]) -> None:
+        n = len(swarm)
+        if n == 0:
+            return
+
+        for particle in swarm:
+            if not hasattr(particle, 'attributes') or particle.attributes is None:
+                particle.attributes = {}
+            attrs = particle.attributes
+
+            for flag_name, probability in self.role_probabilities.items():
+                attrs[flag_name] = (random.random() < probability)
+
+    def create_initial_solutions(self) -> List[S]:
+        solutions = super().create_initial_solutions()
+        self._assign_role_flags_to_swarm(solutions)
+        return solutions
+
+    @staticmethod
+    def _log_role_distribution(swarm: List[S]):
+        if not swarm or not hasattr(swarm[0], 'attributes') or not swarm[0].attributes:
+            logger.debug("Cannot log role distribution: Swarm empty or first particle has no attributes.")
+            return
+
+        flag_counts = {}
+        known_flags = [f for f in swarm[0].attributes.keys() if f.startswith('is_')]
+        for flag in known_flags:
+            flag_counts[flag] = 0
+
+        for p in swarm:
+            for flag in known_flags:
+                if p.attributes.get(flag, False):
+                    flag_counts[flag] += 1
+
+        logger.debug("Role Activation Counts (Additive):")
+        for flag, count in sorted(flag_counts.items()):
+            logger.debug(f"  Flag: {flag:<20} | Active Count: {count}")
+
+    def step(self):
+        if self.assign_flags_every_iteration:
+            self._assign_role_flags_to_swarm(self.solutions)
+
+        self.update_velocity(self.solutions)
+        self.update_position(self.solutions)
+        self.perturbation(self.solutions)
+        self.solutions = self.evaluate(self.solutions)
+        self.update_global_best(self.solutions)
+        self.update_particle_best(self.solutions)
+
+    def update_particle_best(self, swarm: List[S]) -> None:
+        super().update_particle_best(swarm)
+        self.update_particle_worst(swarm)
+
+    def update_global_best(self, swarm: List[S]) -> None:
+        super().update_global_best(swarm)
+        self.update_global_worst(swarm)
+
+    def update_velocity(self, swarm: List[S]) -> None:
+        if self.best_global is None or not swarm:
+            return
+
+        g_best = np.array(self.best_global.variables)
+
+        for particle in swarm:
+            attrs = particle.attributes
+            required_core_attrs = ['velocity', 'best_position']
+            if not all(attr in attrs for attr in required_core_attrs):
+                continue
+
+            for flag_name in self.coefficients.keys():
+                if flag_name not in attrs:
+                    attrs[flag_name] = False
+
+            current = np.array(particle.variables)
+            velocity = np.array(attrs['velocity'])
+            p_best = np.array(attrs['best_position'])
+
+            r1 = random.random()
+            r2 = random.random()
+
+            cognitive_component = np.zeros_like(current)
+            social_component = np.zeros_like(current)
+            wanderer_component = np.zeros_like(current)
+
+            if attrs.get('is_std_cognitive', False):
+                coeff = self.coefficients['is_std_cognitive']
+                cognitive_component += coeff * r1 * (p_best - current)
+
+            if attrs.get('is_std_social', False):
+                coeff = self.coefficients['is_std_social']
+                social_component += coeff * r2 * (g_best - current)
+
+            if attrs.get('is_wanderer', False):
+                coeff = self.coefficients['is_wanderer']
+                wanderer_component += coeff * np.random.uniform(
+                    -1.0, 1.0, self.problem.number_of_variables()
+                )
+
+            new_velocity = self.w * velocity + cognitive_component + social_component + wanderer_component
+            particle.attributes['velocity'] = new_velocity.tolist()
+
+    def get_name(self) -> str:
+        return "HybridAdditivePSO_WithWanderer"
+
+
+
 # ==============================================================================
 # Hybrid Full Disjoint PSO with Convergence Restarters (Explicit Normalization)
 # ==============================================================================

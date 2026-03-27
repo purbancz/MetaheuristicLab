@@ -1237,7 +1237,7 @@ class NoisyPSO(SingleObjectivePSO, RoleMixin):
             particle.attributes['velocity'] = final_velocity.tolist()
 
     def get_name(self) -> str:
-        return "NoisyPSO"
+        return "ErraticPSO"
 
 
 # ==============================================================================
