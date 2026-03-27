@@ -14,7 +14,8 @@ from jmetal.util.termination_criterion import StoppingByEvaluations
 
 from algorithm.hybrid_diverse import HybridPartialDisjointPSO, HybridFullDisjointPSO, HybridAdditivePSO, \
     HybridFullDisjointPSO_WithRandom, HybridPartialDisjointPSO_WithRandom, HybridAdditivePSO_WithRandom, \
-    HybridFullDisjointRestarterPSO, HybridPartialDisjointRestarterPSO, HybridAdditiveRestarterPSO
+    HybridFullDisjointRestarterPSO, HybridPartialDisjointRestarterPSO, HybridAdditiveRestarterPSO, \
+    HybridDisjointPSO_WithWanderer, HybridAdditivePSO_WithWanderer
 from algorithm.AdaptivePSO import CoAdaptativePSO, IndividualAdaptivePSO
 from algorithm.WAPSO import ReverseLearningGlobalAttractorPSO, CombinedLearningPSO, ReverseLearningPersonalAttractorPSO, \
     ReverseLearningPSO
