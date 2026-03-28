@@ -804,7 +804,7 @@ class HybridPartialDisjointPSO_WithRandom(WorstAwarePSO, RoleMixin):
                  anarchic_c: float = 1.0,
                  rejector_fraction: float = 0.0, defeatist_fraction: float = 0.0, escapist_fraction: float = 0.0, amnesiac_fraction: float = 0.0,
                  rebel_fraction: float = 0.0, contrarian_fraction: float = 0.0, eschewer_fraction: float = 0.0, anarchic_fraction: float = 0.0,
-                 constraint_handling_mode: str = "clip", assign_roles_every_iteration: bool = False):
+                 constraint_handling_mode: str = "clip", assign_roles_every_iteration: bool = True):
 
         super().__init__(problem, swarm_size, c1, c2, w, termination_criterion, constraint_handling_mode)
         self.c1=c1; self.c2=c2; self.rejector_c=rejector_c; self.defeatist_c=defeatist_c; self.escapist_c=escapist_c
@@ -956,7 +956,7 @@ class HybridFullDisjointPSO_WithRandom(WorstAwarePSO, RoleMixin):
                  c2: float = 1.5, rebel_c: float = 1.0, contrarian_c: float = 1.0, eschewer_c: float = 1.0, anarchic_c: float = 1.0, # Social + Anarchic
                  rejector_fraction: float = 0.0, defeatist_fraction: float = 0.0, escapist_fraction: float = 0.0, amnesiac_fraction: float = 0.0, # Cognitive specials
                  rebel_fraction: float = 0.0, contrarian_fraction: float = 0.0, eschewer_fraction: float = 0.0, anarchic_fraction: float = 0.0, # Social specials
-                 constraint_handling_mode: str = "clip", assign_roles_every_iteration: bool = False):
+                 constraint_handling_mode: str = "clip", assign_roles_every_iteration: bool = True):
 
         super().__init__(problem, swarm_size, c1, c2, w, termination_criterion, constraint_handling_mode)
         # Define roles and their coefficients
@@ -1138,7 +1138,7 @@ class HybridAdditivePSO_WithRandom(WorstAwarePSO, RoleMixin):
                  c2: float = 1.5, rebel_c: float = 1.0, contrarian_c: float = 1.0, eschewer_c: float = 1.0, anarchic_c: float = 1.0,
                  std_cognitive_prob: float = 1.0, rejector_prob: float = 0.0, defeatist_prob: float = 0.0, escapist_prob: float = 0.0, amnesiac_prob: float = 0.0, # Cog probs
                  std_social_prob: float = 1.0, rebel_prob: float = 0.0, contrarian_prob: float = 0.0, eschewer_prob: float = 0.0, anarchic_prob: float = 0.0, # Soc probs
-                 constraint_handling_mode: str = "clip", assign_flags_every_iteration: bool = False):
+                 constraint_handling_mode: str = "clip", assign_flags_every_iteration: bool = True):
 
         super().__init__(problem, swarm_size, c1, c2, w, termination_criterion, constraint_handling_mode)
         self.coefficients = {
