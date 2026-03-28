@@ -551,10 +551,13 @@ if __name__ == "__main__":
         best_configurations[algo_name] = result
 
         # 2. Load that RData into R’s global env (it creates `iraceResults`)
-        robjects.r['load']("irace.log")
+        # robjects.r['load']("irace.log")
 
         # 3. Tell IRACE to dump the human‑readable log to a .txt file
-        robjects.r['save_irace_logfile'](robjects.r['iraceResults'], "irace.txt")
+        # robjects.r['save_irace_logfile'](robjects.r['iraceResults'], "irace.txt")
+
+        log_file = f"{algo_name}_irace.Rdata"
+        robjects.r['save_irace_logfile'](result, log_file)
 
         # Save results after each algorithm
         with open(output_file, "w") as f:
