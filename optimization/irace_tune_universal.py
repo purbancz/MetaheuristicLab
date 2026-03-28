@@ -556,9 +556,6 @@ if __name__ == "__main__":
         # 3. Tell IRACE to dump the human‑readable log to a .txt file
         # robjects.r['save_irace_logfile'](robjects.r['iraceResults'], "irace.txt")
 
-        log_file = f"{algo_name}_irace.Rdata"
-        robjects.r['save_irace_logfile'](result, log_file)
-
         # Save results after each algorithm
         with open(output_file, "w") as f:
             json.dump({k: v.to_json() for k, v in best_configurations.items()}, f, indent=4)

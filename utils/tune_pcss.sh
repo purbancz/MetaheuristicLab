@@ -2,7 +2,7 @@
 #SBATCH --job-name=tune_RandomComplex
 #SBATCH --output=%x_%j.out
 #SBATCH --error=%x_%j.err
-#SBATCH --time=6:00:00
+#SBATCH --time=13:00:00
 #SBATCH --partition=standard          # standard/fast/long/tesla
 #SBATCH --account=pl0590-01
 #SBATCH --nodes=1
