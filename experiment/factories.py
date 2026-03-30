@@ -578,103 +578,196 @@ def factory_HybridAdditivePSO(p):
     )
 
 
-def factory_HybridFullDisjointPSO_WithRandom(p):
+# def factory_HybridFullDisjointPSO_WithRandom(p):
+#     return HybridFullDisjointPSO_WithRandom(
+#         problem=p,
+#         swarm_size=G_SOLUTIONS_SIZE,
+#         w=0.045871171887412,
+#         c1=0.04186456823808,
+#         c2=3.3512603430983687,
+#         rejector_c=1.6818015055543236,
+#         defeatist_c=0.073048466909476,
+#         escapist_c=4.295140040496995,
+#         amnesiac_c=0.123202191476923,
+#         rebel_c=1.046999188101443,
+#         contrarian_c=1.0201315371765118,
+#         eschewer_c=2.781363171836315,
+#         anarchic_c=2.4146755146545096,
+#         rejector_fraction=0.058218603922034,
+#         defeatist_fraction=0.287604619139506,
+#         escapist_fraction=0.150589334690724,
+#         amnesiac_fraction=0.039872169395881,
+#         rebel_fraction=0.536254030121648,
+#         contrarian_fraction=0.692369927851304,
+#         eschewer_fraction=0.160533277039762,
+#         anarchic_fraction=0.201068690599398,
+#         constraint_handling_mode="clip",
+#         assign_roles_every_iteration=True,
+#         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
+#     )
+#
+#
+# def factory_HybridPartialDisjointPSO_WithRandom(p):
+#     return HybridPartialDisjointPSO_WithRandom(
+#         problem=p,
+#         swarm_size=G_SOLUTIONS_SIZE,
+#         w=0.032920866248212,
+#         c1=3.471681455837407,
+#         c2=1.2151276229152843,
+#         rejector_c=0.376657552954615,
+#         defeatist_c=0.055180455774964,
+#         escapist_c=0.62896031560951,
+#         rebel_c=0.427986984634051,
+#         contrarian_c=1.699577316604754,
+#         eschewer_c=3.6928779079599714,
+#         amnesiac_c=4.98124490255147,
+#         anarchic_c=5.342026988789787,
+#         rejector_fraction=0.018857441494762,
+#         defeatist_fraction=0.714529547920285,
+#         escapist_fraction=0.346943732309136,
+#         amnesiac_fraction=0.023634819035895,
+#         rebel_fraction=0.373606012229191,
+#         contrarian_fraction=0.175060180505544,
+#         eschewer_fraction=0.241785605848191,
+#         anarchic_fraction=0.045603668001108,
+#         constraint_handling_mode="clip",
+#         assign_roles_every_iteration=True,
+#         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
+#     )
+#
+#
+# def factory_HybridAdditivePSO_WithRandom(p):
+#     return HybridAdditivePSO_WithRandom(
+#         problem=p,
+#         swarm_size=G_SOLUTIONS_SIZE,
+#         w=0.029152442728975,
+#         c1=0.312354103872271,
+#         c2=2.537451806033552,
+#         rejector_c=0.435837108869733,
+#         defeatist_c=4.27456352808514,
+#         escapist_c=5.300136874325789,
+#         rebel_c=4.626164727708544,
+#         contrarian_c=1.8358205978065425,
+#         eschewer_c=0.565041947981466,
+#         anarchic_c=2.7414545378092856,
+#         amnesiac_c=0.554749781031361,
+#         std_cognitive_prob=0.921591357935905,
+#         rejector_prob=0.967998524023063,
+#         defeatist_prob=0.02678740199382,
+#         escapist_prob=0.054471591028952,
+#         amnesiac_prob=0.045923766989247,
+#         std_social_prob=0.178282780413502,
+#         rebel_prob=0.226833864067438,
+#         contrarian_prob=0.420293816550519,
+#         eschewer_prob=0.152088881967566,
+#         anarchic_prob=0.102623833459703,
+#         constraint_handling_mode="clip",
+#         assign_flags_every_iteration=True,
+#         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
+#     )
+
+def factory_HybridFullDisjointPSO_WithRandom_Var(p):
     return HybridFullDisjointPSO_WithRandom(
         problem=p,
         swarm_size=G_SOLUTIONS_SIZE,
-        w=0.045871171887412,
-        c1=0.04186456823808,
-        c2=3.3512603430983687,
-        rejector_c=1.6818015055543236,
-        defeatist_c=0.073048466909476,
-        escapist_c=4.295140040496995,
-        amnesiac_c=0.123202191476923,
-        rebel_c=1.046999188101443,
-        contrarian_c=1.0201315371765118,
-        eschewer_c=2.781363171836315,
-        anarchic_c=2.4146755146545096,
-        rejector_fraction=0.058218603922034,
-        defeatist_fraction=0.287604619139506,
-        escapist_fraction=0.150589334690724,
-        amnesiac_fraction=0.039872169395881,
-        rebel_fraction=0.536254030121648,
-        contrarian_fraction=0.692369927851304,
-        eschewer_fraction=0.160533277039762,
-        anarchic_fraction=0.201068690599398,
+        w=0.070613324161097,
+        c1=1.2648841133643252,
+        c2=5.139031539268885,
+
+        rejector_c=0,
+        defeatist_c=0,
+        escapist_c=0,
+        amnesiac_c=3.727243242431227,
+        rebel_c=0,
+        contrarian_c=0,
+        eschewer_c=0,
+        anarchic_c=3.4265350576587106,
+
+        rejector_fraction=0,
+        defeatist_fraction=0,
+        escapist_fraction=0,
+        amnesiac_fraction=0.534157673588983,
+        rebel_fraction=0,
+        contrarian_fraction=0,
+        eschewer_fraction=0,
+        anarchic_fraction=0.116381850790778,
+
         constraint_handling_mode="clip",
-        assign_roles_every_iteration=True,
+        assign_roles_every_iteration=False,
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
 
-
-def factory_HybridPartialDisjointPSO_WithRandom(p):
+def factory_HybridPartialDisjointPSO_WithRandom_Var(p):
     return HybridPartialDisjointPSO_WithRandom(
         problem=p,
         swarm_size=G_SOLUTIONS_SIZE,
-        w=0.032920866248212,
-        c1=3.471681455837407,
-        c2=1.2151276229152843,
-        rejector_c=0.376657552954615,
-        defeatist_c=0.055180455774964,
-        escapist_c=0.62896031560951,
-        rebel_c=0.427986984634051,
-        contrarian_c=1.699577316604754,
-        eschewer_c=3.6928779079599714,
-        amnesiac_c=4.98124490255147,
-        anarchic_c=5.342026988789787,
-        rejector_fraction=0.018857441494762,
-        defeatist_fraction=0.714529547920285,
-        escapist_fraction=0.346943732309136,
-        amnesiac_fraction=0.023634819035895,
-        rebel_fraction=0.373606012229191,
-        contrarian_fraction=0.175060180505544,
-        eschewer_fraction=0.241785605848191,
-        anarchic_fraction=0.045603668001108,
+        w=0.054655302723429,
+        c1=0.429282943785279,
+        c2=5.76062395431257,
+
+        rejector_c=0,
+        defeatist_c=0,
+        escapist_c=0,
+        rebel_c=0,
+        contrarian_c=0,
+        eschewer_c=0,
+        amnesiac_c=4.2311484550184915,
+        anarchic_c=0.51542902758087,
+
+        rejector_fraction=0,
+        defeatist_fraction=0,
+        escapist_fraction=0,
+        rebel_fraction=0,
+        contrarian_fraction=0,
+        eschewer_fraction=0,
+        amnesiac_fraction=0.172142057161717,
+        anarchic_fraction=0.262647267385497,
+
         constraint_handling_mode="clip",
-        assign_roles_every_iteration=True,
+        assign_roles_every_iteration=False,
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
 
-
-def factory_HybridAdditivePSO_WithRandom(p):
-    return HybridAdditivePSO_WithRandom(
+def factory_HybridPartialDisjointPSO_WithRandom_Var(p):
+    return HybridPartialDisjointPSO_WithRandom(
         problem=p,
         swarm_size=G_SOLUTIONS_SIZE,
-        w=0.029152442728975,
-        c1=0.312354103872271,
-        c2=2.537451806033552,
-        rejector_c=0.435837108869733,
-        defeatist_c=4.27456352808514,
-        escapist_c=5.300136874325789,
-        rebel_c=4.626164727708544,
-        contrarian_c=1.8358205978065425,
-        eschewer_c=0.565041947981466,
-        anarchic_c=2.7414545378092856,
-        amnesiac_c=0.554749781031361,
-        std_cognitive_prob=0.921591357935905,
-        rejector_prob=0.967998524023063,
-        defeatist_prob=0.02678740199382,
-        escapist_prob=0.054471591028952,
-        amnesiac_prob=0.045923766989247,
-        std_social_prob=0.178282780413502,
-        rebel_prob=0.226833864067438,
-        contrarian_prob=0.420293816550519,
-        eschewer_prob=0.152088881967566,
-        anarchic_prob=0.102623833459703,
+        w=0.054655302723429,
+        c1=0.429282943785279,
+        c2=5.76062395431257,
+
+        rejector_c=0,
+        defeatist_c=0,
+        escapist_c=0,
+        rebel_c=0,
+        contrarian_c=0,
+        eschewer_c=0,
+        amnesiac_c=4.2311484550184915,
+        anarchic_c=0.51542902758087,
+
+        rejector_fraction=0,
+        defeatist_fraction=0,
+        escapist_fraction=0,
+        rebel_fraction=0,
+        contrarian_fraction=0,
+        eschewer_fraction=0,
+        amnesiac_fraction=0.172142057161717,
+        anarchic_fraction=0.262647267385497,
+
         constraint_handling_mode="clip",
-        assign_flags_every_iteration=True,
+        assign_roles_every_iteration=False,
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
 
-def factory_HybridDisjointPSO_WithWanderer(p):
+def factory_HybridDisjointPSO_WithWanderer_NonVar(p):
     return HybridDisjointPSO_WithWanderer(
         problem=p,
         swarm_size=G_SOLUTIONS_SIZE,
-        w=0.032920866248212,
-        c1=3.471681455837407,
-        c2=1.2151276229152843,
-        wanderer_c=5.1616359456706284,
-        wanderer_fraction=0.9700105036720561,
+        w=0.132778503791544,
+        c1=1.0194514621712447,
+        c2=5.787507933504707,
+        wanderer_c=4.266136447445009,
+        wanderer_fraction=0.116240284310713,
         constraint_handling_mode="clip",
         assign_roles_every_iteration=True,
         termination_criterion=StoppingByEvaluations(
@@ -683,17 +776,17 @@ def factory_HybridDisjointPSO_WithWanderer(p):
     )
 
 
-def factory_HybridAdditivePSO_WithWanderer(p):
+def factory_HybridAdditivePSO_WithWanderer_NonVar(p):
     return HybridAdditivePSO_WithWanderer(
         problem=p,
         swarm_size=G_SOLUTIONS_SIZE,
-        w=0.032920866248212,
-        c1=3.471681455837407,
-        c2=1.2151276229152843,
-        wanderer_c=5.1616359456706284,
-        std_cognitive_prob=1.0,
-        std_social_prob=1.0,
-        wanderer_prob=0.9700105036720561,
+        w=0.193300939674606,
+        c1=0.530432854954883,
+        c2=5.581592153666334,
+        wanderer_c=2.1815272230776914,
+        std_cognitive_prob=0.111307913121892,
+        std_social_prob=0.733331292108552,
+        wanderer_prob=0.115546222298038,
         constraint_handling_mode="clip",
         assign_flags_every_iteration=True,
         termination_criterion=StoppingByEvaluations(

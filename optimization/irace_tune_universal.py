@@ -63,27 +63,29 @@ problems = [
 
 parameter_spaces = {
 
-        # 'HybridDisjointPSO_WithWanderer': {
-        #     'params': [
-        #         Real("w", 0.01, 1.0),
-        #         Real("c1", 0.01, 6.0),
-        #         Real("c2", 0.01, 6.0),
-        #         Real("wanderer_c", 0.01, 6.0),
-        #         Real("wanderer_fraction", 0.1, 0.98),
-        #     ],
-        # },
-        #
-        # 'HybridAdditivePSO_WithWanderer': {
-        #     'params': [
-        #         Real("w", 0.01, 1.0),
-        #         Real("c1", 0.01, 6.0),
-        #         Real("c2", 0.01, 6.0),
-        #         Real("wanderer_c", 0.01, 6.0),
-        #         Real("std_cognitive_prob", 0.1, 1.0),
-        #         Real("std_social_prob", 0.1, 1.0),
-        #         Real("wanderer_prob", 0.1, 1.0),
-        #     ],
-        # },
+        'HybridDisjointPSO_WithWanderer': {
+            'params': [
+                Real("w", 0.01, 1.0),
+                Real("c1", 0.01, 6.0),
+                Real("c2", 0.01, 6.0),
+                Real("wanderer_c", 0.01, 6.0),
+                Real("wanderer_fraction", 0.1, 0.98),
+                Bool("assign_roles_every_iteration"),
+            ],
+        },
+
+        'HybridAdditivePSO_WithWanderer': {
+            'params': [
+                Real("w", 0.01, 1.0),
+                Real("c1", 0.01, 6.0),
+                Real("c2", 0.01, 6.0),
+                Real("wanderer_c", 0.01, 6.0),
+                Real("std_cognitive_prob", 0.1, 1.0),
+                Real("std_social_prob", 0.1, 1.0),
+                Real("wanderer_prob", 0.1, 1.0),
+                Bool("assign_flags_every_iteration"),
+            ],
+        },
 
         'HybridFullDisjointPSO_WithRandom': {
             'params': [
@@ -106,7 +108,7 @@ parameter_spaces = {
                 # Real("contrarian_fraction", 0.01, 0.73),
                 # Real("eschewer_fraction", 0.01, 0.73),
                 Real("anarchic_fraction", 0.01, 0.98),
-                Bool("assign_roles_every_iteration"),
+                # Bool("assign_roles_every_iteration"),
             ],
         },
 
@@ -131,7 +133,7 @@ parameter_spaces = {
                 # Real("contrarian_fraction", 0.01, 0.77),
                 # Real("eschewer_fraction", 0.01, 0.77),
                 Real("anarchic_fraction", 0.01, 0.98),
-                Bool("assign_roles_every_iteration"),
+                # Bool("assign_roles_every_iteration"),
             ],
         },
 
@@ -158,7 +160,7 @@ parameter_spaces = {
                 # Real("contrarian_prob", 0.01, 1.0),
                 # Real("eschewer_prob", 0.01, 1.0),
                 Real("anarchic_prob", 0.01, 1.0),
-                Bool("assign_flags_every_iteration"),
+                # Bool("assign_flags_every_iteration"),
             ],
         },
 
