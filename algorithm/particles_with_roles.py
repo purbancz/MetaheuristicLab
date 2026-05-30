@@ -1053,7 +1053,7 @@ class WandererPSO(SingleObjectivePSO, RoleMixin):
             particle.attributes['velocity'] = new_velocity.tolist()
 
     def get_name(self) -> str:
-        return "WandererPSO"
+        return "ErraticPSO"
 
 
 # ==============================================================================

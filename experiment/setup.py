@@ -13,8 +13,8 @@ from experiment.factories import factory_PSO, factory_RebelPSO, factory_Rejector
     factory_HybridFullDisjointPSO, factory_HybridPartialDisjointPSO, factory_HybridAdditivePSO, \
     factory_HybridFullDisjointRestarterPSO, factory_HybridPartialDisjointRestarterPSO, \
     factory_HybridAdditiveRestarterPSO, factory_CAPSO, factory_IAPSO, factory_DrifterPSO, factory_DAPSO, factory_CMAES, \
-    factory_LSHADE, factory_AnarchicAmnesiacPSO, factory_HybridDisjointPSO_WithWanderer, \
-    factory_HybridAdditivePSO_WithWanderer
+    factory_LSHADE, factory_AnarchicAmnesiacPSO, factory_HybridDisjointPSO_WithWanderer_NonVar, \
+    factory_HybridAdditivePSO_WithWanderer_NonVar
 from experiment.globals import NO_OF_RUNS, NUMBER_OF_VARIABLES, G_SOLUTIONS_SIZE, G_MAX_EVALUATIONS, RESULTS_DIR
 
 from algorithm.AdaptivePSO import CoAdaptativePSO, IndividualAdaptivePSO
@@ -94,6 +94,7 @@ BASE_GROUP_COLORS = {
     'Combined learning': '#9edae5',  # light‐blue (paler than Eschewer)
     'Anarchic': '#9467bd',  # purple
     'Noisy': '#c20078',  # light‐pink (paler than Anarchic)
+    'Erratic': '#c20078',  # light‐pink (paler than Anarchic)
     'Reset': '#ff7f0e',  # orange
     'Hybrid': '#d62728',  # red
     'RandomComplex': '#653700', #brown
@@ -151,6 +152,7 @@ def setup_experiment():
             'AAAPSO',
             'NoisyPSO',
             'NAPSO',
+            'ErraticPSO'
         ],
         'Noisy': [
             'NoisyPSO',
@@ -236,40 +238,40 @@ def setup_experiment():
 
     # Define problems
     n_variables_problems = [
-        # ##
-        # RotatedBentCigar(number_of_variables),
-        # RotatedDiscus(number_of_variables),
-        # RotatedHighConditionedElliptic(number_of_variables),
-        # ShiftedSchwefel(number_of_variables),
-        # ShiftedRotatedHappyCat(number_of_variables),
-        # ShiftedRotatedHGBat(number_of_variables),
-        # ShiftedRotatedWeierstrass(number_of_variables),
-        # ##
-        # AlpineN1(number_of_variables),
-        # CrownedCross(number_of_variables),
-        # EggHolder(number_of_variables),
-        # ExpandedShaffer(number_of_variables),
-        # GeneralizedSchafferN1(number_of_variables),
-        # GeneralizedSchafferN2(number_of_variables),
-        # GeneralizedSchafferN3(number_of_variables),
-        # GeneralizedSchafferN4(number_of_variables),
-        # GeneralizedSchmidtVetters(number_of_variables),
-        # LennardJonesMinimumEnergyCluster(number_of_variables),
-        # Michalewicz(number_of_variables),
-        # Mishra03(number_of_variables),
-        # Mishra04(number_of_variables),
-        # RosenbrockModified02(number_of_variables),
-        # Salomon(number_of_variables),
-        # SchwefelN20(number_of_variables),
-        # SchwefelN36(number_of_variables),
-        # SchwefelN6(number_of_variables),
-        # ShubertN3(number_of_variables),
-        # ShubertN4(number_of_variables),
-        # SineEnvelope(number_of_variables),
-        # Stochastic(number_of_variables),
-        # StretchedV(number_of_variables),
-        # StyblinskiTang(number_of_variables),
-        # ShiftedRotatedSchafferF7(number_of_variables),
+        ##
+        RotatedBentCigar(number_of_variables),
+        RotatedDiscus(number_of_variables),
+        RotatedHighConditionedElliptic(number_of_variables),
+        ShiftedSchwefel(number_of_variables),
+        ShiftedRotatedHappyCat(number_of_variables),
+        ShiftedRotatedHGBat(number_of_variables),
+        ShiftedRotatedWeierstrass(number_of_variables),
+        ##
+        AlpineN1(number_of_variables),
+        CrownedCross(number_of_variables),
+        EggHolder(number_of_variables),
+        ExpandedShaffer(number_of_variables),
+        GeneralizedSchafferN1(number_of_variables),
+        GeneralizedSchafferN2(number_of_variables),
+        GeneralizedSchafferN3(number_of_variables),
+        GeneralizedSchafferN4(number_of_variables),
+        GeneralizedSchmidtVetters(number_of_variables),
+        LennardJonesMinimumEnergyCluster(number_of_variables),
+        Michalewicz(number_of_variables),
+        Mishra03(number_of_variables),
+        Mishra04(number_of_variables),
+        RosenbrockModified02(number_of_variables),
+        Salomon(number_of_variables),
+        SchwefelN20(number_of_variables),
+        SchwefelN36(number_of_variables),
+        SchwefelN6(number_of_variables),
+        ShubertN3(number_of_variables),
+        ShubertN4(number_of_variables),
+        SineEnvelope(number_of_variables),
+        Stochastic(number_of_variables),
+        StretchedV(number_of_variables),
+        StyblinskiTang(number_of_variables),
+        ShiftedRotatedSchafferF7(number_of_variables),
 
         ## Rejected after experiment
 
@@ -374,21 +376,21 @@ def setup_experiment():
     problems = n_variables_problems + fixed_variables_problems
 
     algorithms = {
-        # 'PSO': factory_PSO,
+        'PSO': factory_PSO,
         # 'PerturbationPSO': factory_PerturbationPSO,
         # 'DrifterPSO': factory_DrifterPSO,
         # 'DAPSO': factory_DAPSO,
         # 'RebelPSO': factory_RebelPSO,
         # 'RejectorPSO': factory_RejectorPSO,
-        # 'RebelRejectorPSO': factory_RebelRejectorPSO,
+        'RebelRejectorPSO': factory_RebelRejectorPSO,
         # 'RRAPSO': factory_RRAPSO,
         # 'ContrarianPSO': factory_ContrarianPSO,
         # 'DefeatistPSO': factory_DefeatistPSO,
-        # 'ContrarianDefeatistPSO': factory_ContrarianDefeatistPSO,
+        'ContrarianDefeatistPSO': factory_ContrarianDefeatistPSO,
         # 'CDAPSO': factory_CDAPSO,
         # 'EschewerPSO': factory_EschewerPSO,
         # 'EscapistPSO': factory_EscapistPSO,
-        # 'EschewerEscapistPSO': factory_EschewerEscapistPSO,
+        'EschewerEscapistPSO': factory_EschewerEscapistPSO,
         # 'EEAPSO': factory_EEAPSO,
         # 'ReverseLearningPSO': factory_ReverseLearningPSO,
         # 'ReverseLearningGlobalAttractorPSO': factory_ReverseLearningGlobalAttractorPSO,
@@ -405,21 +407,21 @@ def setup_experiment():
         # 'PartialResetPSO': factory_PartialResetPSO,
         # 'CollectiveResetPSO': factory_CollectiveResetPSO,
         # 'FRAPSO': factory_FRAPSO,
-        # 'HybridFullDisjointPSO': factory_HybridFullDisjointPSO,
-        # 'HybridPartialDisjointPSO': factory_HybridPartialDisjointPSO,
-        # 'HybridAdditivePSO': factory_HybridAdditivePSO,
+        'HybridFullDisjointPSO': factory_HybridFullDisjointPSO,
+        'HybridPartialDisjointPSO': factory_HybridPartialDisjointPSO,
+        'HybridAdditivePSO': factory_HybridAdditivePSO,
         # 'HybridFullDisjointPSO_WithRandom': factory_HybridFullDisjointPSO,
         # 'HybridPartialDisjointPSO_WithRandom': factory_HybridPartialDisjointPSO,
         # 'HybridAdditivePSO_WithRandom': factory_HybridAdditivePSO,
-        'HybridDisjointPSO_WithWanderer': factory_HybridDisjointPSO_WithWanderer,
-        'HybridAdditivePSO_WithWanderer': factory_HybridAdditivePSO_WithWanderer,
+        # 'HybridDisjointPSO_WithWanderer': factory_HybridDisjointPSO_WithWanderer,
+        # 'HybridAdditivePSO_WithWanderer': factory_HybridAdditivePSO_WithWanderer,
         # 'HybridFullDisjointRestarterPSO': factory_HybridFullDisjointRestarterPSO,
         # 'HybridPartialDisjointRestarterPSO': factory_HybridPartialDisjointRestarterPSO,
         # 'HybridAdditiveRestarterPSO': factory_HybridAdditiveRestarterPSO,
         # 'CAPSO': factory_CAPSO,
         # 'IAPSO': factory_IAPSO,
-        # 'CMAES': factory_CMAES,
-        # 'LSHADE': factory_LSHADE,
+        'CMAES': factory_CMAES,
+        'LSHADE': factory_LSHADE,
     }
 
     # helper to flatten some groups
@@ -429,7 +431,7 @@ def setup_experiment():
     exclude_groups = ['Reverse learning', 'Variable coefficient', 'Combined learning', 'Reset',
                       # 'Noisy',
                       # 'Anarchic',
-                      'SOTA', 'Hybrid'
+                      # 'SOTA', 'Hybrid'
                       ]
     adaptive_algorithms = ['RRAPSO', 'CDAPSO', 'EEAPSO', 'AAAPSO', 'CLAPSO', 'NAPSO', 'DAPSO']
     all_without_additive = flatten_group_keys(

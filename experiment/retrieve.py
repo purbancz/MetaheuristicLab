@@ -770,10 +770,7 @@ def extract_results_to_csv(pickle_files, output_prefix="aggregated_results", bas
 # ---------------------------------------------
 def wilcoxon_rank_sum_vs_baselines(
     pickle_files,
-    baselines_display_to_key = OrderedDict([
-        ("Canonical PSO", "PSO"),
-        ("PerturbationPSO", "PerturbationPSO")
-    ]),
+        baselines_display_to_key=None,
     alpha=0.05,
     lower_is_better=True,
     min_group_size=2,
@@ -783,6 +780,12 @@ def wilcoxon_rank_sum_vs_baselines(
     print_examples=False,
 ):
 
+    if baselines_display_to_key is None:
+        baselines_display_to_key = OrderedDict([
+            ("Canonical PSO", "PSO"),
+            ("CMA-ES", "CMAES"),
+            ("L-SHADE", "LSHADE"),
+        ])
     allowed_set = (set(algo_groups.keys()) if algo_groups else set()) \
                   | set(baselines_display_to_key.values())
 
@@ -1071,6 +1074,234 @@ def friedman_wilcoxon_algorithm_groups(pickle_files, algo_groups):
         print(
             "This implies that specific topographical advantages of individual algorithms balance out across the benchmark suite (No Free Lunch).")
 
+def friedman_wilcoxon_algorithm_groups_with_holm(pickle_files, algo_groups):
+    """
+    Min-max normalizes fitness per problem, averages them by the provided
+    algorithm taxonomy groups, and runs a Friedman test followed by pairwise
+    Wilcoxon signed-rank tests with Holm correction.
+
+    Parameters
+    ----------
+    pickle_files : list
+        List of pickle files containing experimental results.
+
+    algo_groups : dict
+        Mapping from algorithm name to group name. If each algorithm should be
+        compared individually, map each algorithm to itself.
+
+    Returns
+    -------
+    dict
+        Dictionary containing group scores, Friedman result, and Holm-corrected
+        pairwise Wilcoxon post-hoc results.
+    """
+
+    # 1. Dynamically extract unique group names, preserving order
+    group_names = list(dict.fromkeys(algo_groups.values()))
+
+    # 2. Load and combine data
+    print("Loading data from pickle files...")
+    data_list = [load_data_from_pickle(fp) for fp in pickle_files]
+    valid_data_list = [d for d in data_list if d is not None]
+
+    if not valid_data_list:
+        print("Error: No valid data loaded.")
+        return None
+
+    combined_data_dict, total_runs = combine_data(valid_data_list)
+
+    if not combined_data_dict:
+        print("Error: Combined data is empty.")
+        return None
+
+    # Initialize storage for group means per problem
+    group_scores_per_problem = {g: [] for g in group_names}
+
+    excluded_empty = 0
+    excluded_degenerate = 0
+    excluded_incomplete = 0
+
+    # 3. Iterate and normalize per problem
+    for problem_name, problem_data in combined_data_dict.items():
+        results = problem_data.get("results", {})
+
+        algo_means = {}
+
+        for algo, a_data in results.items():
+            if algo not in algo_groups:
+                continue
+
+            arr = a_data.get("data", np.array([]))
+            arr = np.asarray(arr)
+
+            if arr.size == 0:
+                continue
+
+            if arr.ndim == 2:
+                arr = arr[:, -1]
+            elif arr.ndim != 1:
+                continue
+
+            finite_vals = arr[np.isfinite(arr)]
+
+            if finite_vals.size > 0:
+                algo_means[algo] = float(np.mean(finite_vals))
+
+        if not algo_means:
+            excluded_empty += 1
+            continue
+
+        min_fit = min(algo_means.values())
+        max_fit = max(algo_means.values())
+
+        if max_fit == min_fit:
+            excluded_degenerate += 1
+            continue
+
+        norm_means = {
+            algo: (val - min_fit) / (max_fit - min_fit)
+            for algo, val in algo_means.items()
+        }
+
+        # Calculate group averages for this problem
+        prob_group_avgs = {}
+
+        for g in group_names:
+            g_algos = [
+                algo
+                for algo, group in algo_groups.items()
+                if group == g and algo in norm_means
+            ]
+
+            if g_algos:
+                prob_group_avgs[g] = float(
+                    np.mean([norm_means[algo] for algo in g_algos])
+                )
+
+        # Keep only complete matched cases for paired Friedman/Wilcoxon tests
+        if len(prob_group_avgs) == len(group_names):
+            for g in group_names:
+                group_scores_per_problem[g].append(prob_group_avgs[g])
+        else:
+            excluded_incomplete += 1
+
+    n_cases = len(group_scores_per_problem[group_names[0]])
+
+    if n_cases < 2:
+        print("Not enough complete matched data across all groups to perform statistical tests.")
+        return None
+
+    # Convert to arrays
+    for g in group_names:
+        group_scores_per_problem[g] = np.asarray(group_scores_per_problem[g], dtype=float)
+
+    # 4. Friedman test
+    stat, p_friedman = friedmanchisquare(
+        *[group_scores_per_problem[g] for g in group_names]
+    )
+
+    print(f"\n=== Taxonomy Group Analysis (Normalized Means, N={n_cases} paired benchmarks) ===")
+    for g in group_names:
+        print(f"  {g} Global Mean: {np.mean(group_scores_per_problem[g]):.4f}")
+
+    print("\n=== Instance filtering summary ===")
+    print(f"Total instances available: {len(combined_data_dict)}")
+    print(f"Valid complete instances used: {n_cases}")
+    print(f"Excluded empty/no relevant algos: {excluded_empty}")
+    print(f"Excluded degenerate: {excluded_degenerate}")
+    print(f"Excluded incomplete across groups: {excluded_incomplete}")
+
+    print(f"\nFriedman Test Statistic: {stat:.4f}, p-value: {p_friedman:.5e}")
+
+    pairwise_results = []
+
+    # 5. Pairwise Wilcoxon post-hoc tests with Holm correction
+    if p_friedman < 0.05:
+        print(
+            "\nFriedman test is SIGNIFICANT (p < 0.05). "
+            "Proceeding with pairwise Wilcoxon signed-rank tests with Holm correction:"
+        )
+
+        raw_results = []
+        raw_p_values = []
+
+        for g1, g2 in combinations(group_names, 2):
+            try:
+                w_stat, p_raw = wilcoxon(
+                    group_scores_per_problem[g1],
+                    group_scores_per_problem[g2]
+                )
+
+                mean_g1 = float(np.mean(group_scores_per_problem[g1]))
+                mean_g2 = float(np.mean(group_scores_per_problem[g2]))
+                mean_diff = mean_g1 - mean_g2
+
+                winner = g1 if mean_diff < 0 else g2  # lower normalized score is better
+
+                raw_results.append({
+                    "group_1": g1,
+                    "group_2": g2,
+                    "wilcoxon_stat": float(w_stat),
+                    "p_raw": float(p_raw),
+                    "mean_group_1": mean_g1,
+                    "mean_group_2": mean_g2,
+                    "mean_diff_group_1_minus_group_2": float(mean_diff),
+                    "lower_mean_group": winner
+                })
+
+                raw_p_values.append(p_raw)
+
+            except Exception as e:
+                print(f"  {g1} vs {g2}: Could not perform Wilcoxon test ({e})")
+
+        if raw_results:
+            reject, p_adjusted, _, _ = multipletests(
+                raw_p_values,
+                alpha=0.05,
+                method="holm"
+            )
+
+            for result, p_adj, is_significant in zip(raw_results, p_adjusted, reject):
+                result["p_holm"] = float(p_adj)
+                result["significant_holm"] = bool(is_significant)
+
+                pairwise_results.append(result)
+
+                sig_star = "*" if is_significant else ""
+
+                if is_significant:
+                    conclusion = f"{result['lower_mean_group']} significantly better"
+                else:
+                    conclusion = f"{result['lower_mean_group']} lower mean, not significant"
+
+                print(
+                    f"  {result['group_1']} vs {result['group_2']}: "
+                    f"raw p={result['p_raw']:.4f}, "
+                    f"Holm-adjusted p={result['p_holm']:.4f}{sig_star} "
+                    f"--> {conclusion}"
+                )
+
+    else:
+        print("\nNo significant difference among the groups overall (Friedman p >= 0.05).")
+        print(
+            "This result is consistent with the possibility that topographical advantages "
+            "of individual algorithms balance out across the benchmark suite, but it does "
+            "not prove a No Free Lunch effect."
+        )
+
+    return {
+        "group_names": group_names,
+        "group_scores_per_problem": group_scores_per_problem,
+        "n_cases": n_cases,
+        "friedman_statistic": float(stat),
+        "friedman_p_value": float(p_friedman),
+        "friedman_significant": bool(p_friedman < 0.05),
+        "pairwise_results": pairwise_results,
+        "excluded_empty": excluded_empty,
+        "excluded_degenerate": excluded_degenerate,
+        "excluded_incomplete": excluded_incomplete,
+        "total_runs": total_runs,
+    }
 
 def head_to_head_champions(pickle_files):
     # Load and combine data
@@ -1078,8 +1309,8 @@ def head_to_head_champions(pickle_files):
     valid_data_list = [d for d in data_list if d is not None]
     combined_data_dict, _ = combine_data(valid_data_list)
 
-    algo_A = "NoisyPSO"
-    algo_B = "DefeatistPSO"
+    algo_A = "PSO"
+    algo_B = "ContrarianDefeatistPSO"
 
     scores_A = []
     scores_B = []

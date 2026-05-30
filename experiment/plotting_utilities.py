@@ -227,32 +227,40 @@ def plot_results_with_annotations(data_dict, problem, results_dir, max_evaluatio
     plt.show()
 
 
-
-
 def plot_results_with_annotations_legend(data_dict, problem, results_dir, max_evaluations, no_of_runs, algorithm_colors,
                                          group_name="all", log_scale=False):
-
     alg_order = [
         'PSO', 'PerturbationPSO', 'RebelPSO', 'RejectorPSO', 'RebelRejectorPSO',
         'ContrarianPSO', 'DefeatistPSO', 'ContrarianDefeatistPSO',
-        'EschewerPSO', 'EscapistPSO', 'EschewerEscapistPSO',
+        'EschewerPSO', 'EscapistPSO', 'EschewerEscapistPSO', 'ErraticPSO', 'NoisyPSO',
         'HybridFullDisjointPSO', 'HybridPartialDisjointPSO', 'HybridAdditivePSO'
     ]
-    alg_number_map = {name: idx+1 for idx, name in enumerate(alg_order)}
+    alg_number_map = {name: idx + 1 for idx, name in enumerate(alg_order)}
 
+    def canonical_label(label):
+        # Keep one consistent name everywhere in this function
+        if label == "WandererPSO":
+            return "ErraticPSO"
+        if label == "NoisyPSO":
+            return "WandererPSO"
+        return label
 
     fig, ax = plt.subplots(figsize=(14, 6))
-    # fig.subplots_adjust(right=0.8)
 
     annot_info = []
-    for i, (label, fitness_data) in enumerate(data_dict.items()):
-        avg_fit = np.mean(fitness_data['data'], axis=0)
-        color = algorithm_colors.get(label, 'black')
-        ls = LINE_STYLES[i % len(LINE_STYLES)]
-        plt.plot(avg_fit, label=label, linestyle=ls, color=color)
+    line_map = {}
 
-        final_y = avg_fit[-1]  # final average fitness
-        final_x = len(avg_fit) - 1  # last evaluation index
+    for i, (raw_label, fitness_data) in enumerate(data_dict.items()):
+        label = canonical_label(raw_label)
+        avg_fit = np.mean(fitness_data['data'], axis=0)
+        color = algorithm_colors.get(label, algorithm_colors.get(raw_label, 'black'))
+        ls = LINE_STYLES[i % len(LINE_STYLES)]
+
+        line, = ax.plot(avg_fit, label=label, linestyle=ls, color=color)
+        line_map[label] = line
+
+        final_y = avg_fit[-1]
+        final_x = len(avg_fit) - 1
         annot_info.append((label, final_x, final_y, color))
 
     # Basic labeling & legend
@@ -270,43 +278,27 @@ def plot_results_with_annotations_legend(data_dict, problem, results_dir, max_ev
     if total_algs <= 1:
         annotation_positions = [0.1]
     else:
-        annotation_bottom = 0.05  # fraction from bottom
-        annotation_top = 0.95  # fraction from top
-        vertical_space = annotation_top - annotation_bottom
-        if total_algs == 1:
-            annotation_positions = [(annotation_bottom + annotation_top) / 2.0]
-        else:
-            annotation_spacing = 0.055
-            annotation_positions = [
-                annotation_bottom + i * annotation_spacing
-                for i in range(total_algs)
-            ]
+        annotation_bottom = 0.05
+        annotation_spacing = 0.055
+        annotation_positions = [
+            annotation_bottom + i * annotation_spacing
+            for i in range(total_algs)
+        ]
 
     annotation_x = 1.02
-
-    # 1) podczas rysowania zbieraj Line2D
-    line_map = {}
-    for i, (label, fitness_data) in enumerate(data_dict.items()):
-        avg = np.mean(fitness_data['data'], axis=0)
-        color = algorithm_colors.get(label, 'black')
-        ls = LINE_STYLES[i % len(LINE_STYLES)]
-        line, = ax.plot(avg, label=label, linestyle=ls, color=color)
-        line_map[label] = line
-
-    # 2) stwórz legendę
-    ax.get_legend().set_visible(False)
-    # 3) przy annotacji używaj tego samego handle’a
-    # swatch_len = 0.03
 
     fig.canvas.draw()
     renderer = fig.canvas.get_renderer()
 
     for (label, final_x, final_y, color), pos in zip(annot_info, annotation_positions):
-        handle = line_map[label]
+        handle = line_map.get(label)
+        if handle is None:
+            # Skip safely if a label somehow wasn't plotted
+            continue
+
         sw_ls = handle.get_linestyle()
         sw_color = handle.get_color()
 
-        # Adnotacja numeryczna
         annotation_text = f"{final_y:.2f}"
         annotation = ax.annotate(
             text=annotation_text,
@@ -316,9 +308,14 @@ def plot_results_with_annotations_legend(data_dict, problem, results_dir, max_ev
             textcoords='axes fraction',
             ha='left', va='center',
             bbox=dict(boxstyle="round,pad=0.2", edgecolor=sw_color, facecolor="white"),
-            arrowprops=dict(arrowstyle="-", color="grey", connectionstyle="arc3,rad=0.1", relpos=(0., 0.5),
-                            shrinkA=0, shrinkB=0,
-                            ),
+            arrowprops=dict(
+                arrowstyle="-",
+                color="grey",
+                connectionstyle="arc3,rad=0.1",
+                relpos=(0., 0.5),
+                shrinkA=0,
+                shrinkB=0,
+            ),
             fontsize=10,
             color="black",
             clip_on=False,
@@ -329,13 +326,10 @@ def plot_results_with_annotations_legend(data_dict, problem, results_dir, max_ev
         bbox_text_axes = bbox_text.transformed(ax.transAxes.inverted())
         text_x_end = bbox_text_axes.x1
 
-        # Teraz minimalny padding między tekstem a swatchem
         minimal_padding = 0.02
-
         swatch_x_start = text_x_end + minimal_padding
         swatch_len = 0.03
 
-        # # Rysuj swatch (linię)
         ax.hlines(
             y=pos,
             xmin=swatch_x_start,
@@ -348,7 +342,6 @@ def plot_results_with_annotations_legend(data_dict, problem, results_dir, max_ev
             zorder=3
         )
 
-        # Tekst algorytmu obok swatcha
         ax.text(
             swatch_x_start + swatch_len + minimal_padding,
             pos,
@@ -360,42 +353,25 @@ def plot_results_with_annotations_legend(data_dict, problem, results_dir, max_ev
             clip_on=False,
             zorder=4
         )
-        alg_number = alg_number_map.get(label, "-")
-        # ax.text(
-        #     # swatch_x_start + swatch_len + minimal_padding,
-        #     swatch_x_start,
-        #     pos,
-        #     # str(alg_number),
-        #     label,
-        #     transform=ax.transAxes,
-        #     va='center',
-        #     fontsize=10,
-        #     color="black",
-        #     clip_on=False,
-        #     zorder=4
-        # )
 
-    # right_margin_for_annotations = 0.001
-    # plt.tight_layout(rect=[0, 0, 1.0 - right_margin_for_annotations, 1.0])
+        alg_number = alg_number_map.get(label, "-")
+
     plt.tight_layout()
 
     safe_group_name = group_name.replace(' ', '_').replace('-', '_')
     safe_problem_name = problem.name().replace(' ', '_').replace('-', '_')
-    # filename = (f"{results_dir}/"
-    #             # + f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_"
-    #             + f"{safe_problem_name}_{safe_group_name}_dim{problem.number_of_variables()}_annot_legend.png")
-    # plt.savefig(filename, dpi=300)
-    # plt.show()
 
-    filename = (f"{results_dir}/"
-                # + f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_"
-                + f"{safe_problem_name}_{safe_group_name}_dim{problem.number_of_variables()}_annot_legend.png")
+    filename = (
+        f"{results_dir}/"
+        + f"{safe_problem_name}_{safe_group_name}_dim{problem.number_of_variables()}_annot_legend.png"
+    )
 
     try:
         plt.savefig(filename, dpi=300)
         print(f"Saved annot plot to {filename}")
     except Exception as e:
         print(f"Error annot plot: {e}")
+
     plt.show()
 
 
@@ -753,6 +729,9 @@ def plot_final_petit_prince(data_dict, problem, results_dir, algorithm_colors,
 
     # Colors: Use given colors for box and scatter; lighten for violins.
     box_colors = [algorithm_colors.get(label, 'black') for label in labels]
+    for label in labels:
+        if label == "NoisyPSO":
+            label = "ErraticPSO"
     violin_colors = [lighten_color(color, 0.5) for color in box_colors]
     scatter_colors = box_colors
 
@@ -787,7 +766,6 @@ def plot_final_petit_prince(data_dict, problem, results_dir, algorithm_colors,
             jittered_rain_data.append(jittered_data)
         else:
             jittered_rain_data.append(data_arr)  # Use original data if variance > 0 or only 1 point
-
 
     # ----- Plot the vertical boxplots (use ORIGINAL data) -----
     bp = ax.boxplot(rain_data, patch_artist=True, vert=True, showfliers=False,  # Hide fliers, scatter shows points
