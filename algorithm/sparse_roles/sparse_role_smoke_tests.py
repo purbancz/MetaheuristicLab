@@ -8,9 +8,9 @@ from jmetal.problem import Sphere
 from jmetal.util.termination_criterion import StoppingByEvaluations
 
 from algorithm.sparse_roles.coordinate_mask_utilities import CoordinateMaskMixin
-from algorithm.sparse_roles.sparse_hybrid_role_p_s_o import SparseHybridPartialDisjointPSO, SparseHybridFullDisjointPSO, \
+from algorithm.sparse_roles.sparse_hybrid import SparseHybridPartialDisjointPSO, SparseHybridFullDisjointPSO, \
     SparseHybridAdditivePSO
-from algorithm.sparse_roles.sparse_role_based_p_s_o import SparseWandererPSO, SparseDefeatistPSO, \
+from algorithm.sparse_roles.sparse_role_based import SparseWandererPSO, SparseDefeatistPSO, \
     SparseContrarianDefeatistPSO, SparseRebelPSO, SparseRejectorPSO, SparseRebelRejectorPSO, \
     SparseContrarianPSO, SparseEschewerPSO, SparseEscapistPSO, SparseEschewerEscapistPSO, \
     SparseAnarchicPSO, SparseAmnesiacPSO, SparseAnarchicAmnesiacPSO, SparseErraticPSO, SparseDrifterPSO
@@ -307,8 +307,8 @@ def standard_velocity():
 
 
 def assert_sparse_velocity(algorithm, particle, expected):
-    with patch("algorithm.sparse_roles.sparse_role_based_p_s_o.random.random", return_value=1.0), \
-            patch("algorithm.sparse_roles.sparse_role_based_p_s_o.np.random.uniform",
+    with patch("algorithm.sparse_roles.sparse_role_based.random.random", return_value=1.0), \
+            patch("algorithm.sparse_roles.sparse_role_based.np.random.uniform",
                   return_value=np.array([10.0, 20.0, 30.0, 40.0])):
         algorithm.update_velocity([particle])
 
@@ -471,7 +471,7 @@ def test_sparse_drifter_perturbs_only_masked_coordinates() -> None:
     drifter = make_particle(is_drifter=True)
     standard = make_particle(is_drifter=False)
 
-    with patch("algorithm.sparse_roles.sparse_role_based_p_s_o.np.random.normal",
+    with patch("algorithm.sparse_roles.sparse_role_based.np.random.normal",
                return_value=np.array([0.25, 0.5, 0.75, 1.0])):
         algorithm.perturbation([drifter, standard])
 
