@@ -1,21 +1,20 @@
-from jmetal.algorithm.singleobjective import EvolutionStrategy
 from jmetal.util.termination_criterion import StoppingByEvaluations
 
-from algorithm.AdaptivePSO import CoAdaptativePSO, IndividualAdaptivePSO
-from algorithm.CMAES import CMAES
-from algorithm.LSHADE import LSHADE
-from algorithm.WAPSO import ReverseLearningPSO, ReverseLearningGlobalAttractorPSO, ReverseLearningPersonalAttractorPSO, \
+from algorithm.role_based.adaptive_pso import CoAdaptativePSO, IndividualAdaptivePSO
+from algorithm.sota.cma_es import CMAES
+from algorithm.sota.lshade import LSHADE
+from algorithm.role_based.worst_aware_pso import ReverseLearningPSO, ReverseLearningGlobalAttractorPSO, ReverseLearningPersonalAttractorPSO, \
     CombinedLearningPSO
-from algorithm.hybrid_diverse import HybridFullDisjointPSO, HybridPartialDisjointPSO, HybridAdditivePSO, \
+from algorithm.role_based.role_hybrids import HybridFullDisjointPSO, HybridPartialDisjointPSO, HybridAdditivePSO, \
     HybridFullDisjointPSO_WithRandom, HybridPartialDisjointPSO_WithRandom, HybridAdditivePSO_WithRandom, \
     HybridFullDisjointRestarterPSO, HybridPartialDisjointRestarterPSO, HybridAdditiveRestarterPSO, \
     HybridDisjointPSO_WithWanderer, HybridAdditivePSO_WithWanderer
-from algorithm.particles_with_roles import RebelPSO, RejectorPSO, RebelRejectorPSO, RRAPSO, ContrarianPSO, DefeatistPSO, \
+from algorithm.role_based.roles import RebelPSO, RejectorPSO, RebelRejectorPSO, RRAPSO, ContrarianPSO, DefeatistPSO, \
     ContrarianDefeatistPSO, CDAPSO, EschewerPSO, EscapistPSO, EschewerEscapistPSO, EEAPSO, CLAPSO, AnarchicPSO, \
     AmnesiacPSO, ErraticPSO, AAAPSO, WandererPSO, NAPSO, DrifterPSO, DAPSO, AnarchicAmnesiacPSO
-from algorithm.reinitialized_PSO import PartialResetPSO, CollectiveResetPSO, FRAPSO
-from algorithm.single_objective_PSO import SingleObjectivePSO, PerturbationPSO
-from experiment.globals import G_SOLUTIONS_SIZE, G_MAX_EVALUATIONS, NUMBER_OF_VARIABLES
+from algorithm.reinitialization.reinitialized_pso import PartialResetPSO, CollectiveResetPSO, FRAPSO
+from algorithm.basic.single_objective_pso import SingleObjectivePSO, PerturbationPSO
+from experiment.globals import G_SOLUTIONS_SIZE, G_MAX_EVALUATIONS
 
 
 def factory_LSHADE(p):

@@ -4,87 +4,35 @@ from itertools import chain
 import matplotlib.colors as mcolors
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 
-from experiment.factories import factory_PSO, factory_RebelPSO, factory_RejectorPSO, factory_RebelRejectorPSO, \
-    factory_RRAPSO, factory_ContrarianPSO, factory_DefeatistPSO, factory_ContrarianDefeatistPSO, factory_CDAPSO, \
-    factory_EschewerPSO, factory_EscapistPSO, factory_EschewerEscapistPSO, factory_EEAPSO, factory_ReverseLearningPSO, \
-    factory_ReverseLearningGlobalAttractorPSO, factory_ReverseLearningPersonalAttractorPSO, factory_CombinedLearningPSO, \
-    factory_CLAPSO, factory_AnarchicPSO, factory_AmnesiacPSO, factory_WandererPSO, factory_AAAPSO, factory_NoisyPSO, \
-    factory_PerturbationPSO, factory_PartialResetPSO, factory_CollectiveResetPSO, factory_FRAPSO, \
-    factory_HybridFullDisjointPSO, factory_HybridPartialDisjointPSO, factory_HybridAdditivePSO, \
-    factory_HybridFullDisjointRestarterPSO, factory_HybridPartialDisjointRestarterPSO, \
-    factory_HybridAdditiveRestarterPSO, factory_CAPSO, factory_IAPSO, factory_DrifterPSO, factory_DAPSO, factory_CMAES, \
-    factory_LSHADE, factory_AnarchicAmnesiacPSO, factory_HybridDisjointPSO_WithWanderer_NonVar, \
-    factory_HybridAdditivePSO_WithWanderer_NonVar
+from experiment.factories import factory_PSO, factory_RebelRejectorPSO, \
+    factory_ContrarianDefeatistPSO, factory_EschewerEscapistPSO, factory_HybridFullDisjointPSO, factory_HybridPartialDisjointPSO, factory_HybridAdditivePSO, \
+    factory_CMAES, \
+    factory_LSHADE
 from experiment.globals import NO_OF_RUNS, NUMBER_OF_VARIABLES, G_SOLUTIONS_SIZE, G_MAX_EVALUATIONS, RESULTS_DIR
 
-from algorithm.AdaptivePSO import CoAdaptativePSO, IndividualAdaptivePSO
-from algorithm.reinitialized_PSO import FRAPSO, CollectiveResetPSO, PartialResetPSO
-from algorithm.WAPSO import ReverseLearningGlobalAttractorPSO, CombinedLearningPSO, ReverseLearningPersonalAttractorPSO, \
-    ReverseLearningPSO
-from algorithm.hybrid_diverse import HybridPartialDisjointPSO, HybridFullDisjointPSO, HybridAdditivePSO, \
-    HybridFullDisjointPSO_WithRandom, HybridPartialDisjointPSO_WithRandom, HybridAdditivePSO_WithRandom, \
-    HybridFullDisjointRestarterPSO, HybridPartialDisjointRestarterPSO, HybridAdditiveRestarterPSO
-from algorithm.particles_with_roles import RebelPSO, RejectorPSO, RebelRejectorPSO, RRAPSO, ContrarianPSO, DefeatistPSO, \
-    ContrarianDefeatistPSO, EschewerPSO, EscapistPSO, EschewerEscapistPSO, CDAPSO, EEAPSO, AnarchicPSO, AmnesiacPSO, \
-    ErraticPSO, WandererPSO, AAAPSO, NAPSO, CLAPSO
-from algorithm.single_objective_PSO import SingleObjectivePSO, PerturbationPSO
-
-from problem.fixed_varaibles.branin import BraninRCOC
-from problem.fixed_varaibles.camel import SixHumpCamel, ThreeHumpCamel
-from problem.fixed_varaibles.cross_in_tray import CrossInTray
-from problem.fixed_varaibles.de_joung import DeJoung
-from problem.fixed_varaibles.drop_wave import DropWave
-from problem.fixed_varaibles.easom import Easom
-from problem.fixed_varaibles.goldstein_price import GoldsteinPrice
-from problem.fixed_varaibles.hartmann import Hartmann
-from problem.fixed_varaibles.holder_table import HolderTable
-from problem.fixed_varaibles.mccormick import McCormick
-from problem.fixed_varaibles.schaffer import SchafferN2
-from problem.fixed_varaibles.shekel import Shekel
-from problem.fixed_varaibles.shubert import Shubert
-from problem.n_variables.hgbat import HGBat
 from problem.n_variables.CEC import RotatedHighConditionedElliptic, RotatedBentCigar, RotatedDiscus, \
-    ShiftedRotatedRosenbrock, ShiftedRotatedAckley, ShiftedRastrigin, ShiftedRotatedRastrigin, ShiftedSchwefel, \
-    ShiftedRotatedSchwefel, ShiftedRotatedKatsuura, ShiftedRotatedHappyCat, ShiftedRotatedHGBat, \
-    ShiftedRotatedExpandedGriewankPlusRosenbrock, ShiftedRotatedExpandedScafferF6, HybridFunction1, HybridFunction2, \
-    HybridFunction3, HybridFunction4, HybridFunction5, HybridFunction6, CompositionFunction1, CompositionFunction2, \
-    CompositionFunction3, CompositionFunction4, CompositionFunction5, CompositionFunction6, CompositionFunction7, \
-    CompositionFunction8, ShiftedRotatedSchafferF7
-from problem.n_variables.ackley import Ackley
-from problem.n_variables.alpine import AlpineN1, AlpineN2, AlpineN2Max, AlpineN1Max
-from problem.n_variables.bent_cigar import BentCigar
-from problem.n_variables.bird import Bird
-from problem.n_variables.cross import CrownedCross, CrossLeggedTable, Cross, GeneralizedCrossInTray
-from problem.n_variables.discus import Discus
-from problem.n_variables.dixon import DixonPrice, GeneralizedDixonPriceRosenbrock
+    ShiftedSchwefel, \
+    ShiftedRotatedHappyCat, ShiftedRotatedHGBat, \
+    ShiftedRotatedSchafferF7
+from problem.n_variables.alpine import AlpineN1
+from problem.n_variables.cross import CrownedCross
 from problem.n_variables.eggholder import EggHolder
 from problem.n_variables.expanded_schaffer import ExpandedShaffer
-from problem.n_variables.griewank import Griewank
-from problem.n_variables.happy_cat import HappyCat
-from problem.n_variables.holders import TestTubeHolder, CarromTable, PenHolder, GeneralizedHolderTable
-from problem.n_variables.katsuura import Katsuura, ExpandedKatsuura
 from problem.n_variables.lenard_johnes_minimum_energy_cluster import LennardJonesMinimumEnergyCluster
-from problem.n_variables.levy import Levy
 from problem.n_variables.michalewicz import Michalewicz
-from problem.n_variables.mishra import Mishra01, Mishra02, Mishra03, Mishra04, Mishra05, Mishra06, Mishra11
-from problem.n_variables.penalized import GeneralizedPenalizedN1
-from problem.n_variables.plateau import Plateau
-from problem.n_variables.quantum_speed import QuantumSpeedLimit2D
-from problem.n_variables.quartic import Quartic
-from problem.n_variables.rosenbrock import Rosenbrock, RosenbrockModified01, RosenbrockModified02
+from problem.n_variables.mishra import Mishra03, Mishra04
+from problem.n_variables.rosenbrock import RosenbrockModified02
 from problem.n_variables.salomon import Salomon
-from problem.n_variables.schaffer import GeneralizedSchafferN7, GeneralizedSchafferN1, GeneralizedSchafferN3, \
+from problem.n_variables.schaffer import GeneralizedSchafferN1, GeneralizedSchafferN3, \
     GeneralizedSchafferN4, GeneralizedSchafferN2
 from problem.n_variables.schmidt_vetters import GeneralizedSchmidtVetters
-from problem.n_variables.schwefel import SchwefelN26, SchwefelN21, SchwefelN22, SchwefelN6, SchwefelN20, SchwefelN36
-from problem.n_variables.shubert import ShubertN1, ShubertN3, ShubertN4
+from problem.n_variables.schwefel import SchwefelN6, SchwefelN20, SchwefelN36
+from problem.n_variables.shubert import ShubertN3, ShubertN4
 from problem.n_variables.sine_envelope import SineEnvelope
-from problem.n_variables.step import StepN1, StepN2, StepN3
 from problem.n_variables.stochastic import Stochastic
 from problem.n_variables.strechedv import StretchedV
 from problem.n_variables.styblinski import StyblinskiTang
 from problem.n_variables.weierstrass import ShiftedRotatedWeierstrass
-from problem.n_variables.zakharov import Zakharov
 
 BASE_GROUP_COLORS = {
     'Baseline': '#000000',  # dark grey

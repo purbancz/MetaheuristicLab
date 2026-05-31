@@ -10,8 +10,8 @@ from jmetal.util.comparator import ObjectiveComparator
 from jmetal.util.evaluator import Evaluator
 from jmetal.util.termination_criterion import TerminationCriterion
 
-from algorithm.custom_GA import GeneticAlgorithm
-from algorithm.single_objective_PSO import SingleObjectivePSO
+from algorithm.basic.custom_ga import GeneticAlgorithm
+from algorithm.basic.single_objective_pso import SingleObjectivePSO
 from operator_wrapper.PSO_GA_wrapper import MutationWithPsoAttributes, CrossoverWithPsoAttributes
 
 S = TypeVar("S")

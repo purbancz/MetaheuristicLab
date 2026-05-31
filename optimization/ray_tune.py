@@ -1,17 +1,9 @@
-import os
-import time
 import json
-import sqlite3
 import ray
 from ray import tune
 from ray.tune.schedulers import PopulationBasedTraining
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
-from algorithm.WAPSO import ReverseLearningGlobalAttractorPSO, CombinedLearningPSO
-from algorithm.particles_with_roles import RebelPSO, RejectorPSO, RebelRejectorPSO, RRAPSO, ContrarianPSO, DefeatistPSO, \
-    ContrarianDefeatistPSO
-from algorithm.single_objective_PSO import SingleObjectivePSO
-
 
 ALGORITHMS = {
     'RebelPSO': {

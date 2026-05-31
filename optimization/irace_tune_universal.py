@@ -4,33 +4,17 @@ import random
 import traceback
 
 import numpy as np
-from datetime import datetime
 import inspect  # Need inspect for filtering params
 
-import rpy2
 from jmetal.problem import Sphere
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
 
-from algorithm.hybrid_diverse import HybridPartialDisjointPSO, HybridFullDisjointPSO, HybridAdditivePSO, \
-    HybridFullDisjointPSO_WithRandom, HybridPartialDisjointPSO_WithRandom, HybridAdditivePSO_WithRandom, \
-    HybridFullDisjointRestarterPSO, HybridPartialDisjointRestarterPSO, HybridAdditiveRestarterPSO, \
-    HybridDisjointPSO_WithWanderer, HybridAdditivePSO_WithWanderer
-from algorithm.AdaptivePSO import CoAdaptativePSO, IndividualAdaptivePSO
-from algorithm.WAPSO import ReverseLearningGlobalAttractorPSO, CombinedLearningPSO, ReverseLearningPersonalAttractorPSO, \
-    ReverseLearningPSO
-from algorithm.particles_with_roles import RebelPSO, RejectorPSO, RebelRejectorPSO, RRAPSO, ContrarianPSO, DefeatistPSO, \
-    ContrarianDefeatistPSO, EschewerPSO, EscapistPSO, EschewerEscapistPSO, CDAPSO, EEAPSO, AAAPSO, NAPSO, CLAPSO, \
-    DrifterPSO, DAPSO, AnarchicAmnesiacPSO
-from algorithm.CMAES import CMAES
-from algorithm.LSHADE import LSHADE
-from algorithm.single_objective_PSO import SingleObjectivePSO
-from algorithm.reinitialized_PSO import FRAPSO
 from algorithm.NPSO import NPSO
 from algorithm.QTPSO import QTPSO
 from algorithm.SPPPSO import SPPPSO
 from algorithm.TDPSO import TDPSO
-from irace import irace, ParameterSpace, Scenario, Experiment, Real, Integer, Bool
+from irace import irace, ParameterSpace, Scenario, Experiment, Real, Bool
 import rpy2.robjects as robjects
 
 from problem.n_variables.ackley import Ackley

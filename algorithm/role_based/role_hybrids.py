@@ -5,8 +5,8 @@ import numpy as np
 from jmetal.core.problem import FloatProblem
 from jmetal.util.termination_criterion import TerminationCriterion
 
-from algorithm.WAPSO import WorstAwarePSO
-from algorithm.particles_with_roles import RoleMixin
+from algorithm.role_based.worst_aware_pso import WorstAwarePSO
+from algorithm.role_based.roles import RoleMixin
 
 from jmetal.logger import get_logger
 

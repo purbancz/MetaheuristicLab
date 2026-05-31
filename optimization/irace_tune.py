@@ -1,26 +1,16 @@
 import os
 import json
 import numpy as np
-from datetime import datetime
 
 from jmetal.problem import Sphere
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
 
-from algorithm.hybrid_diverse import HybridPartialDisjointPSO, HybridFullDisjointPSO, HybridAdditivePSO
-from algorithm.AdaptivePSO import CoAdaptativePSO, IndividualAdaptivePSO
-from algorithm.WAPSO import ReverseLearningGlobalAttractorPSO, CombinedLearningPSO, ReverseLearningPersonalAttractorPSO, \
-    ReverseLearningPSO
-from algorithm.particles_with_roles import RebelPSO, RejectorPSO, RebelRejectorPSO, RRAPSO, ContrarianPSO, DefeatistPSO, \
-    ContrarianDefeatistPSO, EschewerPSO, EscapistPSO, EschewerEscapistPSO, CDAPSO, EEAPSO, AnarchicPSO, AmnesiacPSO, \
-    ErraticPSO, WandererPSO
-from algorithm.single_objective_PSO import SingleObjectivePSO, PerturbationPSO
-from algorithm.reinitialized_PSO import FRAPSO, CollectiveResetPSO, PartialResetPSO
 from algorithm.NPSO import NPSO
 from algorithm.QTPSO import QTPSO
 from algorithm.SPPPSO import SPPPSO
 from algorithm.TDPSO import TDPSO
-from irace import irace, ParameterSpace, Scenario, Experiment, Real, Integer, Bool, Categorical
+from irace import irace, ParameterSpace, Scenario, Experiment, Real, Categorical
 import rpy2.robjects as robjects
 
 from problem.n_variables.ackley import Ackley

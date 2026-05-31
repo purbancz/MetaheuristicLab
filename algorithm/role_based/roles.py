@@ -7,8 +7,8 @@ from jmetal.core.problem import FloatProblem
 from jmetal.core.solution import FloatSolution
 from jmetal.util.termination_criterion import TerminationCriterion
 
-from algorithm.WAPSO import WorstAwarePSO
-from algorithm.single_objective_PSO import SingleObjectivePSO, PerturbationPSO
+from algorithm.role_based.worst_aware_pso import WorstAwarePSO
+from algorithm.basic.single_objective_pso import SingleObjectivePSO, PerturbationPSO
 
 S = TypeVar('S')
 

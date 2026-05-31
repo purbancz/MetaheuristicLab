@@ -16,7 +16,8 @@ from concurrent.futures import ProcessPoolExecutor
 from scipy.stats import mannwhitneyu
 import matplotlib.pyplot as plt
 
-from algorithm.single_objective_PSO import RebelPSO, EscapistPSO, RebelEscapistPSO, REAPSO, SingleObjectivePSO
+from algorithm.basic.single_objective_pso import SingleObjectivePSO
+from algorithm.role_based.roles import RRAPSO, RebelPSO, RebelRejectorPSO, RejectorPSO
 from problem.n_variables.ackley import Ackley
 from problem.n_variables.michalewicz import Michalewicz
 from problem.n_variables.schwefel import SchwefelN26

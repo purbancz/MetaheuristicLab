@@ -4,7 +4,7 @@ from jmetal.operator import PolynomialMutation, SBXCrossover
 from jmetal.problem import Sphere
 from jmetal.util.termination_criterion import StoppingByEvaluations
 
-from algorithm.PGCHEA import PGCHEA
+from algorithm.pso_ga_hybrids.pgchea import PGCHEA
 
 
 def test_pgchea_switch_to_ga_updates_ga_population() -> None:

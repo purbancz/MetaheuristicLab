@@ -1,18 +1,14 @@
 import os
-import time
 import json
 from skopt.space import Real, Integer
 from skopt.utils import use_named_args, dump, load
 from skopt import gp_minimize
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
-from algorithm.reinitialized_PSO import FRAPSO
 from algorithm.NPSO import NPSO
 from algorithm.QTPSO import QTPSO
 from algorithm.SPPPSO import SPPPSO
 from algorithm.TDPSO import TDPSO
-from algorithm.single_objective_PSO import REAPSO, RebelPSO, EscapistPSO, RebelEscapistPSO, SingleObjectivePSO
-
 
 n_calls = 500
 

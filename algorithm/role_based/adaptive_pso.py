@@ -5,7 +5,7 @@ import numpy as np
 from jmetal.core.problem import FloatProblem
 from jmetal.util.termination_criterion import TerminationCriterion
 
-from algorithm.single_objective_PSO import SingleObjectivePSO
+from algorithm.basic.single_objective_pso import SingleObjectivePSO
 
 S = TypeVar('S')
 

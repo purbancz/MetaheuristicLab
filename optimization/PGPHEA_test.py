@@ -2,7 +2,7 @@ from jmetal.operator import PolynomialMutation, SBXCrossover
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
 
-from algorithm.PGPHEA import PGPHEA
+from algorithm.pso_ga_hybrids.pgphea import PGPHEA
 from observer.fitness_observer import FitnessObserver
 
 if __name__ == "__main__":

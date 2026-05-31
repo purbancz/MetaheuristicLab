@@ -11,7 +11,7 @@ from typing import List, TypeVar
 
 import numpy as np
 
-from algorithm.hybrid_diverse import HybridAdditivePSO, HybridFullDisjointPSO, HybridPartialDisjointPSO
+from algorithm.role_based.role_hybrids import HybridAdditivePSO, HybridFullDisjointPSO, HybridPartialDisjointPSO
 from algorithm.sparse_roles.coordinate_mask_utilities import SparseCoordinateMixin
 
 S = TypeVar("S")

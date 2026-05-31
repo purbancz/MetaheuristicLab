@@ -9,8 +9,8 @@ from jmetal.operator import BinaryTournamentSelection
 from jmetal.util.termination_criterion import TerminationCriterion
 from jmetal.util.comparator import ObjectiveComparator
 from jmetal.util.evaluator import Evaluator
-from algorithm.custom_GA import GeneticAlgorithm
-from algorithm.single_objective_PSO import SingleObjectivePSO
+from algorithm.basic.custom_ga import GeneticAlgorithm
+from algorithm.basic.single_objective_pso import SingleObjectivePSO
 
 S = TypeVar("S")
 R = TypeVar("R")

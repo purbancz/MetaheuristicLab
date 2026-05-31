@@ -2,7 +2,7 @@ from jmetal.operator import PolynomialMutation, SBXCrossover
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
 
-from algorithm.PGCHEA import PGCHEA
+from algorithm.pso_ga_hybrids.pgchea import PGCHEA
 
 if __name__ == "__main__":
     problem = Rastrigin(100)

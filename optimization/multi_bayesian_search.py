@@ -9,7 +9,7 @@ from skopt.utils import use_named_args, dump, load
 from skopt import gp_minimize
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
-from algorithm.single_objective_PSO import REAPSO, RebelPSO, EscapistPSO, RebelEscapistPSO
+from algorithm.role_based.roles import RRAPSO, RebelPSO, RebelRejectorPSO, RejectorPSO
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()

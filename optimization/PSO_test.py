@@ -1,7 +1,7 @@
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
 
-from algorithm.single_objective_PSO import SingleObjectivePSO
+from algorithm.basic.single_objective_pso import SingleObjectivePSO
 from observer.fitness_observer import FitnessObserver
 
 if __name__ == "__main__":

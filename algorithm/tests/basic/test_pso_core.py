@@ -5,11 +5,11 @@ import numpy as np
 from jmetal.problem import Sphere
 from jmetal.util.termination_criterion import StoppingByEvaluations
 
-from algorithm.AdaptivePSO import CoAdaptativePSO
-from algorithm.WAPSO import WorstAwarePSO
-from algorithm.particles_with_roles import AdaptiveRolePSO, RoleMixin
-from algorithm.reinitialized_PSO import CollectiveResetPSO, PartialResetPSO
-from algorithm.single_objective_PSO import SingleObjectivePSO
+from algorithm.role_based.adaptive_pso import CoAdaptativePSO
+from algorithm.role_based.worst_aware_pso import WorstAwarePSO
+from algorithm.role_based.roles import AdaptiveRolePSO, RoleMixin
+from algorithm.reinitialization.reinitialized_pso import CollectiveResetPSO, PartialResetPSO
+from algorithm.basic.single_objective_pso import SingleObjectivePSO
 
 
 def termination(max_evaluations: int = 20) -> StoppingByEvaluations:
@@ -66,7 +66,7 @@ def test_worst_aware_pso_initializes_and_updates_worst_state() -> None:
 def test_role_mixin_marks_expected_number_of_particles() -> None:
     swarm = [SimpleNamespace(attributes={}) for _ in range(10)]
 
-    with patch("algorithm.particles_with_roles.random.sample", return_value=[1, 3, 5]):
+    with patch("algorithm.role_based.roles.random.sample", return_value=[1, 3, 5]):
         RoleMixin.mark_particles(swarm, 0.3, "is_rebel")
 
     assert sum(p.attributes["is_rebel"] for p in swarm) == 3
@@ -92,7 +92,7 @@ def test_adaptive_role_pso_uses_role_mixin_marking() -> None:
         window_size=3,
     )
 
-    with patch("algorithm.particles_with_roles.random.sample", return_value=[0, 2]):
+    with patch("algorithm.role_based.roles.random.sample", return_value=[0, 2]):
         swarm = algorithm.create_initial_solutions()
 
     assert sum(p.attributes["is_rebel"] for p in swarm) == 2
@@ -107,7 +107,7 @@ def test_adaptive_and_reset_variants_create_expected_state() -> None:
     assert capso.min_c2 <= capso.c2 <= capso.max_c2
 
     partial_reset = PartialResetPSO(problem, 4, termination(), 0.5, 1.0, 1.0, restarter_fraction=0.5)
-    with patch("algorithm.particles_with_roles.random.sample", return_value=[0, 1]):
+    with patch("algorithm.role_based.roles.random.sample", return_value=[0, 1]):
         swarm = partial_reset.create_initial_solutions()
     assert sum(p.attributes["is_restarter"] for p in swarm) == 2
 
