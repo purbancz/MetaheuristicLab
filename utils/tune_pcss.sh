@@ -1,8 +1,8 @@
 #!/bin/bash
-#SBATCH --job-name=irace_RandomComplex
+#SBATCH --job-name=irace_sparse_algorithms
 #SBATCH --output=%x_%j.out
 #SBATCH --error=%x_%j.err
-#SBATCH --time=12:00:00
+#SBATCH --time=3-00:00:00
 #SBATCH --partition=standard          # standard/fast/long/tesla
 #SBATCH --account=pl0590-01
 #SBATCH --nodes=1

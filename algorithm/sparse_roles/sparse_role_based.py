@@ -18,7 +18,7 @@ from jmetal.util.termination_criterion import TerminationCriterion
 from algorithm.role_based.worst_aware_pso import WorstAwarePSO
 from algorithm.role_based.roles import RoleMixin
 from algorithm.basic.single_objective_pso import PerturbationPSO, SingleObjectivePSO
-from algorithm.sparse_roles.coordinate_mask import SparseCoordinateMixin
+from algorithm.sparse_roles.coordinate_mask_utilities import SparseCoordinateMixin
 
 S = TypeVar("S")
 
