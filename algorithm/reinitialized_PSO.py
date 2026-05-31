@@ -36,7 +36,7 @@ class FRAPSO(SingleObjectivePSO):
         positions = np.array([p.variables for p in self.solutions])
         centroid = np.mean(positions, axis=0)
         diversity = np.mean(np.linalg.norm(positions - centroid, axis=1))
-        return diversity < self.convergence_threshold
+        return bool(diversity < self.convergence_threshold)
 
     def reinitialize_swarm(self):
         for particle in self.solutions:
@@ -111,7 +111,7 @@ class PartialResetPSO(SingleObjectivePSO, RoleMixin):
         positions = np.array([p.variables for p in self.solutions])
         centroid = np.mean(positions, axis=0)
         diversity = np.mean(np.linalg.norm(positions - centroid, axis=1))
-        return diversity < self.convergence_threshold
+        return bool(diversity < self.convergence_threshold)
 
     def selective_reinitialization(self):
         particles_to_reset = [p for p in self.solutions if p.attributes.get('is_restarter', False)]
@@ -165,7 +165,7 @@ class CollectiveResetPSO(SingleObjectivePSO):
         positions = np.array([p.variables for p in self.solutions])
         centroid = np.mean(positions, axis=0)
         diversity = np.mean(np.linalg.norm(positions - centroid, axis=1))
-        return diversity < self.convergence_threshold
+        return bool(diversity < self.convergence_threshold)
 
     def reinitialize_swarm(self):
         for particle in self.solutions:

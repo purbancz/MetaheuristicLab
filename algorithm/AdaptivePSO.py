@@ -2,7 +2,6 @@ import random
 from typing import List, TypeVar
 
 import numpy as np
-from cffi.model import global_lock
 from jmetal.core.problem import FloatProblem
 from jmetal.util.termination_criterion import TerminationCriterion
 

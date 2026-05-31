@@ -138,7 +138,7 @@ class AdaptiveRolePSO(SingleObjectivePSO, AdaptiveRoleMixin, RoleMixin):
         solutions = super().create_initial_solutions()
         # initial marking from original fractions
         for flag, frac in self.original_fractions.items():
-            self.mark(solutions, frac, flag)
+            self.mark_particles(solutions, frac, flag)
         return solutions
 
     def update_velocity(self, swarm: List):
