@@ -1001,12 +1001,12 @@ class AnarchicAmnesiacPSO(SingleObjectivePSO, RoleMixin):
 # ==============================================================================
 # Variant 3: WandererPSO (Random Direction Only)
 # ==============================================================================
-class WandererPSO(SingleObjectivePSO, RoleMixin):
+class ErraticPSO(SingleObjectivePSO, RoleMixin):
     """
-    Wanderer PSO:
-    A subpopulation ('is_wanderer') updates its velocity based only on inertia
+    Erratic PSO:
+    A subpopulation ('is_erratic') updates its velocity based only on inertia
     and a scaled random vector, ignoring personal and global best attractors.
-    Non-wanderer particles follow standard PSO update.
+    Non-erratic particles follow standard PSO update.
     """
 
     def __init__(self,
@@ -1017,7 +1017,7 @@ class WandererPSO(SingleObjectivePSO, RoleMixin):
                  c1: float,
                  c2: float,
                  random_strength: float,
-                 wanderer_fraction: float,
+                 erratic_fraction: float,
                  constraint_handling_mode: str = "clip"):
 
         super().__init__(problem, swarm_size, c1, c2, w, termination_criterion, constraint_handling_mode)
@@ -1025,11 +1025,11 @@ class WandererPSO(SingleObjectivePSO, RoleMixin):
         self.c2 = c2
         self.w = w
         self.random_strength = random_strength
-        self.wanderer_fraction = max(0.0, min(1.0, wanderer_fraction))  # Ensure valid fraction
+        self.wanderer_fraction = max(0.0, min(1.0, erratic_fraction))  # Ensure valid fraction
 
     def create_initial_solutions(self) -> List[S]:
         solutions = super().create_initial_solutions()
-        self.mark_particles(solutions, self.wanderer_fraction, 'is_wanderer')
+        self.mark_particles(solutions, self.wanderer_fraction, 'is_erratic')
         return solutions
 
     def update_velocity(self, swarm: List[S]) -> None:
@@ -1039,7 +1039,7 @@ class WandererPSO(SingleObjectivePSO, RoleMixin):
             current_pos = np.array(particle.variables)
             current_vel = np.array(particle.attributes['velocity'])
 
-            if particle.attributes.get('is_wanderer', False):
+            if particle.attributes.get('is_erratic', False):
                 random_vec = np.random.uniform(-1.0, 1.0, self.problem.number_of_variables())
                 new_velocity = self.w * current_vel + self.random_strength * random_vec
             else:
@@ -1168,12 +1168,6 @@ class AAAPSO(AdaptiveRoleMixin, RoleMixin, SingleObjectivePSO):  # Changed Order
             new_velocity = self.w * current_vel + cognitive_vec + social_vec
             particle.attributes['velocity'] = new_velocity.tolist()
 
-    # def _log_initial_roles(self, swarm: List[S]):
-    #     count_anarchic = sum(1 for p in swarm if p.attributes.get('is_anarchic', False))
-    #     count_amnesiac = sum(1 for p in swarm if p.attributes.get('is_amnesiac', False))
-    #     count_both = sum(
-    #         1 for p in swarm if p.attributes.get('is_anarchic', False) and p.attributes.get('is_amnesiac', False))
-
     def get_name(self) -> str:
         return "AAAPSO"
 
@@ -1181,11 +1175,11 @@ class AAAPSO(AdaptiveRoleMixin, RoleMixin, SingleObjectivePSO):  # Changed Order
 # ==============================================================================
 # Variant: NoisyPSO (Standard PSO + Added Random Vector for Subpopulation)
 # ==============================================================================
-class NoisyPSO(SingleObjectivePSO, RoleMixin):
+class WandererPSO(SingleObjectivePSO, RoleMixin):
     """
-    Noisy PSO (or Perturbed PSO):
+    Wanderer PSO (or Perturbed PSO):
     Applies the standard PSO velocity update (inertia + cognitive + social)
-    to all particles. However, a subpopulation ('is_noisy') has an
+    to all particles. However, a subpopulation ('is_wanderer') has an
     additional scaled random vector added to their calculated velocity.
     """
 
@@ -1197,7 +1191,7 @@ class NoisyPSO(SingleObjectivePSO, RoleMixin):
                  c1: float,
                  c2: float,
                  noise_strength: float,
-                 noisy_fraction: float,
+                 wanderer_fraction: float,
                  constraint_handling_mode: str = "clip"):
 
         super().__init__(problem, swarm_size, c1, c2, w, termination_criterion, constraint_handling_mode)
@@ -1205,12 +1199,12 @@ class NoisyPSO(SingleObjectivePSO, RoleMixin):
         self.c2 = c2
         self.w = w
         self.noise_strength = noise_strength
-        self.noisy_fraction = max(0.0, min(1.0, noisy_fraction))
+        self.noisy_fraction = max(0.0, min(1.0, wanderer_fraction))
 
     def create_initial_solutions(self) -> List[S]:
         solutions = super().create_initial_solutions()
         # Mark the subpopulation that will receive extra noise
-        self.mark_particles(solutions, self.noisy_fraction, 'is_noisy')
+        self.mark_particles(solutions, self.noisy_fraction, 'is_wanderer')
         return solutions
 
     def update_velocity(self, swarm: List[S]) -> None:
@@ -1227,7 +1221,7 @@ class NoisyPSO(SingleObjectivePSO, RoleMixin):
 
             base_velocity = self.w * current_vel + cognitive_vec + social_vec
 
-            if particle.attributes.get('is_noisy', False):
+            if particle.attributes.get('is_wanderer', False):
                 random_noise_vec = np.random.uniform(-1.0, 1.0, self.problem.number_of_variables())
                 scaled_noise = self.noise_strength * random_noise_vec
                 final_velocity = base_velocity + scaled_noise
@@ -1237,7 +1231,7 @@ class NoisyPSO(SingleObjectivePSO, RoleMixin):
             particle.attributes['velocity'] = final_velocity.tolist()
 
     def get_name(self) -> str:
-        return "ErraticPSO"
+        return "WandererPSO"
 
 
 # ==============================================================================

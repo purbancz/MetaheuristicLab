@@ -13,7 +13,7 @@ from algorithm.WAPSO import ReverseLearningGlobalAttractorPSO, CombinedLearningP
     ReverseLearningPSO
 from algorithm.particles_with_roles import RebelPSO, RejectorPSO, RebelRejectorPSO, RRAPSO, ContrarianPSO, DefeatistPSO, \
     ContrarianDefeatistPSO, EschewerPSO, EscapistPSO, EschewerEscapistPSO, CDAPSO, EEAPSO, AnarchicPSO, AmnesiacPSO, \
-    WandererPSO, NoisyPSO
+    ErraticPSO, WandererPSO
 from algorithm.single_objective_PSO import SingleObjectivePSO, PerturbationPSO
 from algorithm.reinitialized_PSO import FRAPSO, CollectiveResetPSO, PartialResetPSO
 from algorithm.NPSO import NPSO

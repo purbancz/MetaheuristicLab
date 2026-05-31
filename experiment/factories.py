@@ -12,7 +12,7 @@ from algorithm.hybrid_diverse import HybridFullDisjointPSO, HybridPartialDisjoin
     HybridDisjointPSO_WithWanderer, HybridAdditivePSO_WithWanderer
 from algorithm.particles_with_roles import RebelPSO, RejectorPSO, RebelRejectorPSO, RRAPSO, ContrarianPSO, DefeatistPSO, \
     ContrarianDefeatistPSO, CDAPSO, EschewerPSO, EscapistPSO, EschewerEscapistPSO, EEAPSO, CLAPSO, AnarchicPSO, \
-    AmnesiacPSO, WandererPSO, AAAPSO, NoisyPSO, NAPSO, DrifterPSO, DAPSO, AnarchicAmnesiacPSO
+    AmnesiacPSO, ErraticPSO, AAAPSO, WandererPSO, NAPSO, DrifterPSO, DAPSO, AnarchicAmnesiacPSO
 from algorithm.reinitialized_PSO import PartialResetPSO, CollectiveResetPSO, FRAPSO
 from algorithm.single_objective_PSO import SingleObjectivePSO, PerturbationPSO
 from experiment.globals import G_SOLUTIONS_SIZE, G_MAX_EVALUATIONS, NUMBER_OF_VARIABLES
@@ -350,14 +350,14 @@ def factory_AnarchicAmnesiacPSO(p):
     )
 
 def factory_WandererPSO(p):
-    return WandererPSO(
+    return ErraticPSO(
         problem=p,
         swarm_size=G_SOLUTIONS_SIZE,
         w=0.104550478300695,
         c1=3.4360763756439807,
         c2=2.55880405172936,
         random_strength=2.3357014415796105,
-        wanderer_fraction=0.380225883274424,
+        erratic_fraction=0.380225883274424,
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
 
@@ -385,14 +385,14 @@ def factory_AAAPSO(p):
 
 
 def factory_NoisyPSO(p):
-    return NoisyPSO(
+    return WandererPSO(
         problem=p,
         swarm_size=G_SOLUTIONS_SIZE,
         w=0.115020987604261,
         c1=4.8318858911420115,
         c2=1.614568939944967,
         noise_strength=0.290212372970094,
-        noisy_fraction=0.112113689734281,
+        wanderer_fraction=0.112113689734281,
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
 

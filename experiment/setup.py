@@ -26,7 +26,7 @@ from algorithm.hybrid_diverse import HybridPartialDisjointPSO, HybridFullDisjoin
     HybridFullDisjointRestarterPSO, HybridPartialDisjointRestarterPSO, HybridAdditiveRestarterPSO
 from algorithm.particles_with_roles import RebelPSO, RejectorPSO, RebelRejectorPSO, RRAPSO, ContrarianPSO, DefeatistPSO, \
     ContrarianDefeatistPSO, EschewerPSO, EscapistPSO, EschewerEscapistPSO, CDAPSO, EEAPSO, AnarchicPSO, AmnesiacPSO, \
-    WandererPSO, NoisyPSO, AAAPSO, NAPSO, CLAPSO
+    ErraticPSO, WandererPSO, AAAPSO, NAPSO, CLAPSO
 from algorithm.single_objective_PSO import SingleObjectivePSO, PerturbationPSO
 
 from problem.fixed_varaibles.branin import BraninRCOC
