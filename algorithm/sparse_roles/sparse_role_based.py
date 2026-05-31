@@ -18,75 +18,17 @@ from jmetal.util.termination_criterion import TerminationCriterion
 from algorithm.WAPSO import WorstAwarePSO
 from algorithm.particles_with_roles import RoleMixin
 from algorithm.single_objective_PSO import PerturbationPSO, SingleObjectivePSO
-from algorithm.sparse_roles.coordinate_mask import CoordinateMaskMixin
+from algorithm.sparse_roles.coordinate_mask import SparseCoordinateMixin
 
 S = TypeVar("S")
 
 
-class SparseRoleMixin(CoordinateMaskMixin):
-    """Shared coordinate-mask parameter handling for sparse role PSOs."""
-
-    def _init_single_coordinate_params(
-            self,
-            coordinate_mode: str,
-            coordinate_fraction: float,
-            coordinate_scale: float,
-            coordinate_count: int,
-    ) -> None:
-        self.coordinate_mode = coordinate_mode
-        self.coordinate_fraction = coordinate_fraction
-        self.coordinate_scale = coordinate_scale
-        self.coordinate_count_value = coordinate_count
-
-    def _single_mask(self, dim: int) -> np.ndarray:
-        return self.coordinate_mask(
-            dim=dim,
-            mode=self.coordinate_mode,
-            fraction=self.coordinate_fraction,
-            scale=self.coordinate_scale,
-            count=self.coordinate_count_value,
-        )
-
-    def _init_component_coordinate_params(
-            self,
-            social_coordinate_mode: str,
-            cognitive_coordinate_mode: str,
-            social_coordinate_fraction: float,
-            cognitive_coordinate_fraction: float,
-            social_coordinate_scale: float,
-            cognitive_coordinate_scale: float,
-            social_coordinate_count: int,
-            cognitive_coordinate_count: int,
-    ) -> None:
-        self.social_coordinate_mode = social_coordinate_mode
-        self.cognitive_coordinate_mode = cognitive_coordinate_mode
-        self.social_coordinate_fraction = social_coordinate_fraction
-        self.cognitive_coordinate_fraction = cognitive_coordinate_fraction
-        self.social_coordinate_scale = social_coordinate_scale
-        self.cognitive_coordinate_scale = cognitive_coordinate_scale
-        self.social_coordinate_count = social_coordinate_count
-        self.cognitive_coordinate_count = cognitive_coordinate_count
-
-    def _social_mask(self, dim: int) -> np.ndarray:
-        return self.coordinate_mask(
-            dim=dim,
-            mode=self.social_coordinate_mode,
-            fraction=self.social_coordinate_fraction,
-            scale=self.social_coordinate_scale,
-            count=self.social_coordinate_count,
-        )
-
-    def _cognitive_mask(self, dim: int) -> np.ndarray:
-        return self.coordinate_mask(
-            dim=dim,
-            mode=self.cognitive_coordinate_mode,
-            fraction=self.cognitive_coordinate_fraction,
-            scale=self.cognitive_coordinate_scale,
-            count=self.cognitive_coordinate_count,
-        )
+class SparseRoleMixin(SparseCoordinateMixin):
+    """Compatibility name for sparse role coordinate-mask helpers."""
+    pass
 
 
-class SparseWandererPSO(SingleObjectivePSO, RoleMixin, CoordinateMaskMixin):
+class SparseWandererPSO(SingleObjectivePSO, RoleMixin, SparseRoleMixin):
     """Coordinate-wise Wanderer PSO.
 
     Wanderer particles receive additive random noise only on selected
@@ -112,10 +54,7 @@ class SparseWandererPSO(SingleObjectivePSO, RoleMixin, CoordinateMaskMixin):
         super().__init__(problem, swarm_size, c1, c2, w, termination_criterion, constraint_handling_mode)
         self.noise_strength = noise_strength
         self.wanderer_fraction = max(0.0, min(1.0, wanderer_fraction))
-        self.coordinate_mode = coordinate_mode
-        self.coordinate_fraction = coordinate_fraction
-        self.coordinate_scale = coordinate_scale
-        self.coordinate_count_value = coordinate_count
+        self._init_single_coordinate_params(coordinate_mode, coordinate_fraction, coordinate_scale, coordinate_count)
 
     def create_initial_solutions(self) -> List[S]:
         solutions = super().create_initial_solutions()
@@ -140,15 +79,8 @@ class SparseWandererPSO(SingleObjectivePSO, RoleMixin, CoordinateMaskMixin):
             base_velocity = self.w * current_vel + cognitive_vec + social_vec
 
             if particle.attributes.get("is_wanderer", False):
-                mask = self.coordinate_mask(
-                    dim=dim,
-                    mode=self.coordinate_mode,
-                    fraction=self.coordinate_fraction,
-                    scale=self.coordinate_scale,
-                    count=self.coordinate_count_value,
-                )
                 noise = self.noise_strength * np.random.uniform(-1.0, 1.0, dim)
-                sparse_noise = np.where(mask, noise, 0.0)
+                sparse_noise = np.where(self._single_mask(dim), noise, 0.0)
                 final_velocity = base_velocity + sparse_noise
             else:
                 final_velocity = base_velocity
@@ -159,7 +91,7 @@ class SparseWandererPSO(SingleObjectivePSO, RoleMixin, CoordinateMaskMixin):
         return "SparseWandererPSO"
 
 
-class SparseDefeatistPSO(WorstAwarePSO, RoleMixin, CoordinateMaskMixin):
+class SparseDefeatistPSO(WorstAwarePSO, RoleMixin, SparseRoleMixin):
     """Coordinate-wise Defeatist PSO.
 
     Defeatist particles use personal-worst attraction only on selected
@@ -185,10 +117,7 @@ class SparseDefeatistPSO(WorstAwarePSO, RoleMixin, CoordinateMaskMixin):
         super().__init__(problem, swarm_size, c1, c2, w, termination_criterion, constraint_handling_mode)
         self.defeatist_c = defeatist_c
         self.defeatist_fraction = max(0.0, min(1.0, defeatist_fraction))
-        self.coordinate_mode = coordinate_mode
-        self.coordinate_fraction = coordinate_fraction
-        self.coordinate_scale = coordinate_scale
-        self.coordinate_count_value = coordinate_count
+        self._init_single_coordinate_params(coordinate_mode, coordinate_fraction, coordinate_scale, coordinate_count)
 
     def create_initial_solutions(self) -> List[S]:
         solutions = super().create_initial_solutions()
@@ -213,14 +142,7 @@ class SparseDefeatistPSO(WorstAwarePSO, RoleMixin, CoordinateMaskMixin):
             defeatist_cognitive = self.defeatist_c * r2 * (p_worst - current)
 
             if particle.attributes.get("is_defeatist", False):
-                mask = self.coordinate_mask(
-                    dim=dim,
-                    mode=self.coordinate_mode,
-                    fraction=self.coordinate_fraction,
-                    scale=self.coordinate_scale,
-                    count=self.coordinate_count_value,
-                )
-                cognitive_vec = self.mix_by_mask(normal_cognitive, defeatist_cognitive, mask)
+                cognitive_vec = self.mix_by_mask(normal_cognitive, defeatist_cognitive, self._single_mask(dim))
             else:
                 cognitive_vec = normal_cognitive
 
@@ -240,7 +162,7 @@ class SparseDefeatistPSO(WorstAwarePSO, RoleMixin, CoordinateMaskMixin):
         return "SparseDefeatistPSO"
 
 
-class SparseContrarianDefeatistPSO(WorstAwarePSO, RoleMixin, CoordinateMaskMixin):
+class SparseContrarianDefeatistPSO(WorstAwarePSO, RoleMixin, SparseRoleMixin):
     """Coordinate-wise Contrarian-Defeatist PSO.
 
     Contrarian behavior is applied sparsely to the social component and
@@ -274,15 +196,16 @@ class SparseContrarianDefeatistPSO(WorstAwarePSO, RoleMixin, CoordinateMaskMixin
         self.contrarian_c = contrarian_c
         self.contrarian_fraction = max(0.0, min(1.0, contrarian_fraction))
         self.defeatist_fraction = max(0.0, min(1.0, defeatist_fraction))
-
-        self.social_coordinate_mode = social_coordinate_mode
-        self.cognitive_coordinate_mode = cognitive_coordinate_mode
-        self.social_coordinate_fraction = social_coordinate_fraction
-        self.cognitive_coordinate_fraction = cognitive_coordinate_fraction
-        self.social_coordinate_scale = social_coordinate_scale
-        self.cognitive_coordinate_scale = cognitive_coordinate_scale
-        self.social_coordinate_count = social_coordinate_count
-        self.cognitive_coordinate_count = cognitive_coordinate_count
+        self._init_component_coordinate_params(
+            social_coordinate_mode,
+            cognitive_coordinate_mode,
+            social_coordinate_fraction,
+            cognitive_coordinate_fraction,
+            social_coordinate_scale,
+            cognitive_coordinate_scale,
+            social_coordinate_count,
+            cognitive_coordinate_count,
+        )
 
     def create_initial_solutions(self) -> List[S]:
         solutions = super().create_initial_solutions()
@@ -310,14 +233,7 @@ class SparseContrarianDefeatistPSO(WorstAwarePSO, RoleMixin, CoordinateMaskMixin
             contrarian_social = self.contrarian_c * r2 * (g_worst - current)
 
             if particle.attributes.get("is_contrarian", False):
-                social_mask = self.coordinate_mask(
-                    dim=dim,
-                    mode=self.social_coordinate_mode,
-                    fraction=self.social_coordinate_fraction,
-                    scale=self.social_coordinate_scale,
-                    count=self.social_coordinate_count,
-                )
-                social_vec = self.mix_by_mask(normal_social, contrarian_social, social_mask)
+                social_vec = self.mix_by_mask(normal_social, contrarian_social, self._social_mask(dim))
             else:
                 social_vec = normal_social
 
@@ -325,14 +241,7 @@ class SparseContrarianDefeatistPSO(WorstAwarePSO, RoleMixin, CoordinateMaskMixin
             defeatist_cognitive = self.defeatist_c * r4 * (p_worst - current)
 
             if particle.attributes.get("is_defeatist", False):
-                cognitive_mask = self.coordinate_mask(
-                    dim=dim,
-                    mode=self.cognitive_coordinate_mode,
-                    fraction=self.cognitive_coordinate_fraction,
-                    scale=self.cognitive_coordinate_scale,
-                    count=self.cognitive_coordinate_count,
-                )
-                cognitive_vec = self.mix_by_mask(normal_cognitive, defeatist_cognitive, cognitive_mask)
+                cognitive_vec = self.mix_by_mask(normal_cognitive, defeatist_cognitive, self._cognitive_mask(dim))
             else:
                 cognitive_vec = normal_cognitive
 

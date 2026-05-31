@@ -1,6 +1,6 @@
 """Sparse coordinate-wise role PSO algorithms."""
 
-from algorithm.sparse_roles.coordinate_mask_utilities import CoordinateMaskMixin
+from algorithm.sparse_roles.coordinate_mask_utilities import CoordinateMaskMixin, SparseCoordinateMixin
 from algorithm.sparse_roles.sparse_role_based import (
     SparseAmnesiacPSO,
     SparseAnarchicAmnesiacPSO,
@@ -26,6 +26,7 @@ from algorithm.sparse_roles.sparse_hybrid import (
 
 __all__ = [
     "CoordinateMaskMixin",
+    "SparseCoordinateMixin",
     "SparseWandererPSO",
     "SparseDefeatistPSO",
     "SparseContrarianDefeatistPSO",

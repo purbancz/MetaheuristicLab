@@ -85,3 +85,72 @@ class CoordinateMaskMixin:
     ) -> np.ndarray:
         """Use ``role_vec`` on masked coordinates and ``normal_vec`` elsewhere."""
         return np.where(mask, role_vec, normal_vec)
+
+
+class SparseCoordinateMixin(CoordinateMaskMixin):
+    """Shared coordinate-mask parameter handling for sparse PSO variants."""
+
+    def _init_single_coordinate_params(
+            self,
+            coordinate_mode: str,
+            coordinate_fraction: float,
+            coordinate_scale: float,
+            coordinate_count: int,
+    ) -> None:
+        self.coordinate_mode = coordinate_mode
+        self.coordinate_fraction = coordinate_fraction
+        self.coordinate_scale = coordinate_scale
+        self.coordinate_count_value = coordinate_count
+
+    def _single_mask(self, dim: int) -> np.ndarray:
+        return self.coordinate_mask(
+            dim=dim,
+            mode=self.coordinate_mode,
+            fraction=self.coordinate_fraction,
+            scale=self.coordinate_scale,
+            count=self.coordinate_count_value,
+        )
+
+    def _init_component_coordinate_params(
+            self,
+            social_coordinate_mode: str,
+            cognitive_coordinate_mode: str,
+            social_coordinate_fraction: float,
+            cognitive_coordinate_fraction: float,
+            social_coordinate_scale: float,
+            cognitive_coordinate_scale: float,
+            social_coordinate_count: int,
+            cognitive_coordinate_count: int,
+    ) -> None:
+        self.social_coordinate_mode = social_coordinate_mode
+        self.cognitive_coordinate_mode = cognitive_coordinate_mode
+        self.social_coordinate_fraction = social_coordinate_fraction
+        self.cognitive_coordinate_fraction = cognitive_coordinate_fraction
+        self.social_coordinate_scale = social_coordinate_scale
+        self.cognitive_coordinate_scale = cognitive_coordinate_scale
+        self.social_coordinate_count = social_coordinate_count
+        self.cognitive_coordinate_count = cognitive_coordinate_count
+
+    def _social_mask(self, dim: int) -> np.ndarray:
+        return self.coordinate_mask(
+            dim=dim,
+            mode=self.social_coordinate_mode,
+            fraction=self.social_coordinate_fraction,
+            scale=self.social_coordinate_scale,
+            count=self.social_coordinate_count,
+        )
+
+    def _cognitive_mask(self, dim: int) -> np.ndarray:
+        return self.coordinate_mask(
+            dim=dim,
+            mode=self.cognitive_coordinate_mode,
+            fraction=self.cognitive_coordinate_fraction,
+            scale=self.cognitive_coordinate_scale,
+            count=self.cognitive_coordinate_count,
+        )
+
+    def _masked_cognitive(self, dim: int, role_vec: np.ndarray) -> np.ndarray:
+        return np.where(self._cognitive_mask(dim), role_vec, 0.0)
+
+    def _masked_social(self, dim: int, role_vec: np.ndarray) -> np.ndarray:
+        return np.where(self._social_mask(dim), role_vec, 0.0)

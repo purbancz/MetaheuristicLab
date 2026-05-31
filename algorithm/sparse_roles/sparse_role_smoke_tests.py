@@ -4,6 +4,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 import numpy as np
+import pytest
 from jmetal.problem import Sphere
 from jmetal.util.termination_criterion import StoppingByEvaluations
 
@@ -39,12 +40,8 @@ def test_masks() -> None:
     full_mask = helper.coordinate_mask(dim=5, mode="constant", count=999)
     assert int(np.sum(full_mask)) == 5
 
-    try:
+    with pytest.raises(ValueError):
         helper.coordinate_mask(dim=100, mode="bad-mode")
-    except ValueError:
-        pass
-    else:
-        raise AssertionError("Invalid coordinate mode should raise ValueError")
 
 
 def instantiate_algorithms(problem) -> None:
@@ -258,7 +255,6 @@ def instantiate_algorithms(problem) -> None:
             assert "velocity" in particle.attributes
             assert len(particle.attributes["velocity"]) == problem.number_of_variables()
 
-    print("Sparse role PSO smoke tests passed.")
 
 def test_sparse_algorithms_smoke() -> None:
     problem = Sphere(10)
@@ -486,4 +482,3 @@ if __name__ == "__main__":
     test_sparse_single_role_variants_apply_role_only_on_masked_coordinates()
     test_sparse_double_role_variants_apply_each_role_only_on_its_masked_coordinates()
     test_sparse_drifter_perturbs_only_masked_coordinates()
-    print("Sparse role PSO tests passed.")

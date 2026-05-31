@@ -12,12 +12,12 @@ from typing import List, TypeVar
 import numpy as np
 
 from algorithm.hybrid_diverse import HybridAdditivePSO, HybridFullDisjointPSO, HybridPartialDisjointPSO
-from algorithm.sparse_roles.coordinate_mask_utilities import CoordinateMaskMixin
+from algorithm.sparse_roles.coordinate_mask_utilities import SparseCoordinateMixin
 
 S = TypeVar("S")
 
 
-class SparseHybridPartialDisjointPSO(HybridPartialDisjointPSO, CoordinateMaskMixin):
+class SparseHybridPartialDisjointPSO(HybridPartialDisjointPSO, SparseCoordinateMixin):
     """Coordinate-wise version of HybridPartialDisjointPSO."""
 
     def __init__(
@@ -34,14 +34,16 @@ class SparseHybridPartialDisjointPSO(HybridPartialDisjointPSO, CoordinateMaskMix
             **kwargs,
     ):
         super().__init__(*args, **kwargs)
-        self.cognitive_coordinate_mode = cognitive_coordinate_mode
-        self.social_coordinate_mode = social_coordinate_mode
-        self.cognitive_coordinate_fraction = cognitive_coordinate_fraction
-        self.social_coordinate_fraction = social_coordinate_fraction
-        self.cognitive_coordinate_scale = cognitive_coordinate_scale
-        self.social_coordinate_scale = social_coordinate_scale
-        self.cognitive_coordinate_count = cognitive_coordinate_count
-        self.social_coordinate_count = social_coordinate_count
+        self._init_component_coordinate_params(
+            social_coordinate_mode,
+            cognitive_coordinate_mode,
+            social_coordinate_fraction,
+            cognitive_coordinate_fraction,
+            social_coordinate_scale,
+            cognitive_coordinate_scale,
+            social_coordinate_count,
+            cognitive_coordinate_count,
+        )
 
     def update_velocity(self, swarm: List[S]) -> None:
         if self.best_global is None or self.global_worst is None or not swarm:
@@ -81,14 +83,7 @@ class SparseHybridPartialDisjointPSO(HybridPartialDisjointPSO, CoordinateMaskMix
             if cognitive_role == "standard":
                 cognitive_vec = standard_cognitive
             else:
-                cognitive_mask = self.coordinate_mask(
-                    dim=dim,
-                    mode=self.cognitive_coordinate_mode,
-                    fraction=self.cognitive_coordinate_fraction,
-                    scale=self.cognitive_coordinate_scale,
-                    count=self.cognitive_coordinate_count,
-                )
-                cognitive_vec = self.mix_by_mask(standard_cognitive, special_cognitive, cognitive_mask)
+                cognitive_vec = self.mix_by_mask(standard_cognitive, special_cognitive, self._cognitive_mask(dim))
 
             standard_social = self.c2 * r2 * (g_best - current)
             if social_role == "rebel":
@@ -103,14 +98,7 @@ class SparseHybridPartialDisjointPSO(HybridPartialDisjointPSO, CoordinateMaskMix
             if social_role == "standard":
                 social_vec = standard_social
             else:
-                social_mask = self.coordinate_mask(
-                    dim=dim,
-                    mode=self.social_coordinate_mode,
-                    fraction=self.social_coordinate_fraction,
-                    scale=self.social_coordinate_scale,
-                    count=self.social_coordinate_count,
-                )
-                social_vec = self.mix_by_mask(standard_social, special_social, social_mask)
+                social_vec = self.mix_by_mask(standard_social, special_social, self._social_mask(dim))
 
             new_velocity = self.w * velocity + cognitive_vec + social_vec
             particle.attributes["velocity"] = new_velocity.tolist()
@@ -119,7 +107,7 @@ class SparseHybridPartialDisjointPSO(HybridPartialDisjointPSO, CoordinateMaskMix
         return "SparseHybridPartialDisjointPSO"
 
 
-class SparseHybridFullDisjointPSO(HybridFullDisjointPSO, CoordinateMaskMixin):
+class SparseHybridFullDisjointPSO(HybridFullDisjointPSO, SparseCoordinateMixin):
     """Coordinate-wise version of HybridFullDisjointPSO."""
 
     def __init__(
@@ -136,14 +124,16 @@ class SparseHybridFullDisjointPSO(HybridFullDisjointPSO, CoordinateMaskMixin):
             **kwargs,
     ):
         super().__init__(*args, **kwargs)
-        self.cognitive_coordinate_mode = cognitive_coordinate_mode
-        self.social_coordinate_mode = social_coordinate_mode
-        self.cognitive_coordinate_fraction = cognitive_coordinate_fraction
-        self.social_coordinate_fraction = social_coordinate_fraction
-        self.cognitive_coordinate_scale = cognitive_coordinate_scale
-        self.social_coordinate_scale = social_coordinate_scale
-        self.cognitive_coordinate_count = cognitive_coordinate_count
-        self.social_coordinate_count = social_coordinate_count
+        self._init_component_coordinate_params(
+            social_coordinate_mode,
+            cognitive_coordinate_mode,
+            social_coordinate_fraction,
+            cognitive_coordinate_fraction,
+            social_coordinate_scale,
+            cognitive_coordinate_scale,
+            social_coordinate_count,
+            cognitive_coordinate_count,
+        )
 
     def update_velocity(self, swarm: List[S]) -> None:
         if self.best_global is None or self.global_worst is None or not swarm:
@@ -184,14 +174,7 @@ class SparseHybridFullDisjointPSO(HybridFullDisjointPSO, CoordinateMaskMixin):
                 else:
                     special_cognitive = standard_cognitive
 
-                cognitive_mask = self.coordinate_mask(
-                    dim=dim,
-                    mode=self.cognitive_coordinate_mode,
-                    fraction=self.cognitive_coordinate_fraction,
-                    scale=self.cognitive_coordinate_scale,
-                    count=self.cognitive_coordinate_count,
-                )
-                cognitive_vec = self.mix_by_mask(standard_cognitive, special_cognitive, cognitive_mask)
+                cognitive_vec = self.mix_by_mask(standard_cognitive, special_cognitive, self._cognitive_mask(dim))
 
             elif assigned_role in self.special_social_roles:
                 if assigned_role == "rebel":
@@ -203,14 +186,7 @@ class SparseHybridFullDisjointPSO(HybridFullDisjointPSO, CoordinateMaskMixin):
                 else:
                     special_social = standard_social
 
-                social_mask = self.coordinate_mask(
-                    dim=dim,
-                    mode=self.social_coordinate_mode,
-                    fraction=self.social_coordinate_fraction,
-                    scale=self.social_coordinate_scale,
-                    count=self.social_coordinate_count,
-                )
-                social_vec = self.mix_by_mask(standard_social, special_social, social_mask)
+                social_vec = self.mix_by_mask(standard_social, special_social, self._social_mask(dim))
 
             new_velocity = self.w * velocity + cognitive_vec + social_vec
             particle.attributes["velocity"] = new_velocity.tolist()
@@ -219,7 +195,7 @@ class SparseHybridFullDisjointPSO(HybridFullDisjointPSO, CoordinateMaskMixin):
         return "SparseHybridFullDisjointPSO"
 
 
-class SparseHybridAdditivePSO(HybridAdditivePSO, CoordinateMaskMixin):
+class SparseHybridAdditivePSO(HybridAdditivePSO, SparseCoordinateMixin):
     """Coordinate-wise version of HybridAdditivePSO."""
 
     def __init__(
@@ -236,34 +212,16 @@ class SparseHybridAdditivePSO(HybridAdditivePSO, CoordinateMaskMixin):
             **kwargs,
     ):
         super().__init__(*args, **kwargs)
-        self.cognitive_coordinate_mode = cognitive_coordinate_mode
-        self.social_coordinate_mode = social_coordinate_mode
-        self.cognitive_coordinate_fraction = cognitive_coordinate_fraction
-        self.social_coordinate_fraction = social_coordinate_fraction
-        self.cognitive_coordinate_scale = cognitive_coordinate_scale
-        self.social_coordinate_scale = social_coordinate_scale
-        self.cognitive_coordinate_count = cognitive_coordinate_count
-        self.social_coordinate_count = social_coordinate_count
-
-    def _masked_cognitive(self, dim: int, role_vec: np.ndarray) -> np.ndarray:
-        mask = self.coordinate_mask(
-            dim=dim,
-            mode=self.cognitive_coordinate_mode,
-            fraction=self.cognitive_coordinate_fraction,
-            scale=self.cognitive_coordinate_scale,
-            count=self.cognitive_coordinate_count,
+        self._init_component_coordinate_params(
+            social_coordinate_mode,
+            cognitive_coordinate_mode,
+            social_coordinate_fraction,
+            cognitive_coordinate_fraction,
+            social_coordinate_scale,
+            cognitive_coordinate_scale,
+            social_coordinate_count,
+            cognitive_coordinate_count,
         )
-        return np.where(mask, role_vec, 0.0)
-
-    def _masked_social(self, dim: int, role_vec: np.ndarray) -> np.ndarray:
-        mask = self.coordinate_mask(
-            dim=dim,
-            mode=self.social_coordinate_mode,
-            fraction=self.social_coordinate_fraction,
-            scale=self.social_coordinate_scale,
-            count=self.social_coordinate_count,
-        )
-        return np.where(mask, role_vec, 0.0)
 
     def update_velocity(self, swarm: List[S]) -> None:
         if self.best_global is None or self.global_worst is None or not swarm:
