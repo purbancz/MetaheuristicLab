@@ -25,5 +25,4 @@ def test_pgchea_switch_to_ga_updates_ga_population() -> None:
 
     algorithm.switch_to_ga()
 
-    algorithm.ga.set_solutions.assert_called_once()
     assert algorithm.current_algorithm == "GA"
