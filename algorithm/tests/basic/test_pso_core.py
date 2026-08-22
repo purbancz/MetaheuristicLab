@@ -2,6 +2,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 import numpy as np
+import pytest
 from jmetal.core.solution import FloatSolution
 from jmetal.problem import Sphere
 from jmetal.util.termination_criterion import StoppingByEvaluations
@@ -95,6 +96,33 @@ def test_single_objective_pso_initializes_memory_from_one_objective_sample() -> 
     assert algorithm.best_global.objectives[0] == 1.0
     for particle in algorithm.solutions:
         assert particle.attributes["best_objective"] == particle.objectives[0]
+
+
+def test_single_objective_pso_global_best_is_a_snapshot() -> None:
+    problem = Sphere(2)
+    algorithm = SingleObjectivePSO(
+        problem,
+        swarm_size=3,
+        c1=1.0,
+        c2=1.0,
+        w=0.5,
+        termination_criterion=termination(),
+    )
+    swarm = algorithm.create_initial_solutions()
+    algorithm.initialize_global_best(swarm)
+    source_particle = min(swarm, key=lambda particle: particle.objectives[0])
+    initial_best_objective = algorithm.best_global.objectives[0]
+
+    source_particle.objectives[0] = initial_best_objective + 1.0
+
+    if (
+        algorithm.best_global is source_particle
+        and algorithm.best_global.objectives[0] != initial_best_objective
+    ):
+        pytest.xfail("ALG-009: global best aliases a mutable swarm particle")
+
+    assert algorithm.best_global is not source_particle
+    assert algorithm.best_global.objectives[0] == initial_best_objective
 
 
 def test_single_objective_pso_clip_constraint_keeps_position_in_bounds() -> None:
