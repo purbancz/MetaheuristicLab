@@ -2,6 +2,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 import numpy as np
+from jmetal.core.solution import FloatSolution
 from jmetal.problem import Sphere
 from jmetal.util.termination_criterion import StoppingByEvaluations
 
@@ -10,6 +11,31 @@ from algorithm.role_based.worst_aware_pso import WorstAwarePSO
 from algorithm.role_based.roles import AdaptiveRolePSO, RoleMixin
 from algorithm.reinitialization.reinitialized_pso import CollectiveResetPSO, PartialResetPSO
 from algorithm.basic.single_objective_pso import SingleObjectivePSO
+
+
+class CountingSphere(Sphere):
+    """Sphere problem that exposes the algorithm's true objective-call count."""
+
+    def __init__(self, number_of_variables: int) -> None:
+        super().__init__(number_of_variables)
+        self.evaluation_count = 0
+
+    def evaluate(self, solution: FloatSolution) -> FloatSolution:
+        self.evaluation_count += 1
+        return super().evaluate(solution)
+
+
+class StatefulCountingSphere(Sphere):
+    """Problem whose objective records the order in which it was evaluated."""
+
+    def __init__(self, number_of_variables: int) -> None:
+        super().__init__(number_of_variables)
+        self.evaluation_count = 0
+
+    def evaluate(self, solution: FloatSolution) -> FloatSolution:
+        self.evaluation_count += 1
+        solution.objectives[0] = float(self.evaluation_count)
+        return solution
 
 
 def termination(max_evaluations: int = 20) -> StoppingByEvaluations:
@@ -28,6 +54,74 @@ def test_single_objective_pso_initializes_particle_state() -> None:
         assert len(particle.attributes["velocity"]) == problem.number_of_variables()
         assert particle.attributes["best_position"] == particle.variables
         assert particle.attributes["best_objective"] == particle.objectives[0]
+
+
+def test_single_objective_pso_respects_objective_evaluation_budget() -> None:
+    max_evaluations = 20
+    swarm_size = 4
+    problem = CountingSphere(3)
+    algorithm = SingleObjectivePSO(
+        problem,
+        swarm_size=swarm_size,
+        c1=1.0,
+        c2=1.0,
+        w=0.5,
+        termination_criterion=termination(max_evaluations),
+    )
+
+    result = algorithm.run()
+
+    assert result is algorithm
+    assert algorithm.evaluations == max_evaluations
+    assert problem.evaluation_count == max_evaluations
+
+
+def test_single_objective_pso_initializes_memory_from_one_objective_sample() -> None:
+    swarm_size = 4
+    problem = StatefulCountingSphere(3)
+    algorithm = SingleObjectivePSO(
+        problem,
+        swarm_size=swarm_size,
+        c1=1.0,
+        c2=1.0,
+        w=0.5,
+        termination_criterion=termination(swarm_size),
+    )
+
+    algorithm.run()
+
+    assert algorithm.evaluations == swarm_size
+    assert problem.evaluation_count == swarm_size
+    assert algorithm.best_global.objectives[0] == 1.0
+    for particle in algorithm.solutions:
+        assert particle.attributes["best_objective"] == particle.objectives[0]
+
+
+def test_single_objective_pso_global_best_is_a_snapshot() -> None:
+    problem = Sphere(2)
+    algorithm = SingleObjectivePSO(
+        problem,
+        swarm_size=3,
+        c1=1.0,
+        c2=1.0,
+        w=0.5,
+        termination_criterion=termination(),
+    )
+    swarm = algorithm.create_initial_solutions()
+    algorithm.initialize_global_best(swarm)
+    source_particle = min(swarm, key=lambda particle: particle.objectives[0])
+    initial_best_objective = algorithm.best_global.objectives[0]
+    initial_best_variables = algorithm.best_global.variables.copy()
+
+    assert initial_best_objective == source_particle.objectives[0]
+    assert initial_best_variables == source_particle.variables
+
+    source_particle.objectives[0] = initial_best_objective + 1.0
+    source_particle.variables[0] += 1.0
+
+    assert algorithm.best_global is not source_particle
+    assert algorithm.best_global.objectives[0] == initial_best_objective
+    assert algorithm.best_global.variables == initial_best_variables
 
 
 def test_single_objective_pso_clip_constraint_keeps_position_in_bounds() -> None:
@@ -61,6 +155,26 @@ def test_worst_aware_pso_initializes_and_updates_worst_state() -> None:
 
     assert particle.attributes["worst_position"] == particle.variables
     assert particle.attributes["worst_objective"] == particle.objectives[0]
+
+
+def test_worst_aware_pso_inherits_initial_evaluation_budget_contract() -> None:
+    swarm_size = 3
+    problem = CountingSphere(2)
+    algorithm = WorstAwarePSO(
+        problem,
+        swarm_size=swarm_size,
+        c1=1.0,
+        c2=1.0,
+        w=0.5,
+        termination_criterion=termination(swarm_size),
+    )
+
+    algorithm.run()
+
+    assert algorithm.evaluations == swarm_size
+    assert problem.evaluation_count == swarm_size
+    for particle in algorithm.solutions:
+        assert particle.attributes["worst_objective"] == particle.objectives[0]
 
 
 def test_role_mixin_marks_expected_number_of_particles() -> None:

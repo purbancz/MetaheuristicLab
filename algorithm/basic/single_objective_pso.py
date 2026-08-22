@@ -3,7 +3,7 @@ from copy import deepcopy
 from typing import List, TypeVar
 import random
 import numpy as np
-from jmetal.core.algorithm import ParticleSwarmOptimization
+from jmetal.core.algorithm import ParticleSwarmOptimization, logger
 from jmetal.core.problem import FloatProblem
 from jmetal.core.solution import FloatSolution
 from jmetal.util.termination_criterion import TerminationCriterion
@@ -46,8 +46,23 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
         self.best_global = deepcopy(min(self.solutions, key=lambda sol: sol.objectives[0]))
         return self.solutions
 
-    def run(self):
-        super().run()
+    def run(self) -> "SingleObjectivePSO":
+        self.start_computing_time = time.time()
+
+        logger.debug("Creating initial set of solutions...")
+        self.solutions = self.create_initial_solutions()
+
+        logger.debug("Initializing progress...")
+        self.init_progress()
+
+        logger.debug("Running main loop until termination criteria is met")
+        while not self.stopping_condition_is_met():
+            self.step()
+            self.update_progress()
+
+        logger.debug("Finished!")
+
+        self.total_computing_time = time.time() - self.start_computing_time
         return self
 
     def observable_data(self) -> dict:
@@ -81,7 +96,7 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
     def initialize_global_best(self, swarm: List[S]) -> None:
         if not swarm:
             raise RuntimeError("Swarm is empty during global best initialization!")
-        self.best_global = min(swarm, key=lambda x: x.objectives[0])
+        self.best_global = deepcopy(min(swarm, key=lambda x: x.objectives[0]))
 
     def update_velocity(self, swarm: List[S]) -> None:
         gbest = np.array(self.best_global.variables)
