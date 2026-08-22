@@ -11,6 +11,7 @@ from scipy.stats import kruskal, f_oneway, shapiro, mannwhitneyu
 from statsmodels.stats.multicomp import pairwise_tukeyhsd
 from scikit_posthocs import posthoc_dunn
 
+from experiment.aggregation import combine_data
 from experiment.plotting_utilities import plot_results, plot_results_with_std, plot_box_at_intervals, plot_final_box, \
     plot_final_raincloud, plot_final_petit_prince, plot_results_with_annotations, plot_results_with_average, \
     plot_results_with_annotations_legend
@@ -82,43 +83,7 @@ def plot_all_from_pickle(file_path):
         plot_final_petit_prince(results, matched_problem, dimensions_dir, algorithm_colors)
 
 
-# def combine_data(data_list):
-#     combined_data = {}
-#     total_runs = 0
-#
-#     for data in data_list:
-#         # Accumulate the number of runs from each data set
-#         total_runs += data[0]['results']['PSO']['data'].shape[
-#             0]  # You can change 'GA' to any consistently run algorithm
-#
-#         for problem_data in data:
-#             problem_name = problem_data['problem']
-#             n_vars = problem_data['n_vars']
-#             results = problem_data['results']
-#
-#             if problem_name not in combined_data:
-#                 combined_data[problem_name] = {
-#                     'n_vars': n_vars,
-#                     'results': {algo: {'data': [], 'avg_fitness': [], 'std_dev': [], 'avg_time': []}
-#                                 for algo in results.keys()}
-#                 }
-#
-#             for algo, algo_data in results.items():
-#                 combined_data[problem_name]['results'][algo]['data'].append(algo_data['data'])
-#                 combined_data[problem_name]['results'][algo]['avg_fitness'].append(algo_data['avg_fitness'])
-#                 combined_data[problem_name]['results'][algo]['std_dev'].append(algo_data['std_dev'])
-#                 combined_data[problem_name]['results'][algo]['avg_time'].append(algo_data['avg_time'])
-#
-#     # Aggregating the data
-#     for problem_name, problem_data in combined_data.items():
-#         for algo, algo_data in problem_data['results'].items():
-#             # Concatenate the list of arrays into a single array
-#             algo_data['data'] = np.concatenate(algo_data['data'], axis=0)
-#             algo_data['avg_fitness'] = np.mean(algo_data['avg_fitness'])
-#             algo_data['std_dev'] = np.std(algo_data['avg_fitness'])
-#             algo_data['avg_time'] = np.mean(algo_data['avg_time'])
-#
-#     return combined_data, total_runs
+
 
 
 def load_data_from_pickle(filepath):
@@ -179,165 +144,41 @@ def calculate_incrementally(arr):
     return mean, std_dev
 
 
-def combine_data(data_list):
-    """
-    Combines data from multiple experiment runs, handling different
-    pickle file structures (list of problems or single problem dict).
-    """
-    combined_data = {}
-    total_runs_calculated = 0
-    runs_set = False
-
-    valid_data_list = [data for data in data_list if data is not None]
-
-    if not valid_data_list:
-         print("Warning: No valid data loaded from pickle files.")
-         return {}, 0
-
-    for data_source in valid_data_list:
-        if isinstance(data_source, list):
-            problems_in_source = data_source
-        elif isinstance(data_source, dict) and 'problem' in data_source and 'results' in data_source:
-            problems_in_source = [data_source]
-        else:
-            print(f"Warning: Skipping unrecognized data source structure: {type(data_source)}")
-            continue
-
-        temp_runs_set_for_source = False
-        if not runs_set:
-            for p_data_check in problems_in_source:
-                if p_data_check and 'results' in p_data_check and p_data_check['results']:
-                     first_algo_name = next(iter(p_data_check['results']))
-                     if 'data' in p_data_check['results'][first_algo_name] and \
-                        isinstance(p_data_check['results'][first_algo_name]['data'], np.ndarray):
-                          current_source_runs = p_data_check['results'][first_algo_name]['data'].shape[0]
-                          total_runs_calculated += current_source_runs # Add runs from this source
-                          temp_runs_set_for_source = True
-                          runs_set = True
-                          # Option B: Sum runs (if combining results from different experiments) -> already doing this
-                          break # Stop checking after finding runs in this source
-            if not temp_runs_set_for_source:
-                 print("Warning: Could not determine number of runs from data source.")
-
-
-        for problem_data in problems_in_source:
-            if not isinstance(problem_data, dict) or 'problem' not in problem_data or 'results' not in problem_data:
-                print(f"Warning: Skipping invalid problem data entry: {problem_data}")
-                continue
-
-            problem_name = problem_data['problem']
-            n_vars = problem_data.get('n_vars', -1)
-            results = problem_data['results']
-
-            if problem_name not in combined_data:
-                combined_data[problem_name] = {
-                    'n_vars': n_vars,
-                    'results': {}
-                }
-            if combined_data[problem_name]['n_vars'] == -1 and n_vars != -1:
-                 combined_data[problem_name]['n_vars'] = n_vars
-
-
-            for algo, algo_data_in in results.items():
-                if not isinstance(algo_data_in, dict) or 'data' not in algo_data_in:
-                     print(f"Warning: Skipping invalid algorithm data for '{algo}' in problem '{problem_name}'.")
-                     continue
-
-                if algo not in combined_data[problem_name]['results']:
-                    combined_data[problem_name]['results'][algo] = {
-                        'data_list': [], # Store individual data arrays temporarily
-                        'avg_fitness_list': [],
-                        'std_dev_list': [],
-                        'avg_time_list': []
-                    }
-
-                if isinstance(algo_data_in['data'], np.ndarray):
-                     combined_data[problem_name]['results'][algo]['data_list'].append(algo_data_in['data'])
-                if 'avg_fitness' in algo_data_in: combined_data[problem_name]['results'][algo]['avg_fitness_list'].append(algo_data_in['avg_fitness'])
-                if 'std_dev' in algo_data_in: combined_data[problem_name]['results'][algo]['std_dev_list'].append(algo_data_in['std_dev'])
-                if 'avg_time' in algo_data_in: combined_data[problem_name]['results'][algo]['avg_time_list'].append(algo_data_in['avg_time'])
-
-
-    # --- Aggregating the collected data ---
-    final_aggregated_data = {}
-    actual_total_runs = 0
-
-    for problem_name, problem_data in combined_data.items():
-        final_aggregated_data[problem_name] = {
-             'n_vars': problem_data['n_vars'],
-             'results': {}
-        }
-        first_algo_runs_set = False
-
-        for algo, collected_data in problem_data['results'].items():
-            if not collected_data['data_list']:
-                 print(f"Warning: No data found to aggregate for '{algo}' in problem '{problem_name}'. Skipping.")
-                 continue
-
-            try:
-                valid_data_arrays = [arr for arr in collected_data['data_list'] if isinstance(arr, np.ndarray)]
-                if not valid_data_arrays:
-                     print(f"Warning: No valid numpy arrays found for '{algo}' in problem '{problem_name}'. Skipping.")
-                     continue
-                concatenated_data = np.concatenate(valid_data_arrays, axis=0)
-            except ValueError as e:
-                 print(f"Error concatenating data for '{algo}' in problem '{problem_name}'. Skipping. Error: {e}")
-                 for i, arr in enumerate(collected_data['data_list']):
-                     print(f"  Array {i} type: {type(arr)}, shape: {getattr(arr, 'shape', 'N/A')}")
-                 continue
-
-            final_run_fitness = concatenated_data[:, -1] if concatenated_data.ndim == 2 else concatenated_data
-            valid_final_fitness = final_run_fitness[np.isfinite(final_run_fitness)]
-
-            if valid_final_fitness.size > 0:
-                 final_avg_fitness = np.mean(valid_final_fitness)
-                 final_std_dev = np.std(valid_final_fitness)
-            else:
-                print(f"Warning: No valid fitness values found for '{algo}' in problem '{problem_name}'.")
-                final_avg_fitness = float('inf')
-                final_std_dev = float('nan')
-
-            valid_avg_times = [t for t in collected_data['avg_time_list'] if isinstance(t, (int, float)) and np.isfinite(t)]
-            final_avg_time = np.mean(valid_avg_times) if valid_avg_times else 0.0
-
-            final_aggregated_data[problem_name]['results'][algo] = {
-                'data': concatenated_data,
-                'avg_fitness': final_avg_fitness,
-                'std_dev': final_std_dev,
-                'avg_time': final_avg_time
-            }
-
-            if not first_algo_runs_set:
-                 actual_total_runs = concatenated_data.shape[0]
-                 first_algo_runs_set = True
-
-
-    if actual_total_runs == 0 and total_runs_calculated != 0:
-         print(f"Warning: Calculated total runs ({total_runs_calculated}) but aggregated data has 0 runs. Using calculated value.")
-         actual_total_runs = total_runs_calculated
-    elif actual_total_runs == 0:
-         print("Warning: Could not determine total runs from aggregated data.")
-
-    print(f"Data combined. Total runs detected: {actual_total_runs}")
-    return final_aggregated_data, actual_total_runs
-
 def plot_combined_data_from_pickles(pickle_files):
     data_list = [load_data_from_pickle(file) for file in pickle_files]
     combined_data, total_runs = combine_data(data_list)
 
-    for problem_name, problem_data in combined_data.items():
-        n_vars = problem_data['n_vars']
-        results = problem_data['results']
+    for instance_key, problem_data in combined_data.items():
 
-        # Matching problem instance
-        matched_problem = next((prob for prob in problems if prob.name() == problem_name), None)
+        problem_name = problem_data["problem"]
+        n_vars = problem_data["n_vars"]
+        results = problem_data["results"]
+
+        # Match both problem identity and dimension.
+        matched_problem = next(
+            (
+                prob
+                for prob in problems
+                if prob.name() == problem_name
+                and (
+                    n_vars == -1
+                    or prob.number_of_variables() == n_vars
+                )
+            ),
+            None,
+        )
 
         if matched_problem is None:
-            print(f"Problem {problem_name} not found in the setup experiment list.")
+            print(
+                f"Problem {problem_name} with dimension {n_vars} "
+                f"not found in the current setup experiment list."
+            )
             continue
 
-        # Directory to save plots for the specific problem
-        dimensions_dir = f"{results_dir}/dim{n_vars}_runs{total_runs}/plots"
+        dimensions_dir = (
+            f"{results_dir}/dim{n_vars}_runs{total_runs}/plots"
+        )
+
         make_dir(dimensions_dir)
 
         # # Plotting all required graphs
@@ -417,39 +258,64 @@ def plot_combined_data_from_pickles(pickle_files):
             #                         adaptive_width=True)
 
 
-def extract_best_algorithms_from_experiment_data(aggregated_data_dict):
+def extract_best_algorithms_from_experiment_data(
+    aggregated_data_dict
+):
     """
-    Extracts the best algorithm(s) for each problem/dimension using the
-    aggregated average fitness from combined data.
-    Expects a dictionary keyed by problem name.
+    Extract the best algorithm(s) separately for each
+    problem/dimension instance.
     """
     best_algorithms_per_problem = {}
-    # Iterate through the dictionary returned by combine_data
-    for problem_name, problem_data in aggregated_data_dict.items():
+
+    for instance_key, problem_data in aggregated_data_dict.items():
+
+        problem_name = problem_data["problem"]
         dimension = problem_data.get("n_vars", "Unknown")
         results = problem_data.get("results", {})
-        if not results: continue
+
+        if not results:
+            continue
 
         avg_fitness_values = {}
-        for algo_name, algo_data in results.items():
-            # Use the 'avg_fitness' calculated by combine_data
-            if isinstance(algo_data, dict) and 'avg_fitness' in algo_data and np.isfinite(algo_data['avg_fitness']):
-                avg_fitness_values[algo_name] = algo_data['avg_fitness']
 
-        if not avg_fitness_values: continue
+        for algo_name, algo_data in results.items():
+
+            if (
+                isinstance(algo_data, dict)
+                and "avg_fitness" in algo_data
+                and np.isfinite(algo_data["avg_fitness"])
+            ):
+                avg_fitness_values[algo_name] = (
+                    algo_data["avg_fitness"]
+                )
+
+        if not avg_fitness_values:
+            continue
 
         try:
             best_value = min(avg_fitness_values.values())
-            # Find all algorithms matching the best value (handling ties)
-            best_algos = [algo for algo, fitness in avg_fitness_values.items() if np.isclose(fitness, best_value)]
 
-            if problem_name not in best_algorithms_per_problem:
-                best_algorithms_per_problem[problem_name] = {}
-            best_algorithms_per_problem[problem_name][dimension] = best_algos
+            best_algos = [
+                algo
+                for algo, fitness
+                in avg_fitness_values.items()
+                if np.isclose(fitness, best_value)
+            ]
+
+            best_algorithms_per_problem.setdefault(
+                problem_name,
+                {},
+            )
+
+            best_algorithms_per_problem[
+                problem_name
+            ][dimension] = best_algos
+
         except ValueError:
-             print(f"Warning: No valid fitness values to compare for {problem_name} dim {dimension}.")
-        except Exception as e:
-             print(f"Error extracting best algorithms for {problem_name} dim {dimension}: {e}")
+            print(
+                f"Warning: No valid fitness values to compare "
+                f"for {problem_name} dim {dimension}."
+            )
 
     return best_algorithms_per_problem
 
@@ -491,9 +357,13 @@ def kruskal_wallis_with_posthoc(pickle_files, perform_shapiro=True, perform_post
     print("Best algorithms extracted:", best_algorithms)
 
     # 4. Iterate through the COMBINED data for statistical analysis
-    print("\nStarting statistical analysis...")
-    for problem_name, problem_data in combined_data_dict.items():
-        dimension = problem_data.get('n_vars', 'Unknown')
+    for instance_key, problem_data in combined_data_dict.items():
+
+        problem_name = problem_data["problem"]
+        dimension = problem_data.get(
+            "n_vars",
+            "Unknown",
+        )
         results = problem_data.get('results', {})
 
         # Get the best algorithms determined *after* combining all runs
@@ -738,25 +608,73 @@ def extract_results_to_csv(pickle_files, output_prefix="aggregated_results", bas
             with open(output_csv_filename, mode='w', newline='', encoding='utf-8') as file:
                 writer = csv.writer(file)
                 writer.writerow(header)
-                for problem_name in sorted(combined_data_dict.keys()):
-                    problem_data = combined_data_dict[problem_name]
-                    data_dimension = problem_data.get('n_vars', 'N/A')
-                    # Final check dimension consistency within combined data for this problem
-                    if data_dimension != dimension and data_dimension != 'N/A':
-                         print(f"    Internal Warning: Combined data dimension {data_dimension} differs from group key {dimension} for problem '{problem_name}'. Using {dimension}.")
-                         # Decide whether to skip or use group dimension
-                    results = problem_data.get('results', {})
+                for instance_key in sorted(
+                        combined_data_dict.keys(),
+                        key=lambda key: (key[0], key[1]),
+                ):
+                    problem_data = combined_data_dict[instance_key]
+
+                    problem_name = problem_data["problem"]
+                    data_dimension = problem_data.get(
+                        "n_vars",
+                        "N/A",
+                    )
+
+                    if (
+                            data_dimension != dimension
+                            and data_dimension != "N/A"
+                    ):
+                        print(
+                            f"    Internal Warning: Combined data dimension "
+                            f"{data_dimension} differs from group key "
+                            f"{dimension} for problem '{problem_name}'."
+                        )
+
+                    results = problem_data.get("results", {})
+
                     for algo_name in sorted(results.keys()):
                         algo_data = results[algo_name]
-                        runs_count = algo_data.get('runs', effective_runs)
-                        avg_fitness = algo_data.get('avg_fitness', float('nan'))
-                        std_dev = algo_data.get('std_dev', float('nan'))
-                        avg_time = algo_data.get('avg_time', float('nan'))
+
+                        runs_count = algo_data.get(
+                            "runs",
+                            effective_runs,
+                        )
+
+                        avg_fitness = algo_data.get(
+                            "avg_fitness",
+                            float("nan"),
+                        )
+
+                        std_dev = algo_data.get(
+                            "std_dev",
+                            float("nan"),
+                        )
+
+                        avg_time = algo_data.get(
+                            "avg_time",
+                            float("nan"),
+                        )
+
                         writer.writerow([
-                            algo_name, problem_name, dimension, runs_count,
-                            f"{avg_fitness}" if np.isfinite(avg_fitness) else "Inf/NaN",
-                            f"{std_dev}" if np.isfinite(std_dev) else "NaN",
-                            f"{avg_time}" if np.isfinite(avg_time) else "NaN"
+                            algo_name,
+                            problem_name,
+                            data_dimension,
+                            runs_count,
+                            (
+                                f"{avg_fitness}"
+                                if np.isfinite(avg_fitness)
+                                else "Inf/NaN"
+                            ),
+                            (
+                                f"{std_dev}"
+                                if np.isfinite(std_dev)
+                                else "NaN"
+                            ),
+                            (
+                                f"{avg_time}"
+                                if np.isfinite(avg_time)
+                                else "NaN"
+                            ),
                         ])
             print(f"  CSV file generation complete for group (Dim={dimension}, Runs={effective_runs}).")
         except IOError as e: print(f"  Error writing CSV file '{output_csv_filename}': {e}")
@@ -824,9 +742,18 @@ def wilcoxon_rank_sum_vs_baselines(
     total_test_cases_by_baseline = {disp: 0 for disp in baselines_display_to_key.keys()}
 
     print("\nStarting Wilcoxon (rank-sum) analysis...")
-    for problem_name, problem_data in combined_data_dict.items():
-        dim = problem_data.get('n_vars', 'Unknown')
-        results = problem_data.get('results', {})
+    for instance_key, problem_data in combined_data_dict.items():
+
+        problem_name = problem_data["problem"]
+        dim = problem_data.get(
+            "n_vars",
+            "Unknown",
+        )
+
+        results = problem_data.get(
+            "results",
+            {},
+        )
         if not results:
             continue
 
@@ -1008,7 +935,7 @@ def friedman_wilcoxon_algorithm_groups(pickle_files, algo_groups):
     group_scores_per_problem = {g: [] for g in group_names}
 
     # 3. Iterate and Normalize
-    for problem_name, problem_data in combined_data_dict.items():
+    for instance_key, problem_data in combined_data_dict.items():
         results = problem_data.get('results', {})
 
         algo_means = {}
@@ -1122,7 +1049,7 @@ def friedman_wilcoxon_algorithm_groups_with_holm(pickle_files, algo_groups):
     excluded_incomplete = 0
 
     # 3. Iterate and normalize per problem
-    for problem_name, problem_data in combined_data_dict.items():
+    for instance_key, problem_data in combined_data_dict.items():
         results = problem_data.get("results", {})
 
         algo_means = {}
@@ -1315,7 +1242,7 @@ def head_to_head_champions(pickle_files):
     scores_A = []
     scores_B = []
 
-    for problem_name, problem_data in combined_data_dict.items():
+    for instance_key, problem_data in combined_data_dict.items():
         results = problem_data.get('results', {})
 
         # We need both algorithms to have data for this problem to do a paired test
@@ -1384,7 +1311,7 @@ def all_vs_all_algorithm_stats(pickle_files):
     # 3. Build a matrix of normalized scores: Rows = Problems, Cols = Algorithms
     matrix_data = {algo: [] for algo in algos_to_compare}
 
-    for problem_name, problem_data in combined_data_dict.items():
+    for instance_key, problem_data in combined_data_dict.items():
         results = problem_data.get('results', {})
 
         # Get mean fitness for each algorithm on this problem
