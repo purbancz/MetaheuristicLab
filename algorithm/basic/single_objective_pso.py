@@ -96,7 +96,7 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
     def initialize_global_best(self, swarm: List[S]) -> None:
         if not swarm:
             raise RuntimeError("Swarm is empty during global best initialization!")
-        self.best_global = min(swarm, key=lambda x: x.objectives[0])
+        self.best_global = deepcopy(min(swarm, key=lambda x: x.objectives[0]))
 
     def update_velocity(self, swarm: List[S]) -> None:
         gbest = np.array(self.best_global.variables)
