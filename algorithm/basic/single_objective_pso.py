@@ -46,8 +46,23 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
         self.best_global = deepcopy(min(self.solutions, key=lambda sol: sol.objectives[0]))
         return self.solutions
 
-    def run(self):
-        super().run()
+    def run(self) -> "SingleObjectivePSO":
+        self.start_computing_time = time.time()
+
+        logger.debug("Creating initial set of solutions...")
+        self.solutions = self.create_initial_solutions()
+
+        logger.debug("Initializing progress...")
+        self.init_progress()
+
+        logger.debug("Running main loop until termination criteria is met")
+        while not self.stopping_condition_is_met():
+            self.step()
+            self.update_progress()
+
+        logger.debug("Finished!")
+
+        self.total_computing_time = time.time() - self.start_computing_time
         return self
 
     def observable_data(self) -> dict:
