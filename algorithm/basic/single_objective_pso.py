@@ -3,7 +3,7 @@ from copy import deepcopy
 from typing import List, TypeVar
 import random
 import numpy as np
-from jmetal.core.algorithm import ParticleSwarmOptimization
+from jmetal.core.algorithm import ParticleSwarmOptimization, logger
 from jmetal.core.problem import FloatProblem
 from jmetal.core.solution import FloatSolution
 from jmetal.util.termination_criterion import TerminationCriterion
