@@ -22,10 +22,6 @@ from experiment.setup import setup_experiment, make_dir
  max_evaluations, frequency, algorithm_colors, results_dir) = setup_experiment()
 
 
-# def load_data_from_pickle(file_path):
-#     with open(file_path, 'rb') as f:
-#         loaded_data = pickle.load(f)
-#     return loaded_data
 
 def collect_pickle_files_from_paths(paths):
     pkl_files = []
@@ -46,13 +42,42 @@ def plot_all_from_pickle(file_path):
         results = problem_data['results']
 
         # Matching problem instance
-        matched_problem = next((prob for prob in problems if prob.name() == problem_name), None)
+        matched_problem = next(
+            (
+                prob
+                for prob in problems
+                if prob.name() == problem_name
+                   and (
+                           n_vars == -1
+                           or prob.number_of_variables() == n_vars
+                   )
+            ),
+            None,
+        )
 
         if matched_problem is None:
             print(f"Problem {problem_name} not found in the setup experiment list.")
             continue
 
-        no_of_runs = problem_data['results']['GA']['data'].shape[0]
+        first_valid_result = next(
+            (
+                algo_data
+                for algo_data in results.values()
+                if isinstance(algo_data, dict)
+                   and isinstance(algo_data.get("data"), np.ndarray)
+                   and algo_data["data"].size > 0
+            ),
+            None,
+        )
+
+        if first_valid_result is None:
+            print(
+                f"No valid result data found for "
+                f"{problem_name}, dimension {n_vars}."
+            )
+            continue
+
+        no_of_runs = first_valid_result["data"].shape[0]
 
         # Directory to save plots for the specific problem
         dimensions_dir = f"{results_dir}/dim{n_vars}_runs{no_of_runs}"
@@ -145,13 +170,18 @@ def calculate_incrementally(arr):
 
 
 def plot_combined_data_from_pickles(pickle_files):
-    data_list = [load_data_from_pickle(file) for file in pickle_files]
-    combined_data, total_runs = combine_data(data_list)
+    data_list = [
+        load_data_from_pickle(file)
+        for file in pickle_files
+    ]
+
+    combined_data = combine_data(data_list)
 
     for instance_key, problem_data in combined_data.items():
 
         problem_name = problem_data["problem"]
         n_vars = problem_data["n_vars"]
+        instance_runs = problem_data["runs"]
         results = problem_data["results"]
 
         # Match both problem identity and dimension.
@@ -176,7 +206,7 @@ def plot_combined_data_from_pickles(pickle_files):
             continue
 
         dimensions_dir = (
-            f"{results_dir}/dim{n_vars}_runs{total_runs}/plots"
+            f"{results_dir}/dim{n_vars}_runs{instance_runs}/plots"
         )
 
         make_dir(dimensions_dir)
@@ -217,26 +247,26 @@ def plot_combined_data_from_pickles(pickle_files):
                 print(f"Skipping {group_name}, no valid algorithms found (only 'PSO' or empty).")
                 continue
 
-            # plot_results(filtered_results, matched_problem, dimensions_dir, max_evaluations, total_runs,
+            # plot_results(filtered_results, matched_problem, dimensions_dir, max_evaluations, instance_runs,
             #              algorithm_colors, group_name)
 
             # plot_results_with_annotations(filtered_results, matched_problem, dimensions_dir, max_evaluations,
-            #                               total_runs, algorithm_colors, group_name)
+            #                               instance_runs, algorithm_colors, group_name)
 
             plot_results_with_annotations_legend(filtered_results, matched_problem, dimensions_dir, max_evaluations,
-                                          total_runs, algorithm_colors, group_name)
+                                          instance_runs, algorithm_colors, group_name)
 
             # plot_results_with_annotations_legend(filtered_results, matched_problem, dimensions_dir, max_evaluations,
-            #                                      total_runs, algorithm_colors, group_name, log_scale=True)
+            #                                      instance_runs, algorithm_colors, group_name, log_scale=True)
 
-            # plot_results_with_std(filtered_results, matched_problem, dimensions_dir, max_evaluations, total_runs,
+            # plot_results_with_std(filtered_results, matched_problem, dimensions_dir, max_evaluations, instance_runs,
             #                       algorithm_colors, group_name)
 
-            # plot_results_with_average(filtered_results, matched_problem, dimensions_dir, max_evaluations, total_runs,
+            # plot_results_with_average(filtered_results, matched_problem, dimensions_dir, max_evaluations, instance_runs,
             #                       algorithm_colors, group_name)
 
             # plot_box_at_intervals(filtered_results, matched_problem, max_evaluations=max_evaluations,
-            #                       no_of_runs=total_runs,
+            #                       no_of_runs=instance_runs,
             #                       algorithms_to_compare=list(filtered_results.keys()), results_dir=dimensions_dir,
             #                       algorithm_colors=algorithm_colors, group_name=group_name)
 
@@ -343,12 +373,22 @@ def kruskal_wallis_with_posthoc(pickle_files, perform_shapiro=True, perform_post
     # 2. Combine data using your existing function
     print("Combining loaded data...")
     # combine_data handles the different list/dict structures internally
-    combined_data_dict, total_runs = combine_data(valid_data_list)
+    combined_data_dict = combine_data(valid_data_list)
 
     if not combined_data_dict:
         print("Error: Data combination resulted in empty dictionary.")
         return
-    print(f"Data combined successfully. Total effective runs: {total_runs}")
+
+    run_counts = sorted({
+        problem_data["runs"]
+        for problem_data in combined_data_dict.values()
+    })
+
+    print(
+        f"Data combined successfully. "
+        f"Instances: {len(combined_data_dict)}, "
+        f"run counts: {run_counts}"
+    )
 
     # 3. Extract best algorithms from the *combined* data
     print("Extracting best algorithms from combined data...")
@@ -506,10 +546,17 @@ def get_data_group_key(loaded_data_item):
         return None, None # Unrecognized structure
 
     # Extract dimension
-    dimension = first_problem_data.get('n_vars')
+    dimension = first_problem_data.get("n_vars")
+
+    if isinstance(dimension, np.integer):
+        dimension = int(dimension)
+
     if dimension is None or not isinstance(dimension, int):
-         print(f"Warning: Could not determine dimension from data item: {first_problem_data.get('problem', 'Unknown')}")
-         return None, None # Dimension not found or invalid
+        print(
+            f"Warning: Could not determine dimension from data item: "
+            f"{first_problem_data.get('problem', 'Unknown')}"
+        )
+        return None, None
 
     # Extract runs - check first algorithm's data shape
     results = first_problem_data.get('results')
@@ -582,17 +629,41 @@ def extract_results_to_csv(pickle_files, output_prefix="aggregated_results", bas
         # 4. Combine data for the current group
         print("  Combining data for this group...")
         # Pass the list of actual data objects (which can be lists or dicts)
-        combined_data_dict, total_runs_in_group = combine_data(data_objects_in_group)
+        combined_data_dict = combine_data(data_objects_in_group)
 
         if not combined_data_dict:
             print("  Error: Data combination resulted in empty dictionary for this group. Skipping CSV generation.")
             continue
         # Verify run count consistency
-        if total_runs_in_group != runs:
-             print(f"  Warning: Aggregated run count ({total_runs_in_group}) differs from initially inferred runs ({runs}). Using aggregated value: {total_runs_in_group}")
-        effective_runs = total_runs_in_group # Trust the combined data
+        instance_run_counts = {
+            problem_data["runs"]
+            for problem_data in combined_data_dict.values()
+            if problem_data.get("runs", 0) > 0
+        }
 
-        print(f"  Data combined. Effective runs for this group: {effective_runs}")
+        if not instance_run_counts:
+            print(
+                "  Warning: No valid run counts found "
+                "after aggregation."
+            )
+            continue
+
+        if len(instance_run_counts) == 1:
+            effective_runs = next(iter(instance_run_counts))
+        else:
+            effective_runs = "mixed"
+
+            print(
+                f"  Warning: Aggregated benchmark instances "
+                f"have different run counts: "
+                f"{sorted(instance_run_counts)}"
+            )
+
+        print(
+            f"  Data combined. "
+            f"Run counts found: "
+            f"{sorted(instance_run_counts)}"
+        )
 
         # 5. Determine Output Path and Filename
         group_dir = os.path.join(base_results_dir, f"dim{dimension}_runs{effective_runs}")
@@ -637,7 +708,7 @@ def extract_results_to_csv(pickle_files, output_prefix="aggregated_results", bas
 
                         runs_count = algo_data.get(
                             "runs",
-                            effective_runs,
+                            problem_data.get("runs", "N/A"),
                         )
 
                         avg_fitness = algo_data.get(
@@ -715,11 +786,20 @@ def wilcoxon_rank_sum_vs_baselines(
         return None
 
     print("Combining loaded data...")
-    combined_data_dict, total_runs = combine_data(valid_data_list)
+    combined_data_dict = combine_data(valid_data_list)
     if not combined_data_dict:
         print("Error: Data combination resulted in empty dictionary.")
         return None
-    print(f"Data combined successfully. Total effective runs: {total_runs}")
+    run_counts = sorted({
+        problem_data["runs"]
+        for problem_data in combined_data_dict.values()
+    })
+
+    print(
+        f"Data combined successfully. "
+        f"Instances: {len(combined_data_dict)}, "
+        f"run counts: {run_counts}"
+    )
 
     def _final_values_from_algo_data(algo_data):
         if 'data' not in algo_data or not isinstance(algo_data['data'], np.ndarray):
@@ -926,7 +1006,7 @@ def friedman_wilcoxon_algorithm_groups(pickle_files, algo_groups):
         print("Error: No valid data loaded.")
         return
 
-    combined_data_dict, total_runs = combine_data(valid_data_list)
+    combined_data_dict = combine_data(valid_data_list)
     if not combined_data_dict:
         print("Error: Combined data is empty.")
         return
@@ -1035,11 +1115,17 @@ def friedman_wilcoxon_algorithm_groups_with_holm(pickle_files, algo_groups):
         print("Error: No valid data loaded.")
         return None
 
-    combined_data_dict, total_runs = combine_data(valid_data_list)
+    combined_data_dict = combine_data(valid_data_list)
 
     if not combined_data_dict:
         print("Error: Combined data is empty.")
         return None
+
+    runs_by_instance = {
+        instance_key: problem_data["runs"]
+        for instance_key, problem_data
+        in combined_data_dict.items()
+    }
 
     # Initialize storage for group means per problem
     group_scores_per_problem = {g: [] for g in group_names}
@@ -1227,14 +1313,14 @@ def friedman_wilcoxon_algorithm_groups_with_holm(pickle_files, algo_groups):
         "excluded_empty": excluded_empty,
         "excluded_degenerate": excluded_degenerate,
         "excluded_incomplete": excluded_incomplete,
-        "total_runs": total_runs,
+        "runs_by_instance": runs_by_instance,
     }
 
 def head_to_head_champions(pickle_files):
     # Load and combine data
     data_list = [load_data_from_pickle(fp) for fp in pickle_files]
     valid_data_list = [d for d in data_list if d is not None]
-    combined_data_dict, _ = combine_data(valid_data_list)
+    combined_data_dict = combine_data(valid_data_list)
 
     algo_A = "PSO"
     algo_B = "ContrarianDefeatistPSO"
@@ -1299,7 +1385,7 @@ def all_vs_all_algorithm_stats(pickle_files):
     # 1. Load and combine data
     valid_data = [d for d in [load_data_from_pickle(fp) for fp in pickle_files] if d is not None]
     if not valid_data: return
-    combined_data_dict, _ = combine_data(valid_data)
+    combined_data_dict = combine_data(valid_data)
 
     # 2. Define the exact algorithms you want to compare
     algos_to_compare = [
@@ -1400,7 +1486,7 @@ def many_to_one_vs_baseline(pickle_files, algos_to_compare, baseline="PSO", alph
         print("No valid data loaded.")
         return
 
-    combined_data_dict, _ = combine_data(valid_data)
+    combined_data_dict = combine_data(valid_data)
 
     # --------------------------
     # 2. Compute normalized scores per instance
