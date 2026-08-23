@@ -97,12 +97,18 @@ class CMAES(EvolutionaryAlgorithm[FloatSolution, FloatSolution]):
         return offspring
 
     def create_initial_solutions(self) -> List[FloatSolution]:
-        """The `run()` method calls this once. We use it to set the `best_solution_so_far`."""
-        # We must create and evaluate here to have a valid first point for the observers.
-        initial_pop = self._sample(self.offspring_population_size)
-        self.solutions = self.evaluate(initial_pop)
-        self.best_solution_so_far = min(self.solutions, key=lambda s: s.objectives[0])
-        return self.solutions
+        return self._sample(self.offspring_population_size)
+
+    def init_progress(self) -> None:
+        self.evaluations = len(self.solutions)
+
+        self.best_solution_so_far = min(
+            self.solutions,
+            key=lambda solution: solution.objectives[0],
+        )
+
+        observable_data = self.observable_data()
+        self.observable.notify_all(**observable_data)
 
     def evaluate(self, solution_list: List[FloatSolution]) -> List[FloatSolution]:
         return self.population_evaluator.evaluate(solution_list, self.problem)
