@@ -41,7 +41,7 @@ def test_same_problem_and_dimension_are_combined():
         [3.0, 4.0],
     )
 
-    combined, _ = combine_data(
+    combined = combine_data(
         [first, second]
     )
 
@@ -85,7 +85,7 @@ def test_same_problem_different_dimensions_are_separate():
         [5.0, 6.0],
     )
 
-    combined, _ = combine_data([
+    combined = combine_data([
         dim_100,
         dim_500,
         dim_1000,
@@ -141,7 +141,7 @@ def test_different_problems_same_dimension_are_separate():
         [2.0],
     )
 
-    combined, _ = combine_data([
+    combined = combine_data([
         rastrigin,
         sphere,
     ])
@@ -159,7 +159,7 @@ def test_problem_metadata_is_preserved():
         [1.0, 2.0],
     )
 
-    combined, _ = combine_data([result])
+    combined = combine_data([result])
 
     instance = combined[
         ("Rastrigin", 500)
@@ -167,3 +167,37 @@ def test_problem_metadata_is_preserved():
 
     assert instance["problem"] == "Rastrigin"
     assert instance["n_vars"] == 500
+
+def test_run_count_is_stored_per_problem_dimension():
+    dim_100 = make_result(
+        "Rastrigin",
+        100,
+        [1.0, 2.0],
+    )
+
+    dim_500 = make_result(
+        "Rastrigin",
+        500,
+        [3.0, 4.0, 5.0],
+    )
+
+    combined = combine_data([
+        dim_100,
+        dim_500,
+    ])
+
+    assert combined[
+        ("Rastrigin", 100)
+    ]["runs"] == 2
+
+    assert combined[
+        ("Rastrigin", 500)
+    ]["runs"] == 3
+
+    assert combined[
+        ("Rastrigin", 100)
+    ]["results"]["PSO"]["runs"] == 2
+
+    assert combined[
+        ("Rastrigin", 500)
+    ]["results"]["PSO"]["runs"] == 3
