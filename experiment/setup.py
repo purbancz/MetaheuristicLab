@@ -96,7 +96,7 @@ def setup_experiment():
             'AnarchicPSO',
             'AmnesiacPSO',
             'WandererPSO',
-            'AnarchicAmnesiacPSO'
+            'AnarchicAmnesiacPSO',
             'AAAPSO',
             'NoisyPSO',
             'NAPSO',

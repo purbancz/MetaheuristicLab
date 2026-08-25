@@ -1,3 +1,5 @@
+import pytest
+
 from jmetal.core.solution import FloatSolution
 from jmetal.problem import Sphere
 from jmetal.util.termination_criterion import StoppingByEvaluations
@@ -49,3 +51,38 @@ def test_cma_es_initial_population_is_evaluated_once():
     assert algorithm.evaluations == 4
     assert len(algorithm.solutions) == 4
     assert algorithm.best_solution_so_far is not None
+
+def test_cma_es_does_not_exceed_non_divisible_evaluation_budget():
+    problem = CountingSphere(3)
+    max_evaluations = 18
+
+    algorithm = CMAES(
+        problem=problem,
+        mu=2,
+        lambda_=4,
+        termination_criterion=StoppingByEvaluations(
+            max_evaluations=max_evaluations
+        ),
+    )
+
+    algorithm.run()
+
+    assert algorithm.evaluations == problem.evaluation_count
+    assert problem.evaluation_count <= max_evaluations
+    assert problem.evaluation_count == 16
+
+def test_cma_es_rejects_budget_smaller_than_initial_population():
+    problem = CountingSphere(3)
+
+    with pytest.raises(
+        ValueError,
+        match="evaluation budget must be at least lambda_",
+    ):
+        CMAES(
+            problem=problem,
+            mu=2,
+            lambda_=4,
+            termination_criterion=StoppingByEvaluations(
+                max_evaluations=2
+            ),
+        )

@@ -6,7 +6,7 @@ from jmetal.core.algorithm import EvolutionaryAlgorithm
 from jmetal.core.problem import Problem
 from jmetal.core.solution import FloatSolution
 from jmetal.util.evaluator import Evaluator
-from jmetal.util.termination_criterion import TerminationCriterion
+from jmetal.util.termination_criterion import StoppingByEvaluations, TerminationCriterion
 
 S = TypeVar("S")
 R = TypeVar("R")
@@ -62,6 +62,10 @@ class CMAES(EvolutionaryAlgorithm[FloatSolution, FloatSolution]):
         self.damps = 1 + 2 * max(0, np.sqrt((self.mueff - 1) / (self.n + 1)) - 1) + self.cs
         self.chiN = np.sqrt(self.n) * (1 - 1 / (4 * self.n) + 1 / (21 * self.n ** 2))
 
+        if (isinstance(self.termination_criterion, StoppingByEvaluations)
+                and self.termination_criterion.max_evaluations < self.offspring_population_size):
+            raise ValueError("CMA-ES evaluation budget must be at least lambda_, ")
+
     def step(self) -> None:
         """
         Overrides the base class `step` to implement the correct CMA-ES workflow.
@@ -114,7 +118,20 @@ class CMAES(EvolutionaryAlgorithm[FloatSolution, FloatSolution]):
         return self.population_evaluator.evaluate(solution_list, self.problem)
 
     def stopping_condition_is_met(self) -> bool:
-        return self.termination_criterion.is_met
+        """
+        Stop when the configured termination criterion is met.
+
+        For an evaluation-based budget, CMA-ES also stops before starting
+        a full lambda-sized generation that would exceed the remaining
+        objective-evaluation budget.
+        """
+        if self.termination_criterion.is_met:
+            return True
+
+        if isinstance(self.termination_criterion,StoppingByEvaluations):
+            next_generation_evaluations = (self.evaluations + self.offspring_population_size)
+            return next_generation_evaluations > self.termination_criterion.max_evaluations
+        return False
 
     def result(self) -> FloatSolution:
         return self.best_solution_so_far
