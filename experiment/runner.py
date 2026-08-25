@@ -14,7 +14,7 @@ import traceback
 
 from experiment.plotting_utilities import plot_results, plot_results_with_std, plot_box_at_intervals, plot_final_box, \
     plot_final_raincloud, plot_final_petit_prince, plot_results_with_annotations
-from experiment.setup import setup_experiment, initialize_algorithms, make_dir
+from experiment.setup import setup_experiment, make_dir
 from observer.fitness_observer import FitnessObserver
 
 # Configuration
@@ -35,9 +35,8 @@ def run_all_experiments():
         for problem in problems:
             problem = copy.deepcopy(problem)
             safe_problem_name = problem.name().replace(' ', '_').replace('-', '_')
-            initialized_algorithms = initialize_algorithms(algorithms, problem)
             problem_data = {'problem': problem.name(), 'n_vars': problem.number_of_variables(), 'results': {}}
-            for name, algorithm in initialized_algorithms.items():
+            for name, algorithm in algorithms.items():
                 fitness_data, avg_fitness, std_dev, avg_time = run_experiment(algorithm, no_of_runs, frequency)
                 problem_data['results'][name] = {'data': fitness_data, 'avg_fitness': avg_fitness, 'std_dev': std_dev,
                                                  'avg_time': avg_time}
@@ -120,11 +119,14 @@ def run_all_experiments():
         pickle.dump(all_data, f)
 
 
-def run_experiment(algorithm, runs, interval):
+def run_experiment(algorithm_factory, problem, runs, interval):
     all_fitness_data = []
     total_times = []
 
     for _ in range(runs):
+        problem_instance = copy.deepcopy(problem)
+        algorithm = algorithm_factory(problem_instance)
+
         observer = FitnessObserver(interval=interval)
         algorithm.observable.register(observer)
 

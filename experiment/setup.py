@@ -426,8 +426,8 @@ def setup_experiment():
             max_evaluations, frequency, algorithm_colors, results_dir)
 
 
-def initialize_algorithms(algorithms, problem):
-    return {name: algo(problem) for name, algo in algorithms.items()}
+# def initialize_algorithms(algorithms, problem):
+#     return {name: algo(problem) for name, algo in algorithms.items()}
 
 
 def make_dir(results_dir):
