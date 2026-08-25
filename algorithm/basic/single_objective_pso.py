@@ -6,7 +6,7 @@ import numpy as np
 from jmetal.core.algorithm import ParticleSwarmOptimization, logger
 from jmetal.core.problem import FloatProblem
 from jmetal.core.solution import FloatSolution
-from jmetal.util.termination_criterion import TerminationCriterion
+from jmetal.util.termination_criterion import StoppingByEvaluations, TerminationCriterion
 
 S = TypeVar('S')
 R = TypeVar('R')
@@ -78,7 +78,13 @@ class SingleObjectivePSO(ParticleSwarmOptimization):
         return [self.problem.evaluate(sol) for sol in solution_list]
 
     def stopping_condition_is_met(self) -> bool:
-        return self.termination_criterion.is_met
+        if self.termination_criterion.is_met:
+            return True
+
+        if isinstance(self.termination_criterion, StoppingByEvaluations):
+            next_iteration_evaluations = (self.evaluations + self.swarm_size)
+            return next_iteration_evaluations > self.termination_criterion.max_evaluations
+        return False
 
     def initialize_velocity(self, swarm: List[S]) -> None:
         for particle in swarm:
