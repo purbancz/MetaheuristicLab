@@ -36,6 +36,7 @@ class LSHADE(Algorithm[S, R]):
             archive_size_rate: float = 2.6,
     ):
         super().__init__()
+        self.evaluations_in_current_step = 0
         self.problem = problem
         self.initial_population_size = problem.number_of_variables() * pop_size_factor if initial_population_size == 0\
             else initial_population_size
@@ -77,6 +78,7 @@ class LSHADE(Algorithm[S, R]):
         """Performs one iteration of the L-SHADE algorithm."""
         reproduction_output = self.reproduction(self.solutions)
         offspring_population = [item[0] for item in reproduction_output]
+        self.evaluations_in_current_step = len(offspring_population)
         self.evaluate(offspring_population)
         self.solutions = self.replacement(self.solutions, reproduction_output)
 
@@ -86,7 +88,7 @@ class LSHADE(Algorithm[S, R]):
         by the `run()` method after each `step()`.
         """
         # The number of new evaluations is the current population size.
-        self.evaluations += self.population_size
+        self.evaluations += self.evaluations_in_current_step
         observable_data = self.observable_data()
         self.observable.notify_all(**observable_data)
 
