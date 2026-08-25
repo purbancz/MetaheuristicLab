@@ -76,7 +76,14 @@ class LSHADE(Algorithm[S, R]):
 
     def step(self) -> None:
         """Performs one iteration of the L-SHADE algorithm."""
-        reproduction_output = self.reproduction(self.solutions)
+
+        offspring_count = self.population_size
+
+        if isinstance(self.termination_criterion, StoppingByEvaluations):
+            remaining_evaluations = (self.termination_criterion.max_evaluations - self.evaluations)
+            offspring_count = min(offspring_count, remaining_evaluations)
+
+        reproduction_output = self.reproduction(self.solutions,offspring_count)
         offspring_population = [item[0] for item in reproduction_output]
         self.evaluations_in_current_step = len(offspring_population)
         self.evaluate(offspring_population)
@@ -87,17 +94,20 @@ class LSHADE(Algorithm[S, R]):
         Updates the progress variables of the algorithm. This is called
         by the `run()` method after each `step()`.
         """
-        # The number of new evaluations is the current population size.
+        # Count the offspring actually evaluated in the preceding step.
         self.evaluations += self.evaluations_in_current_step
         observable_data = self.observable_data()
         self.observable.notify_all(**observable_data)
 
-    def reproduction(self, population: List[S]) -> List[Tuple[S, float, float]]:
+    def reproduction(self, population: List[S], offspring_count: int = None) -> List[Tuple[S, float, float]]:
         """
         Generates offspring and returns them with their CR/F values.
         """
+        if offspring_count is None:
+            offspring_count = self.population_size
+
         reproduction_result: List[Tuple[S, float, float]] = []
-        for i in range(self.population_size):
+        for i in range(offspring_count):
             mem_rand_index = random.randint(0, self.memory_size - 1)
             mu_cr = self.memory_cr[mem_rand_index]
             mu_f = self.memory_f[mem_rand_index]
@@ -147,8 +157,9 @@ class LSHADE(Algorithm[S, R]):
         successful_f = []
         successful_cr = []
         fitness_improvements = []
+        evaluated_count = len(offspring_data)
 
-        for i in range(self.population_size):
+        for i in range(evaluated_count):
             parent = population[i]
             offspring_solution, cr, f = offspring_data[i]
             if self.comparator.compare(offspring_solution, parent) < 0:
@@ -160,6 +171,8 @@ class LSHADE(Algorithm[S, R]):
                 fitness_improvements.append(fitness_imp)
             else:
                 new_population.append(parent)
+
+        new_population.extend(population[evaluated_count:])
 
         archive_size_limit = int(self.initial_population_size * self.archive_size_rate)
         while len(self.archive) > archive_size_limit:
@@ -180,7 +193,7 @@ class LSHADE(Algorithm[S, R]):
 
         if isinstance(self.termination_criterion, StoppingByEvaluations):
             max_evals = self.termination_criterion.max_evaluations
-            current_evals = self.evaluations
+            current_evals = self.evaluations + self.evaluations_in_current_step
             next_pop_size = round(
                 ((4 - self.initial_population_size) / max_evals) * current_evals + self.initial_population_size)
             next_pop_size = max(4, next_pop_size)
