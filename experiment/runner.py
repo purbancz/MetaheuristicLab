@@ -1,6 +1,7 @@
 import copy
 import csv
 import pickle
+import random
 from datetime import datetime
 
 import humanize
@@ -11,7 +12,7 @@ from multiprocessing import Pool, cpu_count
 import traceback
 
 
-
+from experiment.globals import BASE_SEED
 from experiment.plotting_utilities import plot_results, plot_results_with_std, plot_box_at_intervals, plot_final_box, \
     plot_final_raincloud, plot_final_petit_prince, plot_results_with_annotations
 from experiment.setup import setup_experiment, make_dir
@@ -23,6 +24,7 @@ from observer.fitness_observer import FitnessObserver
 
 
 def run_all_experiments():
+    run_seeds = generate_run_seeds(no_of_runs)
     dimensions_dir = results_dir + f'/dim{number_of_variables}_runs{no_of_runs}'
     make_dir(dimensions_dir)
     csv_filename = f'{dimensions_dir}/{datetime.now().strftime("%Y%m%d_%H%M%S")}_results.csv'
@@ -37,9 +39,10 @@ def run_all_experiments():
             safe_problem_name = problem.name().replace(' ', '_').replace('-', '_')
             problem_data = {'problem': problem.name(), 'n_vars': problem.number_of_variables(), 'results': {}}
             for name, algorithm in algorithms.items():
-                fitness_data, avg_fitness, std_dev, avg_time = run_experiment(algorithm, no_of_runs, frequency)
+                fitness_data, avg_fitness, std_dev, avg_time = run_experiment(algorithm, problem, no_of_runs, frequency,
+                                                                              run_seeds=run_seeds)
                 problem_data['results'][name] = {'data': fitness_data, 'avg_fitness': avg_fitness, 'std_dev': std_dev,
-                                                 'avg_time': avg_time}
+                                                 'avg_time': avg_time, "seeds": list(run_seeds),}
 
                 print(f"Algorithm: {name}, Problem: {problem.name()}, Variables: {problem.number_of_variables()}, "
                       f"Runs: {no_of_runs}, Average Final Fitness: {avg_fitness}, "
@@ -119,11 +122,18 @@ def run_all_experiments():
         pickle.dump(all_data, f)
 
 
-def run_experiment(algorithm_factory, problem, runs, interval):
+def run_experiment(algorithm_factory, problem, runs, interval, run_seeds=None):
     all_fitness_data = []
     total_times = []
 
-    for _ in range(runs):
+    if run_seeds is None:
+        run_seeds = generate_run_seeds(runs)
+
+    if len(run_seeds) != runs:
+        raise ValueError("Number of run seeds must match number of runs.")
+
+    for seed in run_seeds:
+        set_run_seed(seed)
         problem_instance = copy.deepcopy(problem)
         algorithm = algorithm_factory(problem_instance)
 
@@ -151,11 +161,13 @@ def run_single_instance(args):
     Executes a single run of an algorithm on a problem.
     Designed to be called by multiprocessing.Pool.map.
     """
-    algo_name, problem_instance_copy, algo_lambda, run_id, max_evals, freq = args
+    algo_name, problem_instance_copy, algo_lambda, run_id, seed, max_evals, freq = args
     # print(f"  Starting Run {run_id} for {algo_name} on {problem_instance_copy.name()}...")
 
     # Instantiate algorithm and observer *within the worker*
     try:
+        set_run_seed(seed)
+
         algorithm = algo_lambda(problem_instance_copy) # Call the factory lambda
         observer = FitnessObserver(interval=freq)
         algorithm.observable.register(observer)
@@ -183,13 +195,14 @@ def run_single_instance(args):
 
         # print(f"  Finished Run {run_id} for {algo_name}. Final Fitness: {final_fitness:.4f}, Time: {total_time:.2f}s")
         # Return data needed for aggregation
-        return {'fitness_history': filled_fitness, 'time': total_time, 'final_fitness': final_fitness}
+        return {'fitness_history': filled_fitness, 'time': total_time, 'final_fitness': final_fitness, "seed": seed}
 
     except Exception as e:
         print(f"    Run {run_id} ERROR for {algo_name} on {problem_instance_copy.name()}: {e}")
         traceback.print_exc()
         # Return failure indicators
-        return {'fitness_history': [float('inf')] * (max_evals // freq), 'time': 0, 'final_fitness': float('inf')}
+        return {'fitness_history': [float('inf')] * (max_evals // freq), 'time': 0, 'final_fitness': float('inf'),
+                "seed": seed}
 
 def run_all_experiments_multi(num_parallel_workers: int = None): # Add parameter for parallelism level
     """
@@ -197,6 +210,8 @@ def run_all_experiments_multi(num_parallel_workers: int = None): # Add parameter
     """
     global algorithms_factory, group_of_algorithms, problems, no_of_runs, number_of_variables, solutions_size, \
            max_evaluations, frequency, algorithm_colors, results_dir # Access globals
+
+    run_seeds = generate_run_seeds(no_of_runs)
 
     # Determine number of workers for the Pool
     if num_parallel_workers is None or num_parallel_workers <= 0:
@@ -242,7 +257,8 @@ def run_all_experiments_multi(num_parallel_workers: int = None): # Add parameter
 
                 # Prepare arguments for parallel runs
                 # Pass deep copies of problem if necessary/possible
-                run_args = [(algo_name, copy.deepcopy(problem_for_runs), algo_lambda, run_id + 1, max_evaluations, frequency)
+                run_args = [(algo_name, copy.deepcopy(problem_for_runs), algo_lambda, run_id + 1, run_seeds[run_id],
+                             max_evaluations, frequency)
                             for run_id in range(no_of_runs)]
 
                 # Execute runs in parallel
@@ -281,7 +297,8 @@ def run_all_experiments_multi(num_parallel_workers: int = None): # Add parameter
                     'data': aggregated_fitness_array, # Store the array of histories
                     'avg_fitness': avg_fitness,
                     'std_dev': std_dev,
-                    'avg_time': avg_time
+                    'avg_time': avg_time,
+                    "seeds": list(run_seeds)
                 }
 
                 # --- Log and Write CSV Row ---
@@ -339,3 +356,11 @@ def run_all_experiments_multi(num_parallel_workers: int = None): # Add parameter
     with open(overall_pickle_filename, 'wb') as f:
         pickle.dump(all_experiment_data, f)
     print(f"Experiment data saved in {dimensions_dir}")
+
+
+def generate_run_seeds(runs: int, base_seed: int = BASE_SEED) -> list[int]:
+    return [base_seed + run_index for run_index in range(runs)]
+
+def set_run_seed(seed: int) -> None:
+    random.seed(seed)
+    np.random.seed(seed)
