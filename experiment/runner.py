@@ -135,6 +135,7 @@ def run_experiment(algorithm_factory, problem, runs, interval, run_seeds=None):
     for seed in run_seeds:
         set_run_seed(seed)
         problem_instance = copy.deepcopy(problem)
+        set_problem_run_seed(problem_instance, seed)
         algorithm = algorithm_factory(problem_instance)
 
         observer = FitnessObserver(interval=interval)
@@ -167,6 +168,7 @@ def run_single_instance(args):
     # Instantiate algorithm and observer *within the worker*
     try:
         set_run_seed(seed)
+        set_problem_run_seed(problem_instance_copy, seed)
 
         algorithm = algo_lambda(problem_instance_copy) # Call the factory lambda
         observer = FitnessObserver(interval=freq)
@@ -364,3 +366,7 @@ def generate_run_seeds(runs: int, base_seed: int = BASE_SEED) -> list[int]:
 def set_run_seed(seed: int) -> None:
     random.seed(seed)
     np.random.seed(seed)
+
+def set_problem_run_seed(problem, seed: int) -> None:
+    if hasattr(problem, "set_seed"):
+        problem.set_seed(seed)
