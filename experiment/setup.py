@@ -8,7 +8,9 @@ from experiment.factories import factory_PSO, factory_RebelRejectorPSO, \
     factory_ContrarianDefeatistPSO, factory_EschewerEscapistPSO, factory_HybridFullDisjointPSO, factory_HybridPartialDisjointPSO, factory_HybridAdditivePSO, \
     factory_CMAES, \
     factory_LSHADE
-from experiment.globals import NO_OF_RUNS, NUMBER_OF_VARIABLES, G_SOLUTIONS_SIZE, G_MAX_EVALUATIONS, RESULTS_DIR
+from experiment.globals import NO_OF_RUNS, NUMBER_OF_VARIABLES, G_SOLUTIONS_SIZE, G_MAX_EVALUATIONS, RESULTS_DIR, BENCHMARK_BASE_SEED
+from experiment.problem_identity import create_seeded_problem
+
 from problem.fixed_varaibles.cross import CrownedCross
 
 from problem.n_variables.CEC import RotatedHighConditionedElliptic, RotatedBentCigar, RotatedDiscus, \
@@ -187,13 +189,13 @@ def setup_experiment():
     # Define problems
     n_variables_problems = [
         ##
-        RotatedBentCigar(number_of_variables),
-        RotatedDiscus(number_of_variables),
-        RotatedHighConditionedElliptic(number_of_variables),
-        ShiftedSchwefel(number_of_variables),
-        ShiftedRotatedHappyCat(number_of_variables),
-        ShiftedRotatedHGBat(number_of_variables),
-        ShiftedRotatedWeierstrass(number_of_variables),
+        create_seeded_problem(RotatedBentCigar, number_of_variables, BENCHMARK_BASE_SEED),
+        create_seeded_problem(RotatedDiscus, number_of_variables, BENCHMARK_BASE_SEED),
+        create_seeded_problem(RotatedHighConditionedElliptic, number_of_variables, BENCHMARK_BASE_SEED),
+        create_seeded_problem(ShiftedSchwefel, number_of_variables, BENCHMARK_BASE_SEED),
+        create_seeded_problem(ShiftedRotatedHappyCat, number_of_variables, BENCHMARK_BASE_SEED),
+        create_seeded_problem(ShiftedRotatedHGBat, number_of_variables, BENCHMARK_BASE_SEED),
+        create_seeded_problem(ShiftedRotatedWeierstrass, number_of_variables, BENCHMARK_BASE_SEED),
         ##
         AlpineN1(number_of_variables),
         EggHolder(number_of_variables),
@@ -218,10 +220,9 @@ def setup_experiment():
         Stochastic(number_of_variables),
         StretchedV(number_of_variables),
         StyblinskiTang(number_of_variables),
-        ShiftedRotatedSchafferF7(number_of_variables),
+        create_seeded_problem(ShiftedRotatedSchafferF7, number_of_variables, BENCHMARK_BASE_SEED),
 
-        ## Rejected after experiment
-
+        # ## Rejected
         # ShiftedRotatedAckley(number_of_variables),
         # ShiftedRastrigin(number_of_variables),
         # ShiftedRotatedRastrigin(number_of_variables),
@@ -230,9 +231,6 @@ def setup_experiment():
         # Levy(number_of_variables),
         # Mishra06(number_of_variables),
         # SchwefelN21(number_of_variables),
-
-        # ## Rejected
-
         # HybridFunction1(number_of_variables),
         # HybridFunction2(number_of_variables),
         # HybridFunction3(number_of_variables),
@@ -252,7 +250,7 @@ def setup_experiment():
         # ExpandedKatsuura(number_of_variables), # too long
         # Katsuura(number_of_variables),  # too long
         # Ackley(number_of_variables), # irace
-        Rastrigin(number_of_variables),  # irace
+        # Rastrigin(number_of_variables),  # irace
         # Sphere(number_of_variables), # irace
 
         # ## uninterested results
