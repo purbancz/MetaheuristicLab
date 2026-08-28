@@ -9,13 +9,13 @@ from experiment.factories import factory_PSO, factory_RebelRejectorPSO, \
     factory_CMAES, \
     factory_LSHADE
 from experiment.globals import NO_OF_RUNS, NUMBER_OF_VARIABLES, G_SOLUTIONS_SIZE, G_MAX_EVALUATIONS, RESULTS_DIR
+from problem.fixed_varaibles.cross import CrownedCross
 
 from problem.n_variables.CEC import RotatedHighConditionedElliptic, RotatedBentCigar, RotatedDiscus, \
     ShiftedSchwefel, \
     ShiftedRotatedHappyCat, ShiftedRotatedHGBat, \
     ShiftedRotatedSchafferF7
 from problem.n_variables.alpine import AlpineN1
-from problem.n_variables.cross import CrownedCross
 from problem.n_variables.eggholder import EggHolder
 from problem.n_variables.expanded_schaffer import ExpandedShaffer
 from problem.n_variables.lenard_johnes_minimum_energy_cluster import LennardJonesMinimumEnergyCluster
@@ -196,7 +196,6 @@ def setup_experiment():
         ShiftedRotatedWeierstrass(number_of_variables),
         ##
         AlpineN1(number_of_variables),
-        CrownedCross(number_of_variables),
         EggHolder(number_of_variables),
         ExpandedShaffer(number_of_variables),
         GeneralizedSchafferN1(number_of_variables),
@@ -303,6 +302,7 @@ def setup_experiment():
     ]
 
     fixed_variables_problems = [
+        CrownedCross(),
         # QuantumSpeedLimit2D(),
         # BraninRCOC(),
         # DeJoung(),
