@@ -31,16 +31,10 @@ class DifferentialEvolution(Algorithm[S, R]):
         self.selection_operator = selection_operator
         self.termination_criterion = termination_criterion
         self.observable.register(termination_criterion)
-        self.solutions: List[S] = self.create_initial_solutions()
         self.comparator = ObjectiveComparator(0)
 
     def create_initial_solutions(self) -> List[S]:
-        population = []
-        for _ in range(self.solutions_size):
-            solution = self.problem.create_solution()
-            self.problem.evaluate(solution)
-            population.append(solution)
-        return population
+        return [self.problem.create_solution() for _ in range(self.solutions_size)]
 
     def evaluate(self, solution_list: List[S]):
         return self.solution_evaluator.evaluate(solution_list, self.problem)

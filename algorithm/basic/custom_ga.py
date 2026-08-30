@@ -10,7 +10,7 @@ from jmetal.operator import BinaryTournamentSelection
 from jmetal.util.comparator import Comparator, ObjectiveComparator
 from jmetal.util.evaluator import Evaluator
 from jmetal.util.generator import Generator
-from jmetal.util.termination_criterion import TerminationCriterion
+from jmetal.util.termination_criterion import StoppingByEvaluations, TerminationCriterion
 
 S = TypeVar("S")
 R = TypeVar("R")
@@ -62,19 +62,21 @@ class GeneticAlgorithm(EvolutionaryAlgorithm[S, R]):
             self.mating_pool_size = self.crossover_operator.get_number_of_children()
 
     def create_initial_solutions(self) -> List[S]:
-        return self.evaluate([self.population_generator.new(self.problem) for _ in range(self.population_size)])
+        return [self.population_generator.new(self.problem) for _ in range(self.population_size)]
 
     def set_solutions(self, solutions: List[S]):
         self.solutions = deepcopy(solutions)
-        # Ensure solutions are evaluated and sorted as needed
-        self.evaluate(self.solutions)
         self.solutions.sort(key=lambda sol: sol.objectives[0])
 
     def evaluate(self, population: List[S]):
         return self.population_evaluator.evaluate(population, self.problem)
 
     def stopping_condition_is_met(self) -> bool:
-        return self.termination_criterion.is_met
+        if self.termination_criterion.is_met:
+            return True
+        if isinstance(self.termination_criterion, StoppingByEvaluations):
+            return self.evaluations + self.offspring_population_size > self.termination_criterion.max_evaluations
+        return False
 
     def selection(self, population: List[S]):
         mating_population = []
