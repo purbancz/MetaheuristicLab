@@ -30,7 +30,7 @@ class LennardJonesMinimumEnergyCluster(FloatProblem):
     def d(self, i, j, variables):
         sum_k = 0
         for k in range(3):
-            sum_k += (variables[3 * i + k - 2] - variables[3 * j + k - 2]) ** 2
+            sum_k += (variables[3 * i + k] - variables[3 * j + k]) ** 2
         return sum_k ** 3
 
     def evaluate(self, solution: FloatSolution) -> FloatSolution:
@@ -38,7 +38,7 @@ class LennardJonesMinimumEnergyCluster(FloatProblem):
         s = 12.7120622568
         num_points = self.number_of_variables() // 3
         epsilon = 1e-6  # anti ZeroDivisionError
-        for i in range(num_points - 2):
+        for i in range(num_points - 1):
             sum_j = 0
             for j in range(i + 1, num_points):
                 d_tmp = self.d(i, j, x)

@@ -234,17 +234,10 @@ class SchwefelN36(FloatProblem):
 
 
     def evaluate(self, solution: FloatSolution) -> FloatSolution:
-        d = self.number_of_variables()
-        total = 0.0
-        for i in range(d - 1):
-            x_i = solution.variables[i]
-            x_next = solution.variables[i + 1]
-            # Original term: -x_i*x_next*(72 - 2*x_i - 2*x_next)
-            # At (12,12): -12*12*(72-24-24) = -144*24 = -3456.
-            # Adding 3456 shifts that pair's contribution to 0.
-            term = -x_i * x_next * (72 - 2 * x_i - 2 * x_next) + 3456
-            total += term
-        solution.objectives[0] = total + (self.number_of_variables() - 1) * (4.8*1e8)
+        solution.objectives[0] = sum(
+            (418.9829 - xi * math.sin(math.sqrt(abs(xi)))) ** 2
+            for xi in solution.variables
+        )
         return solution
 
     def name(self) -> str:

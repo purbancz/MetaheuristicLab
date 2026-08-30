@@ -32,15 +32,13 @@ class SineEnvelope(FloatProblem):
 
     def evaluate(self, solution: FloatSolution) -> FloatSolution:
         total = 0.0
-        # Loop over all adjacent variable pairs (i, i+1)
         for i in range(self.number_of_variables() - 1):
             x_i = solution.variables[i]
             x_next = solution.variables[i + 1]
-            # Compute the SineEnvelope component for each pair
             distance = math.sqrt(x_i**2 + x_next**2)
-            component = (math.sin(distance - 0.5) ** 2) / ((0.001 * (x_i**2 + x_next**2) + 1) ** 2)
-            total += component + 0.5
-        solution.objectives[0] = total
+            component = (math.sin(distance) ** 2) / ((0.001 * (x_i**2 + x_next**2) + 1) ** 2)
+            total += component
+        solution.objectives[0] = -total
         return solution
 
     def name(self) -> str:

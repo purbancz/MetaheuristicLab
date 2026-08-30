@@ -187,7 +187,7 @@ class GeneralizedSchafferN3(FloatProblem):
             # At optimum: if x_i = x_next = 0, then r_sq=0, so term = 0.
             term = (r_sq**0.25) * (1 + math.sin(50*(r_sq**0.1))**2)
             total += term
-        solution.objectives[0] = total - 1
+        solution.objectives[0] = total
         return solution
 
     def name(self) -> str:
