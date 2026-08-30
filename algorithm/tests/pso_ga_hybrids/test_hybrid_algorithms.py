@@ -1,7 +1,8 @@
 import pytest
 from unittest.mock import patch
 
-from jmetal.operator import PolynomialMutation, SBXCrossover
+from jmetal.operator.crossover import SBXCrossover
+from jmetal.operator.mutation import PolynomialMutation
 from jmetal.problem import Sphere
 from jmetal.util.termination_criterion import StoppingByEvaluations
 

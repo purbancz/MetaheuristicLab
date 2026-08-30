@@ -1,5 +1,6 @@
 import pytest
-from jmetal.operator import PolynomialMutation, SBXCrossover
+from jmetal.operator.crossover import SBXCrossover
+from jmetal.operator.mutation import PolynomialMutation
 from jmetal.util.termination_criterion import StoppingByEvaluations
 
 from algorithm.basic.custom_ga import GeneticAlgorithm

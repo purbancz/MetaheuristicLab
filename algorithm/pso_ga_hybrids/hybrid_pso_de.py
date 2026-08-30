@@ -6,7 +6,7 @@ import numpy as np
 from jmetal.config import store
 from jmetal.core.problem import FloatProblem
 from jmetal.core.solution import Solution
-from jmetal.operator import DifferentialEvolutionCrossover
+from jmetal.operator.crossover import DifferentialEvolutionCrossover
 from jmetal.operator.selection import DifferentialEvolutionSelection
 from jmetal.util.termination_criterion import TerminationCriterion
 from jmetal.util.comparator import ObjectiveComparator

@@ -19,7 +19,8 @@ from algorithm.role_based.role_hybrids import (
     HybridAdditiveRestarterPSO,
 )
 from algorithm.pso_ga_hybrids.pgchea import PGCHEA
-from jmetal.operator import PolynomialMutation, SBXCrossover
+from jmetal.operator.crossover import SBXCrossover
+from jmetal.operator.mutation import PolynomialMutation
 
 from algorithm.sparse_roles.sparse_hybrid import (
     SparseHybridAdditivePSO,
