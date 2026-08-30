@@ -1,130 +1,52 @@
-from experiment.retrieve import collect_pickle_files_from_paths, \
-    friedman_wilcoxon_algorithm_groups, head_to_head_champions, all_vs_all_algorithm_stats, many_to_one_vs_baseline, \
-    plot_combined_data_from_pickles, extract_results_to_csv, wilcoxon_rank_sum_vs_baselines, \
-    friedman_wilcoxon_algorithm_groups_with_holm
+from experiment.retrieve import friedman_wilcoxon_algorithm_groups, head_to_head_champions, all_vs_all_algorithm_stats, \
+    many_to_one_vs_baseline, \
+    extract_results_to_csv, wilcoxon_rank_sum_vs_baselines, \
+    friedman_wilcoxon_algorithm_groups_with_holm, collect_h5_files_from_paths, plot_all_from_h5, \
+    kruskal_wallis_with_posthoc, plot_combined_data_from_h5
 
 if __name__ == "__main__":
-    # try:
-    #     slurm_cpus_per_task = os.environ.get('SLURM_CPUS_PER_TASK')
-    #     slurm_ntasks = os.environ.get('SLURM_NTASKS')
-    #     print(f"Read SLURM_CPUS_PER_TASK: {slurm_cpus_per_task}")
-    #     print(f"Read SLURM_NTASKS: {slurm_ntasks}")
-    #
-    #     slurm_cpus = int(os.environ.get('SLURM_CPUS_PER_TASK', os.environ.get('SLURM_NTASKS', 0)))
-    #     if slurm_cpus > 0:
-    #         num_workers = slurm_cpus
-    #         print(f"Detected Slurm allocation: Setting num_workers = {num_workers}")
-    #     else:
-    #         num_workers = cpu_count()
-    #         print(f"Slurm variables not detected. Defaulting num_workers to cpu_count(): {num_workers}")
-    # except Exception as e:
-    #     print(f"Could not read Slurm environment variables ({e}). Defaulting num_workers.")
-    #     num_workers = cpu_count()
-    #
-    # # Limit workers if needed (e.g., memory constraints)
-    # # num_workers = min(num_workers, 16) # Example limit
-    #
-    # # run_all_experiments()
-    # run_all_experiments_multi(num_parallel_workers=num_workers)
-
-    ###############
-
-    # pkl_files = [
-    #     'experiment_results/dim100_runs5/Rastrigin_dim100_runs5_RebelPSO_experiment_data.pkl',
-    #     'experiment_results/dim100_runs5/Rastrigin_dim100_runs5_RejectorPSO_experiment_data.pkl',
-    # ]
-
     paths = [
-        # 'experiment_results/dim100_runs50',
-        # 'experiment_results/dim500_runs50',
-        # 'experiment_results/dim1000_runs50',
-        # 'experiment_results/wybrane/100',
-        # 'experiment_results/wybrane/500',
-        # 'experiment_results/wybrane/1000',
-        # 'experiment_results/anarchy_in_the_swarm/1000',
-        'experiment_results/wybrane_CMAES_LSHADE/100',
-        'experiment_results/wybrane_CMAES_LSHADE/500',
-        'experiment_results/wybrane_CMAES_LSHADE/1000',
+        'experiment_results/dim100_runs2',
     ]
 
-    pkl_files = collect_pickle_files_from_paths(paths)
+    h5_files = collect_h5_files_from_paths(paths)
 
 
-    # plot_all_from_pickle(pkl_files[0])
-    plot_combined_data_from_pickles(pkl_files)
+    plot_all_from_h5(h5_files)
+    plot_combined_data_from_h5(h5_files)
 
-    # kruskal_wallis_with_posthoc(pkl_files)
-    # wilcoxon_rank_sum_vs_baselines(pkl_files)
+    kruskal_wallis_with_posthoc(h5_files)
+    wilcoxon_rank_sum_vs_baselines(h5_files)
 
     algo_groups = {
-        # Opposing-Best Strategies
-        # "RebelPSO": "Opposing-Best Strategies",
-        # "RejectorPSO": "Opposing-Best Strategies",
-        # "RebelRejectorPSO": "Opposing-Best Strategies",
-        "RebelRejectorPSO": "RebelRejectorPSO",
-
-        # Attraction-to-Worst Strategies
-        # "ContrarianPSO": "Attraction-to-Worst Strategies",
-        # "DefeatistPSO": "Attraction-to-Worst Strategies",
-        # "ContrarianDefeatistPSO": "Attraction-to-Worst Strategies",
-        "ContrarianDefeatistPSO": "ContrarianDefeatistPSO",
-
-        # Opposing-Worst Strategies
-        # "EschewerPSO": "Opposing-Worst Strategies",
-        # "EscapistPSO": "Opposing-Worst Strategies",
-        # "EschewerEscapistPSO": "Opposing-Worst Strategies",
-        "EschewerEscapistPSO": "EschewerEscapistPSO",
-
-        #Random Strategies
-        # "AnarchicPSO": "Explicit Randomization Strategies",
-        # "AmnesiacPSO": "Explicit Randomization Strategies",
-        # "AnarchicAmnesiacPSO": "Explicit Randomization Strategies",
-        # "WandererPSO": "Explicit Randomization Strategies",
-        # "NoisyPSO": "Explicit Randomization Strategies",
-        # "DrifterPSO": "Explicit Randomization Strategies",
-        # "PerturbationPSO": "Explicit Randomization Strategies",
-
-        # # Multi-Hybrid Strategies
-        # "HybridFullDisjointPSO": "Multi-Hybrid Strategies",
-        # "HybridPartialDisjointPSO": "Multi-Hybrid Strategies",
-        # "HybridAdditivePSO": "Multi-Hybrid Strategies",
-
-        "HybridFullDisjointPSO": "HybridFullDisjointPSO",
-        "HybridPartialDisjointPSO": "HybridPartialDisjointPSO",
-        "HybridAdditivePSO": "HybridAdditivePSO",
-
-
-
-        # # SOTA
-        # "CMAES": "SOTA",
-        # "LSHADE": "SOTA",
-        # "PSO": "SOTA",
-        "CMAES": "CMAES",
-        "LSHADE": "LSHADE",
-        # "PSO": "PSO",
+        "FRAPSO": "FRAPSO",
+        "HybridFullDisjointRestarterPSO": "HybridFullDisjointRestarterPSO",
+        "HybridPartialDisjointRestarterPSO": "HybridPartialDisjointRestarterPSO",
+        "HybridAdditiveRestarterPSO": "HybridAdditiveRestarterPSO",
     }
 
-    # wilcoxon_rank_sum_vs_baselines(
-    #     pkl_files,
-    #     algo_groups=algo_groups,
-    #     lower_is_better=True,
-    #     alpha=0.05,
-    #     print_examples=False
-    # )
+    wilcoxon_rank_sum_vs_baselines(
+        h5_files,
+        algo_groups=algo_groups,
+        lower_is_better=True,
+        alpha=0.05,
+        print_examples=False
+    )
 
-    # friedman_wilcoxon_algorithm_groups(pkl_files, algo_groups)
-    # friedman_wilcoxon_algorithm_groups_with_holm(pkl_files, algo_groups)
-    # head_to_head_champions(pkl_files)
-    # all_vs_all_algorithm_stats(pkl_files)
+    friedman_wilcoxon_algorithm_groups(h5_files, algo_groups)
+    friedman_wilcoxon_algorithm_groups_with_holm(h5_files, algo_groups)
+    head_to_head_champions(h5_files)
+    all_vs_all_algorithm_stats(h5_files)
 
-    # algos_to_compare = [
-    #     'NoisyPSO', 'WandererPSO', 'AmnesiacPSO', 'DefeatistPSO', 'RebelPSO',
-    #     'EschewerPSO', 'ContrarianPSO', 'RejectorPSO', 'AnarchicPSO',
-    #     'EscapistPSO', 'DrifterPSO'
-    # ]
+    algos_to_compare = [
+        "FRAPSO",
+        "HybridFullDisjointRestarterPSO",
+        "HybridPartialDisjointRestarterPSO",
+        "HybridAdditiveRestarterPSO",
+    ]
 
-    # many_to_one_vs_baseline(pkl_files, algos_to_compare)
-    # many_to_one_vs_baseline(pkl_files, list(algo_groups.keys()))
+    many_to_one_vs_baseline(h5_files, algos_to_compare)
+    many_to_one_vs_baseline(h5_files, list(algo_groups.keys()))
 
 
-    extract_results_to_csv(pkl_files, output_prefix="all_algorithms_all_problems")
+    extract_results_to_csv(h5_files, output_prefix="all_algorithms_all_problems")

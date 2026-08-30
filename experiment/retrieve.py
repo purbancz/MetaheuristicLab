@@ -32,6 +32,9 @@ def collect_h5_files_from_paths(paths):
 
 
 def plot_all_from_h5(file_path):
+    if isinstance(file_path, list):
+        plot_combined_data_from_h5(file_path)
+        return
     loaded_data = load_data(file_path)
 
     for problem_data in loaded_data:
@@ -237,7 +240,7 @@ def calculate_incrementally(arr):
     return mean, std_dev
 
 
-def plot_combined_data_from_pickles(pickle_files):
+def plot_combined_data_from_h5(pickle_files):
     data_list = [
         load_data(file)
         for file in pickle_files
@@ -278,6 +281,10 @@ def plot_combined_data_from_pickles(pickle_files):
         )
 
         make_dir(dimensions_dir)
+
+        # if results:
+        #     plot_results_with_annotations_legend(results, matched_problem, dimensions_dir, max_evaluations,
+        #                                          instance_runs, algorithm_colors, "All algorithms")
 
         # # Plotting all required graphs
         # plot_results(results, matched_problem, dimensions_dir, max_evaluations, total_runs, algorithm_colors)

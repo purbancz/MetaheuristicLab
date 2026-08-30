@@ -403,11 +403,17 @@ def setup_experiment():
         # 'All without all additive':
         # ['PerturbationPSO'] + all_without_additive,
 
-        'All selected algorithms':
-            ['PerturbationPSO'] + [alg for alg in all_without_additive if
-                                   alg not in [
-                                       # 'DrifterPSO',
-                                               'DAPSO', 'FRAPSO'] + adaptive_algorithms],
+        'Test': ["FRAPSO",
+        "HybridFullDisjointRestarterPSO",
+        "HybridPartialDisjointRestarterPSO",
+        "HybridAdditiveRestarterPSO",
+        ],
+
+        # 'All selected algorithms':
+        #     ['PerturbationPSO'] + [alg for alg in all_without_additive if
+        #                            alg not in [
+        #                                # 'DrifterPSO',
+        #                                        'DAPSO', 'FRAPSO'] + adaptive_algorithms],
     }
 
     group_of_algorithms = {

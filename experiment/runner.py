@@ -333,19 +333,19 @@ def run_all_experiments_multi(num_parallel_workers=None):
 
             print(f"--- Finished all algorithms for Problem: {problem_name} ---")
 
-            try:
-                print(f"  Generating plots for {problem_name}...")
-                plot_results(problem_data['results'], problem_for_runs, dimensions_dir, max_evaluations,
-                             no_of_runs, algorithm_colors)
-                for group_name, algorithm_list in group_of_algorithms.items():
-                    filtered_results = {algo: problem_data['results'][algo] for algo in algorithm_list
-                                        if algo in problem_data['results']}
-                    if len(filtered_results) > 1 or (len(filtered_results) == 1 and 'PSO' not in filtered_results):
-                        print(f"    Generating plots for group: {group_name}")
-                        plot_results(filtered_results, problem_for_runs, dimensions_dir, max_evaluations,
-                                     no_of_runs, algorithm_colors, group_name)
-            except Exception as plot_err:
-                print(f"  ERROR generating plots for {problem_name}: {plot_err}")
+            # try:
+            #     print(f"  Generating plots for {problem_name}...")
+            #     plot_results(problem_data['results'], problem_for_runs, dimensions_dir, max_evaluations,
+            #                  no_of_runs, algorithm_colors)
+            #     for group_name, algorithm_list in group_of_algorithms.items():
+            #         filtered_results = {algo: problem_data['results'][algo] for algo in algorithm_list
+            #                             if algo in problem_data['results']}
+            #         if len(filtered_results) > 1 or (len(filtered_results) == 1 and 'PSO' not in filtered_results):
+            #             print(f"    Generating plots for group: {group_name}")
+            #             plot_results(filtered_results, problem_for_runs, dimensions_dir, max_evaluations,
+            #                          no_of_runs, algorithm_colors, group_name)
+            # except Exception as plot_err:
+            #     print(f"  ERROR generating plots for {problem_name}: {plot_err}")
 
     print(f"\n===== All Problems Processed =====")
     print(f"Experiment data saved to {dimensions_dir}")
