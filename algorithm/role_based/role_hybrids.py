@@ -1421,8 +1421,9 @@ class HybridPartialDisjointRestarterPSO(HybridPartialDisjointPSO_WithRandom):
         """Checks if the swarm diversity is below the threshold."""
         if not self.solutions or len(self.solutions) < 2: return False
         try:
-            positions = np.array([p for p in self.solutions if p.attributes.get('is_restarter', False)])
-            if positions.ndim != 2 or positions.shape[1] != self.problem.number_of_variables(): return False
+            restarters = [p for p in self.solutions if p.attributes.get('is_restarter', False)]
+            if len(restarters) < 2: return False
+            positions = np.array([p.variables for p in restarters])
             centroid = np.mean(positions, axis=0)
             diversity = np.mean(np.linalg.norm(positions - centroid, axis=1))
             return diversity < self.convergence_threshold
@@ -1851,8 +1852,9 @@ class HybridFullDisjointRestarterPSO(HybridFullDisjointPSO_WithRandom): # Inheri
         """Checks if the swarm diversity is below the threshold."""
         if not self.solutions or len(self.solutions) < 2: return False
         try:
-            positions = np.array([p for p in self.solutions if p.attributes.get('is_restarter', False)])
-            if positions.ndim != 2 or positions.shape[1] != self.problem.number_of_variables(): return False
+            restarters = [p for p in self.solutions if p.attributes.get('is_restarter', False)]
+            if len(restarters) < 2: return False
+            positions = np.array([p.variables for p in restarters])
             centroid = np.mean(positions, axis=0)
             diversity = np.mean(np.linalg.norm(positions - centroid, axis=1))
             return diversity < self.convergence_threshold
@@ -1966,8 +1968,9 @@ class HybridAdditiveRestarterPSO(HybridAdditivePSO_WithRandom): # Mixin first
         """Checks if the swarm diversity is below the threshold."""
         if not self.solutions or len(self.solutions) < 2: return False
         try:
-            positions = np.array([p for p in self.solutions if p.attributes.get('is_restarter', False)])
-            if positions.ndim != 2 or positions.shape[1] != self.problem.number_of_variables(): return False
+            restarters = [p for p in self.solutions if p.attributes.get('is_restarter', False)]
+            if len(restarters) < 2: return False
+            positions = np.array([p.variables for p in restarters])
             centroid = np.mean(positions, axis=0)
             diversity = np.mean(np.linalg.norm(positions - centroid, axis=1))
             return diversity < self.convergence_threshold
