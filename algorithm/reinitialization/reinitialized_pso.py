@@ -46,7 +46,7 @@ class FRAPSO(SingleObjectivePSO):
             ).tolist()
             particle.attributes['velocity'] = np.random.uniform(-1, 1, self.problem.number_of_variables()).tolist()
             particle.attributes['best_position'] = particle.variables.copy()
-            particle.attributes['best_objective'] = particle.objectives[0]
+            particle.attributes['best_objective'] = float('inf')
 
     def calculate_subregion(self, best_particle: FloatSolution):
         # Use the current search region as the starting point.
@@ -123,7 +123,7 @@ class PartialResetPSO(SingleObjectivePSO, RoleMixin):
             ).tolist()
             particle.attributes['velocity'] = np.random.uniform(-1, 1, self.problem.number_of_variables()).tolist()
             particle.attributes['best_position'] = particle.variables.copy()
-            particle.attributes['best_objective'] = particle.objectives[0]
+            particle.attributes['best_objective'] = float('inf')
 
     def create_initial_solutions(self) -> List[S]:
         solutions = super().create_initial_solutions()
@@ -175,8 +175,7 @@ class CollectiveResetPSO(SingleObjectivePSO):
             ).tolist()
             particle.attributes['velocity'] = np.random.uniform(-1, 1, self.problem.number_of_variables()).tolist()
             particle.attributes['best_position'] = particle.variables.copy()
-            particle.attributes['best_objective'] = particle.objectives[0]
-
+            particle.attributes['best_objective'] = float('inf')
 
     def step(self):
         if self.converged():

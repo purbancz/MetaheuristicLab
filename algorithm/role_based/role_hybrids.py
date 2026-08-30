@@ -1439,9 +1439,9 @@ class HybridPartialDisjointRestarterPSO(HybridPartialDisjointPSO_WithRandom):
             ).tolist()
             particle.attributes['velocity'] = np.random.uniform(-1, 1, self.problem.number_of_variables()).tolist()
             particle.attributes['best_position'] = particle.variables.copy()
-            particle.attributes['best_objective'] = particle.objectives[0]
+            particle.attributes['best_objective'] = float('inf')
             particle.attributes['worst_position'] = particle.variables.copy()
-            particle.attributes['worst_objective'] = particle.objectives[0]
+            particle.attributes['worst_objective'] = float('-inf')
 
 
     # Override step
@@ -1870,9 +1870,9 @@ class HybridFullDisjointRestarterPSO(HybridFullDisjointPSO_WithRandom): # Inheri
             ).tolist()
             particle.attributes['velocity'] = np.random.uniform(-1, 1, self.problem.number_of_variables()).tolist()
             particle.attributes['best_position'] = particle.variables.copy()
-            particle.attributes['best_objective'] = particle.objectives[0]
+            particle.attributes['best_objective'] = float('inf')
             particle.attributes['worst_position'] = particle.variables.copy()
-            particle.attributes['worst_objective'] = particle.objectives[0]
+            particle.attributes['worst_objective'] = float('-inf')
 
 
     # Override step
@@ -1986,9 +1986,9 @@ class HybridAdditiveRestarterPSO(HybridAdditivePSO_WithRandom): # Mixin first
             ).tolist()
             particle.attributes['velocity'] = np.random.uniform(-1, 1, self.problem.number_of_variables()).tolist()
             particle.attributes['best_position'] = particle.variables.copy()
-            particle.attributes['best_objective'] = particle.objectives[0]
+            particle.attributes['best_objective'] = float('inf')
             particle.attributes['worst_position'] = particle.variables.copy()
-            particle.attributes['worst_objective'] = particle.objectives[0]
+            particle.attributes['worst_objective'] = float('-inf')
 
 
     # Override step
