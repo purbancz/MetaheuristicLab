@@ -10,6 +10,17 @@ from jmetal.problem import Sphere
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
 
+from algorithm.reinitialization.reinitialized_pso import FRAPSO, PartialResetPSO, CollectiveResetPSO
+from algorithm.reinitialization.boundary_reinitialized_pso import BoundaryReinitializedPSO
+
+from algorithm.role_based.role_hybrids import (
+    HybridPartialDisjointRestarterPSO,
+    HybridFullDisjointRestarterPSO,
+    HybridAdditiveRestarterPSO,
+)
+from algorithm.pso_ga_hybrids.pgchea import PGCHEA
+from jmetal.operator import PolynomialMutation, SBXCrossover
+
 from algorithm.sparse_roles.sparse_hybrid import (
     SparseHybridAdditivePSO,
     SparseHybridFullDisjointPSO,
@@ -32,7 +43,7 @@ from algorithm.sparse_roles.sparse_role_based import (
     SparseRejectorPSO,
     SparseWandererPSO,
 )
-from irace import irace, ParameterSpace, Scenario, Experiment, Real, Bool, Categorical
+from irace import irace, ParameterSpace, Scenario, Experiment, Real, Integer, Bool, Categorical
 import rpy2.robjects as robjects
 
 from problem.n_variables.ackley import Ackley
@@ -99,181 +110,304 @@ def sparse_single_role_params(coefficient_name: str, fraction_name: str):
 
 parameter_spaces = {
 
-        'SparseWandererPSO': {
+        'BoundaryReinitializedPSO': {
             'params': [
                 *base_pso_params(),
-                Real("noise_strength", 0.01, 3.0),
-                Real("wanderer_fraction", 0.01, 0.98),
-                *single_sparse_mask_params(),
+                Real("pbest_gbest_epsilon", 1e-4, 0.5),
+                Categorical("distance_metric", ["normalized_rms", "normalized_linf", "fraction_close"]),
+                Categorical("boundary_strategy", ["random_face", "near_boundary", "mixed_boundary"]),
+                Real("boundary_margin", 0.01, 0.3),
+                Categorical("velocity_reset_strategy", ["zero", "random", "away_from_gbest"]),
+                Real("velocity_scale", 0.01, 0.5),
+                Bool("reset_personal_best_on_reinit"),
             ],
         },
 
-        'SparseDefeatistPSO': {
-            'params': sparse_single_role_params("defeatist_c", "defeatist_fraction"),
-        },
-
-        'SparseRebelPSO': {
-            'params': sparse_single_role_params("rebel_c", "rebel_fraction"),
-        },
-
-        'SparseRejectorPSO': {
-            'params': sparse_single_role_params("rejector_c", "rejector_fraction"),
-        },
-
-        'SparseContrarianPSO': {
-            'params': sparse_single_role_params("contrarian_c", "contrarian_fraction"),
-        },
-
-        'SparseEschewerPSO': {
-            'params': sparse_single_role_params("eschewer_c", "eschewer_fraction"),
-        },
-
-        'SparseEscapistPSO': {
-            'params': sparse_single_role_params("escapist_c", "escapist_fraction"),
-        },
-
-        'SparseAnarchicPSO': {
-            'params': [
-                *base_pso_params(),
-                Real("random_strength", 0.01, 6.0),
-                Real("anarchic_fraction", 0.01, 0.98),
-                *single_sparse_mask_params(),
-            ],
-        },
-
-        'SparseAmnesiacPSO': {
-            'params': [
-                *base_pso_params(),
-                Real("random_strength", 0.01, 6.0),
-                Real("amnesiac_fraction", 0.01, 0.98),
-                *single_sparse_mask_params(),
-            ],
-        },
-
-        'SparseErraticPSO': {
-            'params': [
-                *base_pso_params(),
-                Real("random_strength", 0.01, 6.0),
-                Real("erratic_fraction", 0.01, 0.98),
-                *single_sparse_mask_params(),
-            ],
-        },
-
-        'SparseDrifterPSO': {
-            'params': [
-                *base_pso_params(),
-                Real("drifter_fraction", 0.01, 0.98),
-                Real("perturbation_scale", 0.0001, 0.10),
-                Categorical("perturbation_method", ["gaussian", "cauchy"]),
-                *single_sparse_mask_params(),
-            ],
-        },
-
-        'SparseContrarianDefeatistPSO': {
-            'params': [
-                *base_pso_params(),
-                Real("defeatist_c", 0.01, 6.0),
-                Real("contrarian_c", 0.01, 6.0),
-                Real("contrarian_fraction", 0.01, 0.98),
-                Real("defeatist_fraction", 0.01, 0.98),
-                *component_sparse_mask_params(),
-            ],
-        },
-
-        'SparseRebelRejectorPSO': {
-            'params': [
-                *base_pso_params(),
-                Real("rejector_c", 0.01, 6.0),
-                Real("rebel_c", 0.01, 6.0),
-                Real("rebel_fraction", 0.01, 0.98),
-                Real("rejector_fraction", 0.01, 0.98),
-                *component_sparse_mask_params(),
-            ],
-        },
-
-        'SparseEschewerEscapistPSO': {
-            'params': [
-                *base_pso_params(),
-                Real("escapist_c", 0.01, 6.0),
-                Real("eschewer_c", 0.01, 6.0),
-                Real("eschewer_fraction", 0.01, 0.98),
-                Real("escapist_fraction", 0.01, 0.98),
-                *component_sparse_mask_params(),
-            ],
-        },
-
-        'SparseAnarchicAmnesiacPSO': {
-            'params': [
-                *base_pso_params(),
-                Real("random_strength_social", 0.01, 6.0),
-                Real("random_strength_cognitive", 0.01, 6.0),
-                Real("anarchic_fraction", 0.01, 0.98),
-                Real("amnesiac_fraction", 0.01, 0.98),
-                *component_sparse_mask_params(),
-            ],
-        },
-
-        'SparseHybridPartialDisjointPSO': {
+        'HybridPartialDisjointRestarterPSO': {
             'params': [
                 *base_pso_params(),
                 Real("rejector_c", 0.01, 6.0),
                 Real("defeatist_c", 0.01, 6.0),
                 Real("escapist_c", 0.01, 6.0),
+                Real("amnesiac_c", 0.01, 6.0),
                 Real("rebel_c", 0.01, 6.0),
                 Real("contrarian_c", 0.01, 6.0),
                 Real("eschewer_c", 0.01, 6.0),
-                Real("rejector_fraction", 0.01, 0.78),
-                Real("defeatist_fraction", 0.01, 0.78),
-                Real("escapist_fraction", 0.01, 0.78),
-                Real("rebel_fraction", 0.01, 0.78),
-                Real("contrarian_fraction", 0.01, 0.78),
-                Real("eschewer_fraction", 0.01, 0.78),
+                Real("anarchic_c", 0.01, 6.0),
+                Real("rejector_fraction", 0.01, 0.99),
+                Real("defeatist_fraction", 0.01, 0.99),
+                Real("escapist_fraction", 0.01, 0.99),
+                Real("amnesiac_fraction", 0.01, 0.99),
+                Real("rebel_fraction", 0.01, 0.99),
+                Real("contrarian_fraction", 0.01, 0.99),
+                Real("eschewer_fraction", 0.01, 0.99),
+                Real("anarchic_fraction", 0.01, 0.99),
                 Bool("assign_roles_every_iteration"),
-                *component_sparse_mask_params(),
+                Real("restarter_fraction", 0.01, 0.99),
+                Real("convergence_threshold", 1e-4, 1.0),
             ],
         },
 
-        'SparseHybridFullDisjointPSO': {
+        'HybridFullDisjointRestarterPSO': {
             'params': [
                 *base_pso_params(),
                 Real("rejector_c", 0.01, 6.0),
                 Real("defeatist_c", 0.01, 6.0),
                 Real("escapist_c", 0.01, 6.0),
+                Real("amnesiac_c", 0.01, 6.0),
                 Real("rebel_c", 0.01, 6.0),
                 Real("contrarian_c", 0.01, 6.0),
                 Real("eschewer_c", 0.01, 6.0),
-                Real("rejector_fraction", 0.01, 0.75),
-                Real("defeatist_fraction", 0.01, 0.75),
-                Real("escapist_fraction", 0.01, 0.75),
-                Real("rebel_fraction", 0.01, 0.75),
-                Real("contrarian_fraction", 0.01, 0.75),
-                Real("eschewer_fraction", 0.01, 0.75),
+                Real("anarchic_c", 0.01, 6.0),
+                Real("rejector_fraction", 0.01, 0.99),
+                Real("defeatist_fraction", 0.01, 0.99),
+                Real("escapist_fraction", 0.01, 0.99),
+                Real("amnesiac_fraction", 0.01, 0.99),
+                Real("rebel_fraction", 0.01, 0.99),
+                Real("contrarian_fraction", 0.01, 0.99),
+                Real("eschewer_fraction", 0.01, 0.99),
+                Real("anarchic_fraction", 0.01, 0.99),
                 Bool("assign_roles_every_iteration"),
-                *component_sparse_mask_params(),
+                Real("restarter_fraction", 0.01, 0.99),
+                Real("convergence_threshold", 1e-4, 1.0),
             ],
         },
 
-        'SparseHybridAdditivePSO': {
+        'HybridAdditiveRestarterPSO': {
             'params': [
                 *base_pso_params(),
                 Real("rejector_c", 0.01, 6.0),
                 Real("defeatist_c", 0.01, 6.0),
                 Real("escapist_c", 0.01, 6.0),
+                Real("amnesiac_c", 0.01, 6.0),
                 Real("rebel_c", 0.01, 6.0),
                 Real("contrarian_c", 0.01, 6.0),
                 Real("eschewer_c", 0.01, 6.0),
-                Real("std_cognitive_prob", 0.01, 1.0),
-                Real("rejector_prob", 0.01, 1.0),
-                Real("defeatist_prob", 0.01, 1.0),
-                Real("escapist_prob", 0.01, 1.0),
-                Real("std_social_prob", 0.01, 1.0),
-                Real("rebel_prob", 0.01, 1.0),
-                Real("contrarian_prob", 0.01, 1.0),
-                Real("eschewer_prob", 0.01, 1.0),
+                Real("anarchic_c", 0.01, 6.0),
+                Real("std_cognitive_prob", 0.01, 0.99),
+                Real("rejector_prob", 0.01, 0.99),
+                Real("defeatist_prob", 0.01, 0.99),
+                Real("escapist_prob", 0.01, 0.99),
+                Real("amnesiac_prob", 0.01, 0.99),
+                Real("std_social_prob", 0.01, 0.99),
+                Real("rebel_prob", 0.01, 0.99),
+                Real("contrarian_prob", 0.01, 0.99),
+                Real("eschewer_prob", 0.01, 0.99),
+                Real("anarchic_prob", 0.01, 0.99),
                 Bool("assign_flags_every_iteration"),
-                *component_sparse_mask_params(),
+                Real("restarter_fraction", 0.01, 0.99),
+                Real("convergence_threshold", 1e-4, 1.0),
             ],
         },
+
+        'PGCHEA': {
+            'params': [
+                *base_pso_params(),
+                Categorical("starting_algorithm", ["PSO", "GA"]),
+                Bool("inherit_best"),
+                Real("sbx_distribution_index", 2.0, 30.0),
+                Real("mutation_distribution_index", 5.0, 100.0),
+            ],
+        },
+
+        'FRAPSO': {
+            'params': [
+                *base_pso_params(),
+                Integer("fractal_depth", 1, 6),
+                Real("convergence_threshold", 1e-4, 1.0),
+            ],
+        },
+
+        'PartialResetPSO': {
+            'params': [
+                *base_pso_params(),
+                Real("convergence_threshold", 1e-4, 1.0),
+                Real("restarter_fraction", 0.01, 0.99),
+            ],
+        },
+
+        'CollectiveResetPSO': {
+            'params': [
+                *base_pso_params(),
+                Real("convergence_threshold", 1e-4, 1.0),
+            ],
+        },
+
+        # 'SparseWandererPSO': {
+        #     'params': [
+        #         *base_pso_params(),
+        #         Real("noise_strength", 0.01, 3.0),
+        #         Real("wanderer_fraction", 0.01, 0.98),
+        #         *single_sparse_mask_params(),
+        #     ],
+        # },
+        #
+        # 'SparseDefeatistPSO': {
+        #     'params': sparse_single_role_params("defeatist_c", "defeatist_fraction"),
+        # },
+        #
+        # 'SparseRebelPSO': {
+        #     'params': sparse_single_role_params("rebel_c", "rebel_fraction"),
+        # },
+        #
+        # 'SparseRejectorPSO': {
+        #     'params': sparse_single_role_params("rejector_c", "rejector_fraction"),
+        # },
+        #
+        # 'SparseContrarianPSO': {
+        #     'params': sparse_single_role_params("contrarian_c", "contrarian_fraction"),
+        # },
+        #
+        # 'SparseEschewerPSO': {
+        #     'params': sparse_single_role_params("eschewer_c", "eschewer_fraction"),
+        # },
+        #
+        # 'SparseEscapistPSO': {
+        #     'params': sparse_single_role_params("escapist_c", "escapist_fraction"),
+        # },
+        #
+        # 'SparseAnarchicPSO': {
+        #     'params': [
+        #         *base_pso_params(),
+        #         Real("random_strength", 0.01, 6.0),
+        #         Real("anarchic_fraction", 0.01, 0.98),
+        #         *single_sparse_mask_params(),
+        #     ],
+        # },
+        #
+        # 'SparseAmnesiacPSO': {
+        #     'params': [
+        #         *base_pso_params(),
+        #         Real("random_strength", 0.01, 6.0),
+        #         Real("amnesiac_fraction", 0.01, 0.98),
+        #         *single_sparse_mask_params(),
+        #     ],
+        # },
+        #
+        # 'SparseErraticPSO': {
+        #     'params': [
+        #         *base_pso_params(),
+        #         Real("random_strength", 0.01, 6.0),
+        #         Real("erratic_fraction", 0.01, 0.98),
+        #         *single_sparse_mask_params(),
+        #     ],
+        # },
+        #
+        # 'SparseDrifterPSO': {
+        #     'params': [
+        #         *base_pso_params(),
+        #         Real("drifter_fraction", 0.01, 0.98),
+        #         Real("perturbation_scale", 0.0001, 0.10),
+        #         Categorical("perturbation_method", ["gaussian", "cauchy"]),
+        #         *single_sparse_mask_params(),
+        #     ],
+        # },
+        #
+        # 'SparseContrarianDefeatistPSO': {
+        #     'params': [
+        #         *base_pso_params(),
+        #         Real("defeatist_c", 0.01, 6.0),
+        #         Real("contrarian_c", 0.01, 6.0),
+        #         Real("contrarian_fraction", 0.01, 0.98),
+        #         Real("defeatist_fraction", 0.01, 0.98),
+        #         *component_sparse_mask_params(),
+        #     ],
+        # },
+        #
+        # 'SparseRebelRejectorPSO': {
+        #     'params': [
+        #         *base_pso_params(),
+        #         Real("rejector_c", 0.01, 6.0),
+        #         Real("rebel_c", 0.01, 6.0),
+        #         Real("rebel_fraction", 0.01, 0.98),
+        #         Real("rejector_fraction", 0.01, 0.98),
+        #         *component_sparse_mask_params(),
+        #     ],
+        # },
+        #
+        # 'SparseEschewerEscapistPSO': {
+        #     'params': [
+        #         *base_pso_params(),
+        #         Real("escapist_c", 0.01, 6.0),
+        #         Real("eschewer_c", 0.01, 6.0),
+        #         Real("eschewer_fraction", 0.01, 0.98),
+        #         Real("escapist_fraction", 0.01, 0.98),
+        #         *component_sparse_mask_params(),
+        #     ],
+        # },
+        #
+        # 'SparseAnarchicAmnesiacPSO': {
+        #     'params': [
+        #         *base_pso_params(),
+        #         Real("random_strength_social", 0.01, 6.0),
+        #         Real("random_strength_cognitive", 0.01, 6.0),
+        #         Real("anarchic_fraction", 0.01, 0.98),
+        #         Real("amnesiac_fraction", 0.01, 0.98),
+        #         *component_sparse_mask_params(),
+        #     ],
+        # },
+        #
+        # 'SparseHybridPartialDisjointPSO': {
+        #     'params': [
+        #         *base_pso_params(),
+        #         Real("rejector_c", 0.01, 6.0),
+        #         Real("defeatist_c", 0.01, 6.0),
+        #         Real("escapist_c", 0.01, 6.0),
+        #         Real("rebel_c", 0.01, 6.0),
+        #         Real("contrarian_c", 0.01, 6.0),
+        #         Real("eschewer_c", 0.01, 6.0),
+        #         Real("rejector_fraction", 0.01, 0.78),
+        #         Real("defeatist_fraction", 0.01, 0.78),
+        #         Real("escapist_fraction", 0.01, 0.78),
+        #         Real("rebel_fraction", 0.01, 0.78),
+        #         Real("contrarian_fraction", 0.01, 0.78),
+        #         Real("eschewer_fraction", 0.01, 0.78),
+        #         Bool("assign_roles_every_iteration"),
+        #         *component_sparse_mask_params(),
+        #     ],
+        # },
+        #
+        # 'SparseHybridFullDisjointPSO': {
+        #     'params': [
+        #         *base_pso_params(),
+        #         Real("rejector_c", 0.01, 6.0),
+        #         Real("defeatist_c", 0.01, 6.0),
+        #         Real("escapist_c", 0.01, 6.0),
+        #         Real("rebel_c", 0.01, 6.0),
+        #         Real("contrarian_c", 0.01, 6.0),
+        #         Real("eschewer_c", 0.01, 6.0),
+        #         Real("rejector_fraction", 0.01, 0.75),
+        #         Real("defeatist_fraction", 0.01, 0.75),
+        #         Real("escapist_fraction", 0.01, 0.75),
+        #         Real("rebel_fraction", 0.01, 0.75),
+        #         Real("contrarian_fraction", 0.01, 0.75),
+        #         Real("eschewer_fraction", 0.01, 0.75),
+        #         Bool("assign_roles_every_iteration"),
+        #         *component_sparse_mask_params(),
+        #     ],
+        # },
+        #
+        # 'SparseHybridAdditivePSO': {
+        #     'params': [
+        #         *base_pso_params(),
+        #         Real("rejector_c", 0.01, 6.0),
+        #         Real("defeatist_c", 0.01, 6.0),
+        #         Real("escapist_c", 0.01, 6.0),
+        #         Real("rebel_c", 0.01, 6.0),
+        #         Real("contrarian_c", 0.01, 6.0),
+        #         Real("eschewer_c", 0.01, 6.0),
+        #         Real("std_cognitive_prob", 0.01, 1.0),
+        #         Real("rejector_prob", 0.01, 1.0),
+        #         Real("defeatist_prob", 0.01, 1.0),
+        #         Real("escapist_prob", 0.01, 1.0),
+        #         Real("std_social_prob", 0.01, 1.0),
+        #         Real("rebel_prob", 0.01, 1.0),
+        #         Real("contrarian_prob", 0.01, 1.0),
+        #         Real("eschewer_prob", 0.01, 1.0),
+        #         Bool("assign_flags_every_iteration"),
+        #         *component_sparse_mask_params(),
+        #     ],
+        # },
 
     # 'AnarchicAmnesiacPSO': {
     #     'params': [
@@ -614,6 +748,18 @@ def target_runner(experiment: Experiment, scenario: Scenario) -> float:
     cognitive_fraction_keys = ["rejector_fraction", "defeatist_fraction", "escapist_fraction", "amnesiac_fraction"]
     social_fraction_keys = ["rebel_fraction", "contrarian_fraction", "eschewer_fraction", "anarchic_fraction"]
     all_special_fraction_keys = cognitive_fraction_keys + social_fraction_keys + ["wanderer_fraction"] # Assuming wanderer might exist
+
+    # --- PGCHEA special handling ---
+    if current_algorithm == 'PGCHEA':
+        final_params['solutions_size'] = solutions_size
+        final_params['crossover'] = SBXCrossover(
+            probability=1.0,
+            distribution_index=final_params.pop('sbx_distribution_index', 5.0),
+        )
+        final_params['mutation'] = PolynomialMutation(
+            probability=1.0 / number_of_variables,
+            distribution_index=final_params.pop('mutation_distribution_index', 20.0),
+        )
 
     # --- Normalization for Partial Disjoint Variants ---
     if current_algorithm in [

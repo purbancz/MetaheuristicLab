@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=irace_sparse_algorithms
-#SBATCH --output=%x_%j.out
-#SBATCH --error=%x_%j.err
-#SBATCH --time=3-00:00:00
+#SBATCH --output=slurm_tune_logs/%x_%j.out
+#SBATCH --error=slurm_tune_logs/%x_%j.err
+#SBATCH --time=2-00:00:00
 #SBATCH --partition=standard          # standard/fast/long/tesla
 #SBATCH --account=pl0590-01
 #SBATCH --nodes=1
