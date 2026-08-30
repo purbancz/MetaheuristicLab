@@ -5,7 +5,7 @@ from jmetal.config import store
 from jmetal.core.algorithm import Algorithm
 from jmetal.core.problem import FloatProblem
 from jmetal.core.solution import Solution
-from jmetal.operator import DifferentialEvolutionCrossover
+from jmetal.operator.crossover import DifferentialEvolutionCrossover
 from jmetal.operator.selection import DifferentialEvolutionSelection
 from jmetal.util.comparator import ObjectiveComparator
 from jmetal.util.evaluator import Evaluator
