@@ -50,7 +50,7 @@ class PGCHEA(Algorithm[S, R]):
         )
         self.ga = GeneticAlgorithm(
             problem=problem, population_size=solutions_size, offspring_population_size=100,
-            crossover=crossover, mutation=mutation, selection=selection
+            crossover=self.crossover, mutation=self.mutation, selection=selection
         )
 
     def create_initial_solutions(self) -> List[S]:
@@ -85,8 +85,7 @@ class PGCHEA(Algorithm[S, R]):
         self.current_algorithm = 'PSO'
 
     def switch_to_ga(self):
-        self.update_attributes()
-        self.pso.set_solutions(self.update_attributes())
+        self.ga.set_solutions(self.pso.solutions)
         self.current_algorithm = 'GA'
 
     def update_attributes(self):
