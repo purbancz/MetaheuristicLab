@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=irace_sparse_algorithms
+#SBATCH --job-name=irace_reinitialization_algorithms
 #SBATCH --output=slurm_tune_logs/%x_%j.out
 #SBATCH --error=slurm_tune_logs/%x_%j.err
 #SBATCH --time=2-00:00:00
