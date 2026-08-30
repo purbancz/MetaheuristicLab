@@ -126,6 +126,9 @@ def combine_data(data_list):
                         "avg_fitness_list": [],
                         "std_dev_list": [],
                         "avg_time_list": [],
+                        "final_fitness_list": [],
+                        "run_times_list": [],
+                        "seeds_list": [],
                     }
 
                 collected = combined_data[instance_key]["results"][algo]
@@ -155,6 +158,21 @@ def combine_data(data_list):
                     collected["avg_time_list"].append(
                         algo_data_in["avg_time"]
                     )
+
+                if "final_fitness" in algo_data_in:
+                    arr = np.asarray(algo_data_in["final_fitness"])
+                    if arr.ndim == 1 and arr.size > 0:
+                        collected["final_fitness_list"].append(arr)
+
+                if "run_times" in algo_data_in:
+                    arr = np.asarray(algo_data_in["run_times"])
+                    if arr.ndim == 1 and arr.size > 0:
+                        collected["run_times_list"].append(arr)
+
+                if "seeds" in algo_data_in:
+                    seeds = algo_data_in["seeds"]
+                    if isinstance(seeds, (list, np.ndarray)):
+                        collected["seeds_list"].extend(list(seeds))
 
     # ---------------------------------------------------------
     # Aggregate collected arrays
@@ -304,6 +322,17 @@ def combine_data(data_list):
                 "avg_fitness": final_avg_fitness,
                 "std_dev": final_std_dev,
                 "avg_time": final_avg_time,
+                "final_fitness": (
+                    np.concatenate(collected["final_fitness_list"])
+                    if collected["final_fitness_list"]
+                    else (concatenated_data[:, -1] if concatenated_data.ndim == 2 else concatenated_data)
+                ),
+                "run_times": (
+                    np.concatenate(collected["run_times_list"])
+                    if collected["run_times_list"]
+                    else np.zeros(runs_count)
+                ),
+                "seeds": collected["seeds_list"],
             }
 
     print(

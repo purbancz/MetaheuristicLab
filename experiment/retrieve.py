@@ -1,9 +1,9 @@
 import csv
 import glob
 import os
-import pickle
 from collections import defaultdict, OrderedDict
 from datetime import datetime
+import h5py
 import numpy as np
 import scikit_posthocs as sp
 import pandas as pd
@@ -23,18 +23,16 @@ from experiment.setup import setup_experiment, make_dir
 
 
 
-def collect_pickle_files_from_paths(paths):
-    pkl_files = []
-
+def collect_h5_files_from_paths(paths):
+    h5_files = []
     for path in paths:
-        files = glob.glob(os.path.join(path, '**', '*.pkl'), recursive=True)
-        pkl_files.extend(files)
+        files = glob.glob(os.path.join(path, '**', '*.h5'), recursive=True)
+        h5_files.extend(files)
+    return h5_files
 
-    return pkl_files
 
-
-def plot_all_from_pickle(file_path):
-    loaded_data = load_data_from_pickle(file_path)
+def plot_all_from_h5(file_path):
+    loaded_data = load_data(file_path)
 
     for problem_data in loaded_data:
         problem_name = problem_data['problem']
@@ -111,29 +109,99 @@ def plot_all_from_pickle(file_path):
 
 
 
-def load_data_from_pickle(filepath):
-    """Loads data from a pickle file."""
+def load_data(filepath, problems=None, algorithms=None):
+    """Load experiment data from an HDF5 file.
+
+    Parameters
+    ----------
+    filepath : str
+        Path to the HDF5 file produced by run_all_experiments[_multi].
+    problems : list[str] | None
+        If given, only load these problem groups (exact names as stored).
+    algorithms : list[str] | None
+        If given, only load these algorithm groups within each problem.
+
+    Returns a list of problem dicts compatible with combine_data() and all
+    statistical / plotting functions:
+      [{'problem': str, 'n_vars': int, 'results': {algo: {'data': ndarray, ...}}}]
+    """
+    result = []
     try:
-        with open(filepath, 'rb') as f:
-            data = pickle.load(f)
-            print(f"Successfully loaded data from: {filepath}")
-            if isinstance(data, list) and data:
-                 if not all(isinstance(item, dict) and 'problem' in item and 'results' in item for item in data):
-                      print(f"Warning: List structure in {filepath} doesn't match expected format.")
-            elif isinstance(data, dict):
-                 if not ('problem' in data and 'results' in data):
-                      print(f"Warning: Dictionary structure in {filepath} doesn't match expected format.")
-            elif not data:
-                 print(f"Warning: Pickle file {filepath} loaded empty data.")
-            else:
-                 print(f"Warning: Unexpected data type loaded from {filepath}: {type(data)}")
-            return data
+        with h5py.File(filepath, 'r') as f:
+            problem_keys = [k for k in f.keys() if problems is None or k in problems]
+            for problem_name in problem_keys:
+                problem_grp = f[problem_name]
+                n_vars = int(problem_grp.attrs.get('n_vars', -1))
+                results = {}
+                algo_keys = [k for k in problem_grp.keys() if algorithms is None or k in algorithms]
+                for algo_name in algo_keys:
+                    grp = problem_grp[algo_name]
+                    fitness_curves = grp['fitness_curves'][:]
+                    final_fitness = grp['final_fitness'][:]
+                    run_times = grp['run_times'][:]
+                    seeds = grp['seeds'][:].tolist()
+                    valid_final = final_fitness[np.isfinite(final_fitness)]
+                    results[algo_name] = {
+                        'data': fitness_curves,
+                        'final_fitness': final_fitness,
+                        'run_times': run_times,
+                        'seeds': seeds,
+                        'avg_fitness': float(grp.attrs.get('avg_fitness',
+                                             np.mean(valid_final) if valid_final.size > 0 else float('inf'))),
+                        'std_dev': float(grp.attrs.get('std_dev',
+                                         np.std(valid_final) if valid_final.size > 0 else float('nan'))),
+                        'avg_time': float(grp.attrs.get('avg_time', np.mean(run_times))),
+                    }
+                if results:
+                    result.append({'problem': problem_name, 'n_vars': n_vars, 'results': results})
+        print(f"Successfully loaded data from: {filepath}")
     except FileNotFoundError:
-        print(f"Error: Pickle file not found at {filepath}")
+        print(f"Error: File not found at {filepath}")
         return None
     except Exception as e:
-        print(f"Error loading pickle file {filepath}: {e}")
+        print(f"Error loading file {filepath}: {e}")
         return None
+    return result if result else None
+
+
+def export_h5_subset(src_path, dst_path, problems=None, algorithms=None):
+    """Write a filtered copy of an HDF5 experiment file for sharing.
+
+    Parameters
+    ----------
+    src_path : str
+        Source HDF5 file (produced by run_all_experiments[_multi]).
+    dst_path : str
+        Destination path for the exported file.
+    problems : list[str] | None
+        Problem groups to include; None means all.
+    algorithms : list[str] | None
+        Algorithm groups to include; None means all.
+
+    Example
+    -------
+    # Share only PSO and PGCHEA results for Rastrigin:
+    export_h5_subset('dim1000_runs50.h5', 'share_rastrigin_pso_pgchea.h5',
+                     problems=['Rastrigin'], algorithms=['PSO', 'PGCHEA'])
+    """
+    with h5py.File(src_path, 'r') as src, h5py.File(dst_path, 'w') as dst:
+        for attr_key, attr_val in src.attrs.items():
+            dst.attrs[attr_key] = attr_val
+
+        problem_keys = [k for k in src.keys() if problems is None or k in problems]
+        for problem_name in problem_keys:
+            src_prob = src[problem_name]
+            dst_prob = dst.require_group(problem_name)
+            for attr_key, attr_val in src_prob.attrs.items():
+                dst_prob.attrs[attr_key] = attr_val
+
+            algo_keys = [k for k in src_prob.keys() if algorithms is None or k in algorithms]
+            for algo_name in algo_keys:
+                src.copy(f'{problem_name}/{algo_name}', dst_prob, name=algo_name)
+
+    print(f"Exported subset to {dst_path} "
+          f"(problems={problems or 'all'}, algorithms={algorithms or 'all'})")
+
 
 from decimal import Decimal
 
@@ -171,7 +239,7 @@ def calculate_incrementally(arr):
 
 def plot_combined_data_from_pickles(pickle_files):
     data_list = [
-        load_data_from_pickle(file)
+        load_data(file)
         for file in pickle_files
     ]
 
@@ -363,7 +431,7 @@ def kruskal_wallis_with_posthoc(pickle_files, perform_shapiro=True, perform_post
 
     # 1. Load data from all pickle files
     print("Loading data from pickle files...")
-    data_list = [load_data_from_pickle(file) for file in pickle_files]
+    data_list = [load_data(file) for file in pickle_files]
     valid_data_list = [d for d in data_list if d is not None] # Filter out loading errors
 
     if not valid_data_list:
@@ -597,7 +665,7 @@ def extract_results_to_csv(pickle_files, output_prefix="aggregated_results", bas
     print(f"Processing {len(pickle_files)} pickle files for CSV extraction...")
 
     # 1. Load all data first, keeping track of original filepath if needed for context
-    loaded_data_map = {fp: load_data_from_pickle(fp) for fp in pickle_files}
+    loaded_data_map = {fp: load_data(fp) for fp in pickle_files}
     valid_loaded_data = {fp: data for fp, data in loaded_data_map.items() if data is not None}
 
     if not valid_loaded_data:
@@ -779,7 +847,7 @@ def wilcoxon_rank_sum_vs_baselines(
                   | set(baselines_display_to_key.values())
 
     print("Loading data from pickle files...")
-    data_list = [load_data_from_pickle(fp) for fp in pickle_files]
+    data_list = [load_data(fp) for fp in pickle_files]
     valid_data_list = [d for d in data_list if d is not None]
     if not valid_data_list:
         print("Error: No valid data loaded from any pickle files.")
@@ -1000,7 +1068,7 @@ def friedman_wilcoxon_algorithm_groups(pickle_files, algo_groups):
 
     # 2. Load and combine data
     print("Loading data from pickle files...")
-    data_list = [load_data_from_pickle(fp) for fp in pickle_files]
+    data_list = [load_data(fp) for fp in pickle_files]
     valid_data_list = [d for d in data_list if d is not None]
     if not valid_data_list:
         print("Error: No valid data loaded.")
@@ -1108,7 +1176,7 @@ def friedman_wilcoxon_algorithm_groups_with_holm(pickle_files, algo_groups):
 
     # 2. Load and combine data
     print("Loading data from pickle files...")
-    data_list = [load_data_from_pickle(fp) for fp in pickle_files]
+    data_list = [load_data(fp) for fp in pickle_files]
     valid_data_list = [d for d in data_list if d is not None]
 
     if not valid_data_list:
@@ -1318,7 +1386,7 @@ def friedman_wilcoxon_algorithm_groups_with_holm(pickle_files, algo_groups):
 
 def head_to_head_champions(pickle_files):
     # Load and combine data
-    data_list = [load_data_from_pickle(fp) for fp in pickle_files]
+    data_list = [load_data(fp) for fp in pickle_files]
     valid_data_list = [d for d in data_list if d is not None]
     combined_data_dict = combine_data(valid_data_list)
 
@@ -1383,7 +1451,7 @@ import pandas as pd
 
 def all_vs_all_algorithm_stats(pickle_files):
     # 1. Load and combine data
-    valid_data = [d for d in [load_data_from_pickle(fp) for fp in pickle_files] if d is not None]
+    valid_data = [d for d in [load_data(fp) for fp in pickle_files] if d is not None]
     if not valid_data: return
     combined_data_dict = combine_data(valid_data)
 
@@ -1478,7 +1546,7 @@ def many_to_one_vs_baseline(pickle_files, algos_to_compare, baseline="PSO", alph
     # --------------------------
     valid_data = []
     for fp in pickle_files:
-        d = load_data_from_pickle(fp)
+        d = load_data(fp)
         if d is not None:
             valid_data.append(d)
 
