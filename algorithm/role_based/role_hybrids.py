@@ -5,6 +5,7 @@ import numpy as np
 from jmetal.core.problem import FloatProblem
 from jmetal.util.termination_criterion import TerminationCriterion
 
+from algorithm.diversity import normalized_swarm_diversity
 from algorithm.role_based.worst_aware_pso import WorstAwarePSO
 from algorithm.role_based.roles import RoleMixin
 
@@ -1326,6 +1327,7 @@ class HybridPartialDisjointRestarterPSO(HybridPartialDisjointPSO_WithRandom):
         # Store other parameters
         self.assign_roles_every_iteration = assign_roles_every_iteration
         self.convergence_threshold = convergence_threshold
+        self.total_restarts = 0
 
 
     # --- Assign Roles with EXPLICIT NORMALIZATION ---
@@ -1418,14 +1420,17 @@ class HybridPartialDisjointRestarterPSO(HybridPartialDisjointPSO_WithRandom):
         return solutions
 
     def check_convergence(self) -> bool:
-        """Checks if the swarm diversity is below the threshold."""
+        """Checks if the restarter-subset diversity, normalized by the domain
+        diagonal, is below the threshold."""
         if not self.solutions or len(self.solutions) < 2: return False
         try:
             restarters = [p for p in self.solutions if p.attributes.get('is_restarter', False)]
             if len(restarters) < 2: return False
-            positions = np.array([p.variables for p in restarters])
-            centroid = np.mean(positions, axis=0)
-            diversity = np.mean(np.linalg.norm(positions - centroid, axis=1))
+            diversity = normalized_swarm_diversity(
+                [p.variables for p in restarters],
+                self.problem.lower_bound,
+                self.problem.upper_bound,
+            )
             return diversity < self.convergence_threshold
         except Exception as e: print(f"Error calculating diversity: {e}"); return False
 
@@ -1448,6 +1453,7 @@ class HybridPartialDisjointRestarterPSO(HybridPartialDisjointPSO_WithRandom):
     def step(self):
         """ Checks convergence, restarts if needed, potentially reassigns roles, then updates. """
         if self.check_convergence():
+            self.total_restarts += 1
             self.selective_reinitialization()
         if self.assign_roles_every_iteration:
             self._assign_roles(self.solutions, initial_assignment=False)
@@ -1458,7 +1464,12 @@ class HybridPartialDisjointRestarterPSO(HybridPartialDisjointPSO_WithRandom):
         self.update_global_best(self.solutions)
         self.update_particle_best(self.solutions)
 
+    def observable_data(self) -> dict:
+        data = super().observable_data()
+        data['TOTAL_RESTARTS'] = self.total_restarts
+        return data
 
+    def get_name(self) -> str: return "HybridPartialDisjointRestarterPSO"
 
 
 class HybridDisjointPSO_WithWanderer(WorstAwarePSO, RoleMixin):
@@ -1785,6 +1796,7 @@ class HybridFullDisjointRestarterPSO(HybridFullDisjointPSO_WithRandom): # Inheri
         # Store other parameters
         self.assign_roles_every_iteration = assign_roles_every_iteration
         self.convergence_threshold = convergence_threshold
+        self.total_restarts = 0
 
     def _assign_roles(self, swarm: List[S], initial_assignment=False) -> None:
         """
@@ -1849,14 +1861,17 @@ class HybridFullDisjointRestarterPSO(HybridFullDisjointPSO_WithRandom): # Inheri
         return solutions
 
     def check_convergence(self) -> bool:
-        """Checks if the swarm diversity is below the threshold."""
+        """Checks if the restarter-subset diversity, normalized by the domain
+        diagonal, is below the threshold."""
         if not self.solutions or len(self.solutions) < 2: return False
         try:
             restarters = [p for p in self.solutions if p.attributes.get('is_restarter', False)]
             if len(restarters) < 2: return False
-            positions = np.array([p.variables for p in restarters])
-            centroid = np.mean(positions, axis=0)
-            diversity = np.mean(np.linalg.norm(positions - centroid, axis=1))
+            diversity = normalized_swarm_diversity(
+                [p.variables for p in restarters],
+                self.problem.lower_bound,
+                self.problem.upper_bound,
+            )
             return diversity < self.convergence_threshold
         except Exception as e: print(f"Error calculating diversity: {e}"); return False
 
@@ -1879,6 +1894,7 @@ class HybridFullDisjointRestarterPSO(HybridFullDisjointPSO_WithRandom): # Inheri
     def step(self):
         """ Checks convergence, restarts if needed, potentially reassigns roles, then updates. """
         if self.check_convergence():
+            self.total_restarts += 1
             self.selective_reinitialization()
         if self.assign_roles_every_iteration:
             self._assign_roles(self.solutions, initial_assignment=False)
@@ -1888,6 +1904,11 @@ class HybridFullDisjointRestarterPSO(HybridFullDisjointPSO_WithRandom): # Inheri
         self.solutions = self.evaluate(self.solutions)
         self.update_global_best(self.solutions)
         self.update_particle_best(self.solutions)
+
+    def observable_data(self) -> dict:
+        data = super().observable_data()
+        data['TOTAL_RESTARTS'] = self.total_restarts
+        return data
 
     def get_name(self) -> str: return "HybridFullDisjointRestarterPSO"
 
@@ -1929,6 +1950,7 @@ class HybridAdditiveRestarterPSO(HybridAdditivePSO_WithRandom): # Mixin first
             assign_flags_every_iteration=assign_flags_every_iteration # Pass this through
         )
         self.convergence_threshold = convergence_threshold
+        self.total_restarts = 0
         self.restarter_fraction = max(0.0, min(1.0, restarter_fraction))
 
     def create_initial_solutions(self) -> List[S]:
@@ -1965,14 +1987,17 @@ class HybridAdditiveRestarterPSO(HybridAdditivePSO_WithRandom): # Mixin first
                     attrs[flag_name] = (random.random() < probability)
 
     def check_convergence(self) -> bool:
-        """Checks if the swarm diversity is below the threshold."""
+        """Checks if the restarter-subset diversity, normalized by the domain
+        diagonal, is below the threshold."""
         if not self.solutions or len(self.solutions) < 2: return False
         try:
             restarters = [p for p in self.solutions if p.attributes.get('is_restarter', False)]
             if len(restarters) < 2: return False
-            positions = np.array([p.variables for p in restarters])
-            centroid = np.mean(positions, axis=0)
-            diversity = np.mean(np.linalg.norm(positions - centroid, axis=1))
+            diversity = normalized_swarm_diversity(
+                [p.variables for p in restarters],
+                self.problem.lower_bound,
+                self.problem.upper_bound,
+            )
             return diversity < self.convergence_threshold
         except Exception as e: print(f"Error calculating diversity: {e}"); return False
 
@@ -1995,7 +2020,13 @@ class HybridAdditiveRestarterPSO(HybridAdditivePSO_WithRandom): # Mixin first
     def step(self):
         """ Checks convergence, restarts if needed, then performs hybrid additive step. """
         if self.check_convergence():
+            self.total_restarts += 1
             self.selective_reinitialization()
         super().step()
+
+    def observable_data(self) -> dict:
+        data = super().observable_data()
+        data['TOTAL_RESTARTS'] = self.total_restarts
+        return data
 
     def get_name(self) -> str: return "HybridAdditiveRestarterPSO"

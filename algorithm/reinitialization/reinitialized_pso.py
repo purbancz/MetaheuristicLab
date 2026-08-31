@@ -5,6 +5,7 @@ from jmetal.core.problem import FloatProblem
 from jmetal.core.solution import FloatSolution
 from jmetal.util.termination_criterion import TerminationCriterion
 
+from algorithm.diversity import normalized_swarm_diversity
 from algorithm.role_based.roles import RoleMixin
 from algorithm.basic.single_objective_pso import SingleObjectivePSO
 
@@ -28,14 +29,19 @@ class FRAPSO(SingleObjectivePSO):
         self.fractal_depth = fractal_depth
         self.convergence_threshold = convergence_threshold
         self.current_depth = 0
+        self.total_restarts = 0
         # Instead of altering the problem bounds, store a copy that defines the current search region.
         self.current_lower_bound = np.array(self.problem.lower_bound, dtype=float)
         self.current_upper_bound = np.array(self.problem.upper_bound, dtype=float)
 
     def converged(self) -> bool:
-        positions = np.array([p.variables for p in self.solutions])
-        centroid = np.mean(positions, axis=0)
-        diversity = np.mean(np.linalg.norm(positions - centroid, axis=1))
+        # Normalized by the CURRENT zoom region, so the trigger keeps the same
+        # "collapsed relative to its search box" meaning at every depth.
+        diversity = normalized_swarm_diversity(
+            [p.variables for p in self.solutions],
+            self.current_lower_bound,
+            self.current_upper_bound,
+        )
         return bool(diversity < self.convergence_threshold)
 
     def reinitialize_swarm(self):
@@ -65,6 +71,7 @@ class FRAPSO(SingleObjectivePSO):
     def fractal_decomposition(self):
         if self.converged() and self.current_depth < self.fractal_depth:
             self.current_depth += 1
+            self.total_restarts += 1
             new_lower, new_upper = self.calculate_subregion(self.best_global)
             # Update current search region; do not modify problem.lower_bound/upper_bound.
             self.current_lower_bound = new_lower
@@ -74,6 +81,12 @@ class FRAPSO(SingleObjectivePSO):
     def step(self):
         self.fractal_decomposition()
         super().step()
+
+    def observable_data(self) -> dict:
+        data = super().observable_data()
+        data['TOTAL_RESTARTS'] = self.total_restarts
+        data['CURRENT_DEPTH'] = self.current_depth
+        return data
 
     def get_name(self) -> str:
         return "FRAPSO"
@@ -103,14 +116,17 @@ class PartialResetPSO(SingleObjectivePSO, RoleMixin):
 
         self.convergence_threshold = convergence_threshold
         self.restarter_fraction = max(0.0, min(1.0, restarter_fraction))
+        self.total_restarts = 0
         self._num_vars = self.problem.number_of_variables
         self._lower_bound = np.array(self.problem.lower_bound)
         self._upper_bound = np.array(self.problem.upper_bound)
 
     def check_convergence(self) -> bool:
-        positions = np.array([p.variables for p in self.solutions])
-        centroid = np.mean(positions, axis=0)
-        diversity = np.mean(np.linalg.norm(positions - centroid, axis=1))
+        diversity = normalized_swarm_diversity(
+            [p.variables for p in self.solutions],
+            self.problem.lower_bound,
+            self.problem.upper_bound,
+        )
         return bool(diversity < self.convergence_threshold)
 
     def selective_reinitialization(self):
@@ -135,8 +151,14 @@ class PartialResetPSO(SingleObjectivePSO, RoleMixin):
 
     def step(self):
         if self.check_convergence():
+            self.total_restarts += 1
             self.selective_reinitialization()
         super().step()
+
+    def observable_data(self) -> dict:
+        data = super().observable_data()
+        data['TOTAL_RESTARTS'] = self.total_restarts
+        return data
 
     def get_name(self) -> str:
         return "PartialResetPSO"
@@ -159,12 +181,15 @@ class CollectiveResetPSO(SingleObjectivePSO):
                          constraint_handling_mode=constraint_handling_mode)
 
         self.convergence_threshold = convergence_threshold
+        self.total_restarts = 0
 
 
     def converged(self) -> bool:
-        positions = np.array([p.variables for p in self.solutions])
-        centroid = np.mean(positions, axis=0)
-        diversity = np.mean(np.linalg.norm(positions - centroid, axis=1))
+        diversity = normalized_swarm_diversity(
+            [p.variables for p in self.solutions],
+            self.problem.lower_bound,
+            self.problem.upper_bound,
+        )
         return bool(diversity < self.convergence_threshold)
 
     def reinitialize_swarm(self):
@@ -179,8 +204,14 @@ class CollectiveResetPSO(SingleObjectivePSO):
 
     def step(self):
         if self.converged():
+            self.total_restarts += 1
             self.reinitialize_swarm()
         super().step()
+
+    def observable_data(self) -> dict:
+        data = super().observable_data()
+        data['TOTAL_RESTARTS'] = self.total_restarts
+        return data
 
     def get_name(self) -> str:
         return "CollectiveResetPSO"

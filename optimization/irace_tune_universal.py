@@ -111,18 +111,18 @@ def sparse_single_role_params(coefficient_name: str, fraction_name: str):
 
 parameter_spaces = {
 
-        'BoundaryReinitializedPSO': {
-            'params': [
-                *base_pso_params(),
-                Real("pbest_gbest_epsilon", 1e-4, 0.5),
-                Categorical("distance_metric", ["normalized_rms", "normalized_linf", "fraction_close"]),
-                Categorical("boundary_strategy", ["random_face", "near_boundary", "mixed_boundary"]),
-                Real("boundary_margin", 0.01, 0.3),
-                Categorical("velocity_reset_strategy", ["zero", "random", "away_from_gbest"]),
-                Real("velocity_scale", 0.01, 0.5),
-                Bool("reset_personal_best_on_reinit"),
-            ],
-        },
+        # 'BoundaryReinitializedPSO': {
+        #     'params': [
+        #         *base_pso_params(),
+        #         Real("pbest_gbest_epsilon", 1e-4, 0.5),
+        #         Categorical("distance_metric", ["normalized_rms", "normalized_linf", "fraction_close"]),
+        #         Categorical("boundary_strategy", ["random_face", "near_boundary", "mixed_boundary"]),
+        #         Real("boundary_margin", 0.01, 0.3),
+        #         Categorical("velocity_reset_strategy", ["zero", "random", "away_from_gbest"]),
+        #         Real("velocity_scale", 0.01, 0.5),
+        #         Bool("reset_personal_best_on_reinit"),
+        #     ],
+        # },
 
         'HybridPartialDisjointRestarterPSO': {
             'params': [
@@ -201,15 +201,15 @@ parameter_spaces = {
             ],
         },
 
-        'PGCHEA': {
-            'params': [
-                *base_pso_params(),
-                Categorical("starting_algorithm", ["PSO", "GA"]),
-                Bool("inherit_best"),
-                Real("sbx_distribution_index", 2.0, 30.0),
-                Real("mutation_distribution_index", 5.0, 100.0),
-            ],
-        },
+        # 'PGCHEA': {
+        #     'params': [
+        #         *base_pso_params(),
+        #         Categorical("starting_algorithm", ["PSO", "GA"]),
+        #         Bool("inherit_best"),
+        #         Real("sbx_distribution_index", 2.0, 30.0),
+        #         Real("mutation_distribution_index", 5.0, 100.0),
+        #     ],
+        # },
 
         'FRAPSO': {
             'params': [
