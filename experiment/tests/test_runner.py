@@ -169,3 +169,58 @@ def test_sequential_and_worker_use_seed_consistently(
         sequential["final_fitness"][0]
         == worker["final_fitness"]
     )
+
+
+def test_multi_runner_stamps_problem_own_dimension(
+    monkeypatch,
+    tmp_path,
+):
+    import h5py
+
+    swarm_size = 4
+    max_evaluations = 8
+
+    def algorithm_factory(problem):
+        return SingleObjectivePSO(
+            problem=problem,
+            swarm_size=swarm_size,
+            w=0.5,
+            c1=1.5,
+            c2=1.5,
+            termination_criterion=StoppingByEvaluations(
+                max_evaluations=max_evaluations
+            ),
+        )
+
+    class SerialPool:
+        def __init__(self, processes=None):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+        def map(self, func, iterable):
+            return [func(item) for item in iterable]
+
+    monkeypatch.setattr(runner, "Pool", SerialPool)
+    monkeypatch.setattr(runner, "problems", [Sphere(3)])
+    monkeypatch.setattr(runner, "algorithms", {"PSO": algorithm_factory})
+    monkeypatch.setattr(runner, "no_of_runs", 2)
+    monkeypatch.setattr(runner, "max_evaluations", max_evaluations)
+    monkeypatch.setattr(runner, "frequency", swarm_size)
+    # Deliberately mismatched campaign dimension: files must carry the
+    # problem's own dimension (3), not this global.
+    monkeypatch.setattr(runner, "number_of_variables", 1000)
+    monkeypatch.setattr(runner, "results_dir", str(tmp_path))
+
+    runner.run_all_experiments_multi(num_parallel_workers=1)
+
+    h5_path = tmp_path / "dim1000_runs2" / "Sphere_dim3_runs2_PSO.h5"
+    assert h5_path.exists()
+
+    with h5py.File(h5_path, "r") as f:
+        assert f.attrs["n_vars"] == 3
+        assert f["Sphere"].attrs["n_vars"] == 3

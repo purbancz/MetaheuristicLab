@@ -275,7 +275,8 @@ def run_all_experiments_multi(num_parallel_workers=None):
                 problem_for_runs = problem
 
             problem_name = problem_for_runs.name() if hasattr(problem_for_runs, 'name') else problem_for_runs.__class__.__name__
-            problem_data = {'problem': problem_name, 'n_vars': number_of_variables, 'results': {}}
+            problem_n_vars = problem_for_runs.number_of_variables()
+            problem_data = {'problem': problem_name, 'n_vars': problem_n_vars, 'results': {}}
 
             for algo_name, algo_lambda in algorithms.items():
                 run_args = [(algo_name, copy.deepcopy(problem_for_runs), algo_lambda, run_id + 1, run_seeds[run_id],
@@ -324,12 +325,12 @@ def run_all_experiments_multi(num_parallel_workers=None):
                           f"Avg Final Fitness: {avg_fitness:.4f}, Std Dev: {std_dev:.4f}, "
                           f"Avg single run duration: {avg_time:.2f}s, "
                           f"Duration: {humanized_duration}, Finished at: {datetime.now()}")
-                writer.writerow([algo_name, problem_name, number_of_variables, no_of_runs, avg_fitness,
+                writer.writerow([algo_name, problem_name, problem_n_vars, no_of_runs, avg_fitness,
                                  std_dev, avg_time])
                 file.flush()
 
-                h5_path = _h5_path(dimensions_dir, problem_name, algo_name, number_of_variables, no_of_runs)
-                _write_h5_algo_result(h5_path, problem_name, algo_name, result, number_of_variables, no_of_runs)
+                h5_path = _h5_path(dimensions_dir, problem_name, algo_name, problem_n_vars, no_of_runs)
+                _write_h5_algo_result(h5_path, problem_name, algo_name, result, problem_n_vars, no_of_runs)
 
             print(f"--- Finished all algorithms for Problem: {problem_name} ---")
 
