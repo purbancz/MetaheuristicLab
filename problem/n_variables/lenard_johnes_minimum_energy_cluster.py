@@ -6,6 +6,21 @@ from jmetal.core.solution import FloatSolution
 
 
 class LennardJonesMinimumEnergyCluster(FloatProblem):
+    """
+    Lennard-Jones cluster potential in reduced (r_min-normalized) units.
+
+    Variables encode atom coordinates as (x1,y1,z1, x2,y2,z2, ...); with n
+    variables the problem uses n // 3 atoms and IGNORES the n % 3 leftover
+    variables (dead dimensions when n is not divisible by 3).
+
+    f(x) = 12.7120622568 + sum_{i<j} [ 1/d_ij^2 - 2/d_ij ],  d_ij = r_ij^6,
+
+    i.e. the pairwise potential r^-12 - 2*r^-6 with pair minimum -1 at
+    distance 1. The additive constant is |LJ6 global minimum| (12.712062...),
+    chosen so the 6-atom (18-variable) instance has optimum 0; for any other
+    atom count it is only a constant shift of the landscape.
+    """
+
     def __init__(self, number_of_variables: int = 10):
         super(LennardJonesMinimumEnergyCluster, self).__init__()
         self._number_of_variables = number_of_variables

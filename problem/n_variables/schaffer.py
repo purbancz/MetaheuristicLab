@@ -154,11 +154,13 @@ class GeneralizedSchafferN2(FloatProblem):
 
 class GeneralizedSchafferN3(FloatProblem):
     """
-    Multi-dimensional generalization of Schaffer03:
+    Multi-dimensional generalization of the classical Schaffer F7 pair form
+    (note: NOT Schaffer N3 of the N1-N4 numbering, whose optimum is nonzero
+    and off the origin):
 
       f(x) = sum_{i=1}^{n-1} [ (x_i^2+x_{i+1}^2)^0.25 * (1 + sin^2(50*(x_i^2+x_{i+1}^2)^0.1) ) ]
 
-    Domain: x_i ∈ [-100, 100] for all i.
+    Domain: x_i ∈ [-50, 50] for all i.
     Global optimum: f(0)=0.
     """
 

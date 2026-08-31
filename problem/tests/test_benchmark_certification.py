@@ -26,7 +26,7 @@ def test_crowned_cross_both_coordinates_influence_result():
     assert shifted_x1 != base
 
 
-# --- LennardJones defects (XFAIL) ---
+# --- LennardJones ---
 
 def test_lennard_jones_two_atom_energy_varies_with_separation():
     from problem.n_variables.lenard_johnes_minimum_energy_cluster import LennardJonesMinimumEnergyCluster
@@ -51,7 +51,7 @@ def test_lennard_jones_pairwise_distance_uses_correct_coordinates():
     assert s.objectives[0] == pytest.approx(11.71, abs=0.1)
 
 
-# --- GeneralizedSchafferN3 (XFAIL) ---
+# --- GeneralizedSchafferN3 (classical Schaffer F7 pair form) ---
 
 def test_generalized_schaffer_n3_optimum_value_is_zero():
     from problem.n_variables.schaffer import GeneralizedSchafferN3
@@ -95,7 +95,7 @@ def test_sine_envelope_origin_is_not_the_minimum():
     assert ring == pytest.approx(-1.4915, abs=1e-3)
 
 
-# --- SchwefelN36 (XFAIL) ---
+# --- SchwefelN36 (squared Schwefel 2.26 variant) ---
 
 def test_schwefel_n36_matches_docstring_formula():
     from problem.n_variables.schwefel import SchwefelN36
@@ -108,3 +108,17 @@ def test_schwefel_n36_matches_docstring_formula():
     # Docstring formula: sum((418.9829 - xi * sin(sqrt(|xi|)))^2)
     expected = sum((418.9829 - xi * math.sin(math.sqrt(abs(xi)))) ** 2 for xi in test_point)
     assert s.objectives[0] == pytest.approx(expected)
+
+
+def test_schwefel_n36_optimum_is_near_zero_at_420_9687():
+    from problem.n_variables.schwefel import SchwefelN36
+    prob = SchwefelN36(number_of_variables=3)
+    lb, ub = prob.lower_bound, prob.upper_bound
+
+    x_star = 420.9687
+    s = prob.evaluate(_sol([x_star] * 3, lb, ub))
+    assert s.objectives[0] == pytest.approx(0.0, abs=1e-6)
+
+    # And nearby points are worse: the optimum is a genuine minimum.
+    s_off = prob.evaluate(_sol([x_star + 5.0] * 3, lb, ub))
+    assert s_off.objectives[0] > s.objectives[0]
