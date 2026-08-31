@@ -3,6 +3,35 @@ import numpy as np
 from experiment.aggregation import combine_data
 
 
+def test_match_problem_rebuilds_other_dimensions(monkeypatch):
+    # Imported inside the test: importing experiment.retrieve runs
+    # setup_experiment() at module import (a few seconds).
+    import experiment.retrieve as retrieve
+    from jmetal.problem import Sphere
+
+    from experiment.problem_identity import create_seeded_problem
+    from problem.n_variables.CEC import RotatedBentCigar
+
+    monkeypatch.setattr(retrieve, "problems", [Sphere(10)])
+
+    exact = retrieve.match_problem("Sphere", 10)
+    assert exact.number_of_variables() == 10
+
+    rebuilt = retrieve.match_problem("Sphere", 5)
+    assert rebuilt is not None
+    assert rebuilt.number_of_variables() == 5
+
+    assert retrieve.match_problem("NoSuchProblem", 5) is None
+
+    seeded = create_seeded_problem(RotatedBentCigar, 10, 42)
+    monkeypatch.setattr(retrieve, "problems", [seeded])
+
+    rebuilt_seeded = retrieve.match_problem(seeded.name(), 6)
+    reference = create_seeded_problem(RotatedBentCigar, 6, 42)
+    assert rebuilt_seeded.number_of_variables() == 6
+    assert rebuilt_seeded.instance_id == reference.instance_id
+
+
 def make_result(
     problem,
     n_vars,

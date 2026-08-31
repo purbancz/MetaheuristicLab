@@ -12,6 +12,8 @@ from statsmodels.stats.multicomp import pairwise_tukeyhsd
 from scikit_posthocs import posthoc_dunn
 
 from experiment.aggregation import combine_data
+from experiment.globals import BENCHMARK_BASE_SEED
+from experiment.problem_identity import create_seeded_problem
 from experiment.plotting_utilities import plot_results, plot_results_with_std, plot_box_at_intervals, plot_final_box, \
     plot_final_raincloud, plot_final_petit_prince, plot_results_with_annotations, plot_results_with_average, \
     plot_results_with_annotations_legend
@@ -31,6 +33,32 @@ def collect_h5_files_from_paths(paths):
     return h5_files
 
 
+def match_problem(problem_name, n_vars):
+    matched = next(
+        (
+            prob
+            for prob in problems
+            if prob.name() == problem_name
+            and (n_vars == -1 or prob.number_of_variables() == n_vars)
+        ),
+        None,
+    )
+    if matched is not None:
+        return matched
+
+    same_name = next((prob for prob in problems if prob.name() == problem_name), None)
+    if same_name is None or n_vars == -1:
+        return None
+
+    try:
+        if hasattr(same_name, "instance_seed"):
+            return create_seeded_problem(type(same_name), n_vars, BENCHMARK_BASE_SEED)
+        return type(same_name)(n_vars)
+    except Exception as e:
+        print(f"Could not rebuild problem {problem_name} at dimension {n_vars}: {e}")
+        return None
+
+
 def plot_all_from_h5(file_path):
     if isinstance(file_path, list):
         plot_combined_data_from_h5(file_path)
@@ -42,22 +70,10 @@ def plot_all_from_h5(file_path):
         n_vars = problem_data['n_vars']
         results = problem_data['results']
 
-        # Matching problem instance
-        matched_problem = next(
-            (
-                prob
-                for prob in problems
-                if prob.name() == problem_name
-                   and (
-                           n_vars == -1
-                           or prob.number_of_variables() == n_vars
-                   )
-            ),
-            None,
-        )
+        matched_problem = match_problem(problem_name, n_vars)
 
         if matched_problem is None:
-            print(f"Problem {problem_name} not found in the setup experiment list.")
+            print(f"Problem {problem_name} (dimension {n_vars}) not found in the setup experiment list.")
             continue
 
         first_valid_result = next(
@@ -256,18 +272,7 @@ def plot_combined_data_from_h5(pickle_files):
         results = problem_data["results"]
 
         # Match both problem identity and dimension.
-        matched_problem = next(
-            (
-                prob
-                for prob in problems
-                if prob.name() == problem_name
-                and (
-                    n_vars == -1
-                    or prob.number_of_variables() == n_vars
-                )
-            ),
-            None,
-        )
+        matched_problem = match_problem(problem_name, n_vars)
 
         if matched_problem is None:
             print(

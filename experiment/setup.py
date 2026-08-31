@@ -250,7 +250,7 @@ def setup_experiment():
         # ExpandedKatsuura(number_of_variables), # too long
         # Katsuura(number_of_variables),  # too long
         # Ackley(number_of_variables), # irace
-        # Rastrigin(number_of_variables),  # irace
+        Rastrigin(number_of_variables),  # irace
         # Sphere(number_of_variables), # irace
 
         # ## uninterested results
@@ -425,6 +425,12 @@ def setup_experiment():
         group_name: ['PSO'] + [algo for algo in algorithm_list if algo not in ['PSO']]
         for group_name, algorithm_list in group_of_algorithms.items()
     }
+
+    for group_name, algorithm_list in group_of_algorithms.items():
+        missing = [algo for algo in algorithm_list if algo not in algorithms]
+        if missing:
+            print(f"WARNING: plot group '{group_name}' references algorithms not in the "
+                  f"active experiment set: {missing}. Their group plots will be skipped.")
 
     return (algorithms, group_of_algorithms, problems, no_of_runs, number_of_variables, solutions_size,
             max_evaluations, frequency, algorithm_colors, results_dir)

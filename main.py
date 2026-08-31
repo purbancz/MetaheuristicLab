@@ -10,6 +10,10 @@ if __name__ == "__main__":
     ]
 
     h5_files = collect_h5_files_from_paths(paths)
+    if not h5_files:
+        raise SystemExit(
+            f"No .h5 result files found under {paths} - nothing to analyze."
+        )
 
 
     plot_all_from_h5(h5_files)
