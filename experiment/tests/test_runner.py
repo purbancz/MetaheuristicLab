@@ -101,12 +101,17 @@ def test_run_experiment_is_reproducible_with_same_seeds(
     )
 
     np.testing.assert_array_equal(
-        first_result[0],
-        second_result[0],
+        first_result["data"],
+        second_result["data"],
+    )
+    np.testing.assert_array_equal(
+        first_result["final_fitness"],
+        second_result["final_fitness"],
     )
 
-    assert first_result[1] == second_result[1]
-    assert first_result[2] == second_result[2]
+    assert first_result["seeds"] == second_result["seeds"]
+    assert first_result["avg_fitness"] == second_result["avg_fitness"]
+    assert first_result["std_dev"] == second_result["std_dev"]
 
 def test_sequential_and_worker_use_seed_consistently(
     monkeypatch,
@@ -156,11 +161,11 @@ def test_sequential_and_worker_use_seed_consistently(
     )
 
     np.testing.assert_array_equal(
-        sequential[0][0],
+        sequential["data"][0],
         worker["fitness_history"],
     )
 
     assert (
-        sequential[0][0][-1]
+        sequential["final_fitness"][0]
         == worker["final_fitness"]
     )
