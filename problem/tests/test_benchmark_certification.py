@@ -62,15 +62,37 @@ def test_generalized_schaffer_n3_optimum_value_is_zero():
     assert s.objectives[0] == pytest.approx(0.0)
 
 
-# --- SineEnvelope (XFAIL) ---
+# --- SineEnvelope ---
 
-def test_sine_envelope_optimum_value_is_zero():
+def test_sine_envelope_matches_classical_formula():
     from problem.n_variables.sine_envelope import SineEnvelope
     prob = SineEnvelope(number_of_variables=3)
     lb, ub = prob.lower_bound, prob.upper_bound
 
     s = prob.evaluate(_sol([0.0, 0.0, 0.0], lb, ub))
-    assert s.objectives[0] == pytest.approx(0.0)
+    assert s.objectives[0] == pytest.approx(-2.0 * (math.sin(0.5) ** 2 + 0.5))
+
+    x = [1.0, -2.0, 3.0]
+    expected = 0.0
+    for a, b in zip(x, x[1:]):
+        r2 = a * a + b * b
+        expected -= (math.sin(math.sqrt(r2) - 0.5) ** 2) / ((0.001 * r2 + 1) ** 2) + 0.5
+    s = prob.evaluate(_sol(x, lb, ub))
+    assert s.objectives[0] == pytest.approx(expected)
+
+
+def test_sine_envelope_origin_is_not_the_minimum():
+    from problem.n_variables.sine_envelope import SineEnvelope
+    prob = SineEnvelope(number_of_variables=2)
+    lb, ub = prob.lower_bound, prob.upper_bound
+
+    origin = prob.evaluate(_sol([0.0, 0.0], lb, ub)).objectives[0]
+
+    ring_radius = 0.5 + math.pi / 2
+    ring = prob.evaluate(_sol([ring_radius, 0.0], lb, ub)).objectives[0]
+
+    assert ring < origin
+    assert ring == pytest.approx(-1.4915, abs=1e-3)
 
 
 # --- SchwefelN36 (XFAIL) ---
