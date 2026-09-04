@@ -1,4 +1,6 @@
 import copy
+import random
+
 import numpy as np
 import experiment.runner as runner
 
@@ -224,3 +226,72 @@ def test_multi_runner_stamps_problem_own_dimension(
     with h5py.File(h5_path, "r") as f:
         assert f.attrs["n_vars"] == 3
         assert f["Sphere"].attrs["n_vars"] == 3
+
+
+def test_worker_output_depends_only_on_its_seed_not_inherited_rng_state(
+    monkeypatch,
+):
+    """Fork-duplication canary.
+
+    The archived CMA-ES pseudoreplication happened because workers ran
+    UNSEEDED and inherited identical RNG state from the parent process at
+    fork. The invariant that prevents it: run_single_instance's output is a
+    function of its seed argument ONLY, never of whatever RNG state the
+    worker process happens to start with.
+    """
+    swarm_size = 4
+    max_evaluations = 8
+
+    monkeypatch.setattr(
+        runner,
+        "max_evaluations",
+        max_evaluations,
+    )
+
+    def algorithm_factory(problem):
+        return SingleObjectivePSO(
+            problem=problem,
+            swarm_size=swarm_size,
+            w=0.5,
+            c1=1.5,
+            c2=1.5,
+            termination_criterion=StoppingByEvaluations(
+                max_evaluations=max_evaluations
+            ),
+        )
+
+    problem = Sphere(3)
+
+    def run_with_inherited_state(seed, inherited_state_seed):
+        # Simulate the RNG state a worker inherits before it handles a run.
+        random.seed(inherited_state_seed)
+        np.random.seed(inherited_state_seed)
+        return runner.run_single_instance(
+            (
+                "PSO",
+                copy.deepcopy(problem),
+                algorithm_factory,
+                1,
+                seed,
+                max_evaluations,
+                swarm_size,
+            )
+        )
+
+    # Same seed, different inherited states: identical results.
+    first = run_with_inherited_state(seed=123, inherited_state_seed=1)
+    second = run_with_inherited_state(seed=123, inherited_state_seed=2)
+    np.testing.assert_array_equal(
+        first["fitness_history"],
+        second["fitness_history"],
+    )
+    assert first["final_fitness"] == second["final_fitness"]
+
+    # Different seeds, same inherited state: distinct results. (If the
+    # per-run seeding inside the worker is ever removed, results become a
+    # function of the inherited state and this assertion fires.)
+    third = run_with_inherited_state(seed=456, inherited_state_seed=1)
+    assert not np.array_equal(
+        np.asarray(first["fitness_history"]),
+        np.asarray(third["fitness_history"]),
+    )
