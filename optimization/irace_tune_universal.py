@@ -1,3 +1,4 @@
+import hashlib
 import os
 import json
 import random
@@ -726,6 +727,12 @@ def repair_max_param_constraints_random(config: dict) -> dict:
 # Main Target Runner Function
 # ==============================================================================
 
+def derive_run_seed(base_seed: int, problem_name: str, run_index: int) -> int:
+    identity = f"{base_seed}:{problem_name}:{run_index}"
+    digest = hashlib.sha256(identity.encode("utf-8")).digest()
+    return int.from_bytes(digest[:4], byteorder="little", signed=False)
+
+
 def target_runner(experiment: Experiment, scenario: Scenario) -> float:
     """
     Universal target runner. Repairs max/min constraints.
@@ -828,6 +835,14 @@ def target_runner(experiment: Experiment, scenario: Scenario) -> float:
         # print(f"  Problem: {problem_name}") # Verbose
         for run_index in range(num_runs):
             try:
+                # Seed the algorithm RNGs for this run (irace supplies a
+                # per-experiment seed; runs and problems get distinct streams).
+                run_seed = derive_run_seed(experiment.seed, problem_name, run_index)
+                random.seed(run_seed)
+                np.random.seed(run_seed)
+                if hasattr(problem_obj_for_run, "set_seed"):
+                    problem_obj_for_run.set_seed(run_seed)
+
                 # Prepare parameters, FILTERING based on the specific AlgorithmClass constructor
                 constructor_params = {"problem": problem_obj_for_run, # Use the problem instance
                                       "swarm_size": solutions_size,

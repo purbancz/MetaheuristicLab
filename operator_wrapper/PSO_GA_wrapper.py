@@ -34,9 +34,12 @@ class CrossoverWithPsoAttributes(Crossover):
             better_parent = random.choice(parents)
 
         for child in offspring:
-            child.attributes['best_position'] = better_parent.attributes.get('best_position', child.variables[:])
-            child.attributes['best_objective'] = better_parent.attributes.get('best_objective', child.objectives[0])
-            child.attributes['velocity'] = better_parent.attributes.get('velocity')
+            if 'best_position' in better_parent.attributes and 'best_objective' in better_parent.attributes:
+                child.attributes['best_position'] = better_parent.attributes['best_position']
+                child.attributes['best_objective'] = better_parent.attributes['best_objective']
+            velocity = better_parent.attributes.get('velocity')
+            if velocity is not None:
+                child.attributes['velocity'] = velocity
 
         return offspring
 

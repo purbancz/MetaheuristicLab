@@ -46,23 +46,13 @@ class PGSHEA(Algorithm[S, R]):
             termination_criterion=termination_criterion
         )
         self.ga = GeneticAlgorithm(
-            problem=problem, population_size=solutions_size, offspring_population_size=100,
+            problem=problem, population_size=solutions_size, offspring_population_size=solutions_size,
             crossover=crossover, mutation=mutation, selection=selection,
             termination_criterion=termination_criterion
         )
 
     def create_initial_solutions(self) -> List[S]:
-        if self.current_algorithm == 'PSO':
-            solutions = self.pso.create_initial_solutions()
-            self.best_global = min(solutions, key=lambda s: s.objectives[0])
-        else:
-            solutions = self.ga.create_initial_solutions()
-            self.best_global = min(solutions, key=lambda s: s.objectives[0])
-
-        self.ga.set_solutions(solutions)
-        self.pso.set_solutions(solutions)
-
-        return solutions
+        return [self.problem.create_solution() for _ in range(self.solutions_size)]
 
     def update_progress(self) -> None:
         self.evaluations += self.solutions_size
@@ -74,6 +64,11 @@ class PGSHEA(Algorithm[S, R]):
 
     def init_progress(self):
         self.evaluations = self.solutions_size
+
+        self.best_global = min(self.solutions, key=lambda s: s.objectives[0])
+        self.ga.set_solutions(self.solutions)
+        self.pso.set_solutions(self.solutions)
+
         observable_data = self.observable_data()
         self.observable.notify_all(**observable_data)
 
@@ -97,14 +92,14 @@ class PGSHEA(Algorithm[S, R]):
                 self.switch_to_ga()
 
     def switch_to_pso(self):
-        best_solutions = sorted(self.ga.solutions, key=lambda x: x.objectives[:self.solutions_size - 1])
+        best_solutions = sorted(self.ga.solutions, key=lambda x: x.objectives[0])
         if self.best_global not in best_solutions:
             best_solutions[-1] = self.best_global
         self.pso.set_solutions(best_solutions)
         self.current_algorithm = 'PSO'
 
     def switch_to_ga(self):
-        best_solutions = sorted(self.pso.solutions, key=lambda x: x.objectives[:self.solutions_size - 1])
+        best_solutions = sorted(self.pso.solutions, key=lambda x: x.objectives[0])
         if self.best_global not in best_solutions:
             best_solutions[-1] = self.best_global
         self.ga.set_solutions(best_solutions)

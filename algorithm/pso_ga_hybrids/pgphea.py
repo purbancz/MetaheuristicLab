@@ -52,19 +52,13 @@ class PGPHEA(Algorithm[S, R]):
         )
         self.ga = GeneticAlgorithm(
             problem=self.problem, population_size=half_solutions,
-            offspring_population_size=self.solutions_size,
+            offspring_population_size=half_solutions,
             crossover=self.crossover, mutation=self.mutation, selection=self.selection,
             termination_criterion=self.termination_criterion
         )
 
-        pso_solutions = self.pso.create_initial_solutions()
-        ga_solutions = self.ga.create_initial_solutions()
-
-        # print(f"PSO Solutions Count: {len(pso_solutions)}, GA Solutions Count: {len(ga_solutions)}")
-        self.synchronize_best_global()
-        # print(f'PSO Global Solutions Count: {self.best_global.objectives[0]}')
-        self.ga.set_solutions(ga_solutions)
-        self.pso.set_solutions(pso_solutions)
+        pso_solutions = [self.problem.create_solution() for _ in range(self.solutions_size - half_solutions)]
+        ga_solutions = [self.problem.create_solution() for _ in range(half_solutions)]
         return pso_solutions + ga_solutions
 
     def synchronize_best_global(self):
@@ -102,6 +96,12 @@ class PGPHEA(Algorithm[S, R]):
 
     def init_progress(self):
         self.evaluations = self.solutions_size
+
+        half_solutions = int(self.solutions_size / 2)
+        pso_size = self.solutions_size - half_solutions
+        self.pso.set_solutions(self.solutions[:pso_size])
+        self.ga.set_solutions(self.solutions[pso_size:])
+        self.synchronize_best_global()
 
         observable_data = self.observable_data()
         self.observable.notify_all(**observable_data)

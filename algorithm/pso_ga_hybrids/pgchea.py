@@ -49,24 +49,12 @@ class PGCHEA(Algorithm[S, R]):
             problem=problem, swarm_size=solutions_size, c1=c1, c2=c2, w=w, termination_criterion=termination_criterion
         )
         self.ga = GeneticAlgorithm(
-            problem=problem, population_size=solutions_size, offspring_population_size=100,
+            problem=problem, population_size=solutions_size, offspring_population_size=solutions_size,
             crossover=self.crossover, mutation=self.mutation, selection=selection
         )
 
     def create_initial_solutions(self) -> List[S]:
-        if self.current_algorithm == 'PSO':
-            solutions = self.pso.create_initial_solutions()
-            self.best_global = min(solutions, key=lambda s: s.objectives[0])
-            # print(f"Initial best from PSO: {self.best_global.objectives[0]}")
-        else:
-            solutions = self.ga.create_initial_solutions()
-            self.best_global = min(solutions, key=lambda s: s.objectives[0])
-            # print(f"Initial best from GA: {self.best_global.objectives[0]}")
-
-        self.ga.set_solutions(solutions)
-        self.pso.set_solutions(solutions)
-
-        return solutions
+        return [self.problem.create_solution() for _ in range(self.solutions_size)]
 
     def step(self):
         if self.current_algorithm == 'GA':
@@ -89,7 +77,7 @@ class PGCHEA(Algorithm[S, R]):
         self.current_algorithm = 'GA'
 
     def update_attributes(self):
-        best_solutions = sorted(self.ga.solutions, key=lambda x: x.objectives[:self.solutions_size - 1])
+        best_solutions = sorted(self.ga.solutions, key=lambda x: x.objectives[0])
         for sol in best_solutions:
             if 'best_objective' not in sol.attributes or sol.objectives[0] < sol.attributes['best_objective']:
                 sol.attributes['best_position'] = sol.variables[:]
@@ -107,6 +95,10 @@ class PGCHEA(Algorithm[S, R]):
 
     def init_progress(self):
         self.evaluations = self.solutions_size
+
+        self.best_global = min(self.solutions, key=lambda s: s.objectives[0])
+        self.ga.set_solutions(self.solutions)
+        self.pso.set_solutions(self.solutions)
 
         observable_data = self.observable_data()
         self.observable.notify_all(**observable_data)
