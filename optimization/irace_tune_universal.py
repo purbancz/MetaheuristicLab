@@ -422,14 +422,14 @@ parameter_spaces = {
     #     ],
     # }
 
-    # 'LSHADE': {
-    #     'params': [
-    #         Integer("pop_size_factor", 1, 50),
-    #         Integer("memory_size", 10, 200),
-    #         Real("p_best_rate", 0.05, 0.25),
-    #         Real("archive_rate", 1.0, 4.0)
-    #     ]
-    # },
+    'LSHADE': {
+        'params': [
+            Integer("initial_population_size", 20, 500),
+            Integer("memory_size", 2, 50),
+            Real("p_best_rate", 0.05, 0.25),
+            Real("archive_size_rate", 1.0, 4.0),
+        ]
+    },
 
     # 'CMAES': {
     #     'params': [

@@ -99,6 +99,21 @@ class LSHADE(Algorithm[S, R]):
         observable_data = self.observable_data()
         self.observable.notify_all(**observable_data)
 
+    def _select_donors(self, population: List[S], target_index: int) -> Tuple[S, S]:
+        """Canonical current-to-pbest/1 donor selection (Tanabe & Fukunaga 2014):
+        x_r1 is drawn from the population excluding the target; x_r2 is drawn
+        from population + archive excluding the target and r1."""
+        r1_index = random.randrange(len(population))
+        while r1_index == target_index:
+            r1_index = random.randrange(len(population))
+
+        combined = population + self.archive
+        r2_index = random.randrange(len(combined))
+        while r2_index == target_index or r2_index == r1_index:
+            r2_index = random.randrange(len(combined))
+
+        return population[r1_index], combined[r2_index]
+
     def reproduction(self, population: List[S], offspring_count: int = None) -> List[Tuple[S, float, float]]:
         """
         Generates offspring and returns them with their CR/F values.
@@ -124,9 +139,7 @@ class LSHADE(Algorithm[S, R]):
             p_best_index = random.randint(0, num_p_best - 1)
             p_best = sorted(population, key=lambda s: s.objectives[0])[p_best_index]
 
-            combined_pop = population + self.archive
-            r1_index, r2_index = random.sample(range(len(combined_pop)), 2)
-            r1, r2 = combined_pop[r1_index], combined_pop[r2_index]
+            r1, r2 = self._select_donors(population, i)
 
             mutant = self.problem.create_solution()
             current_vars, pbest_vars = population[i].variables, p_best.variables
@@ -174,10 +187,6 @@ class LSHADE(Algorithm[S, R]):
 
         new_population.extend(population[evaluated_count:])
 
-        archive_size_limit = int(self.initial_population_size * self.archive_size_rate)
-        while len(self.archive) > archive_size_limit:
-            self.archive.pop(random.randrange(len(self.archive)))
-
         if successful_cr:
             if sum(fitness_improvements) > 0:
                 weights = np.array(fitness_improvements) / sum(fitness_improvements)
@@ -201,6 +210,11 @@ class LSHADE(Algorithm[S, R]):
             if next_pop_size < self.population_size:
                 self.population_size = next_pop_size
                 new_population = sorted(new_population, key=lambda s: s.objectives[0])[:self.population_size]
+
+        archive_size_limit = int(round(self.archive_size_rate * self.population_size))
+        while len(self.archive) > archive_size_limit:
+            self.archive.pop(random.randrange(len(self.archive)))
+
         return new_population
 
     def result(self) -> R:

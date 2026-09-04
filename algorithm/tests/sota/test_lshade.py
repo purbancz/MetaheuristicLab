@@ -54,3 +54,52 @@ def test_lshade_does_not_exceed_evaluation_budget():
 
     assert problem.evaluation_count == max_evaluations
     assert algorithm.evaluations == max_evaluations
+
+
+def test_lshade_donor_selection_respects_canonical_exclusions():
+    problem = Sphere(3)
+
+    algorithm = LSHADE(
+        problem=problem,
+        initial_population_size=5,
+        memory_size=4,
+        p_best_rate=0.25,
+        archive_size_rate=1.0,
+        termination_criterion=StoppingByEvaluations(max_evaluations=20),
+    )
+
+    population = [problem.create_solution() for _ in range(5)]
+    algorithm.archive = [problem.create_solution() for _ in range(3)]
+    population_ids = {id(p) for p in population}
+
+    for target_index in range(len(population)):
+        target = population[target_index]
+        for _ in range(200):
+            r1, r2 = algorithm._select_donors(population, target_index)
+            # r1 comes from the population and is never the target.
+            assert id(r1) in population_ids
+            assert r1 is not target
+            # r2 comes from population + archive, never the target nor r1.
+            assert r2 is not target
+            assert r2 is not r1
+
+
+def test_lshade_archive_limit_tracks_shrinking_population():
+    problem = Sphere(3)
+
+    algorithm = LSHADE(
+        problem=problem,
+        initial_population_size=20,
+        memory_size=4,
+        p_best_rate=0.25,
+        archive_size_rate=1.0,
+        termination_criterion=StoppingByEvaluations(max_evaluations=200),
+    )
+
+    algorithm.run()
+
+    # Linear population size reduction must have shrunk the population, and
+    # the archive limit follows the CURRENT population, not the initial one.
+    assert algorithm.population_size < algorithm.initial_population_size
+    limit = int(round(algorithm.archive_size_rate * algorithm.population_size))
+    assert len(algorithm.archive) <= limit
