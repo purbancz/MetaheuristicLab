@@ -1,18 +1,23 @@
-humanize
-jmetalpy
-matplotlib
-numpy
-pandas
-scikit-posthocs
+# --- core ---
+jmetalpy==1.7.0
+numpy==2.2.6
+h5py
 scipy
+pandas
+matplotlib
+humanize
+
+# --- statistics
+scikit-posthocs
 statsmodels
-scikit-optimize
-ray[tune]
+
+# --- tuning
+irace @ git+https://github.com/Saethox/iracepy-tiny@865d6ee439d41a31028df7d9e8e44fd4061f259a
 rpy2
-irace
-futures
-joblib
-mpi4py
-cffi
+
+# --- plotting
 seaborn
 scikit-learn
+
+# --- tests
+pytest
