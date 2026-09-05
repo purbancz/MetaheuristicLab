@@ -1,6 +1,7 @@
 import math
 import random
 
+import numpy as np
 from jmetal.core.problem import FloatProblem
 from jmetal.core.solution import FloatSolution
 
@@ -154,9 +155,8 @@ class SchwefelN6(FloatProblem):
 
 
     def evaluate(self, solution: FloatSolution) -> FloatSolution:
-        sum_x = sum(solution.variables)
-        sum_abs = sum(abs(xi) for xi in solution.variables)
-        solution.objectives[0] = abs(sum_x) + sum_abs
+        x = np.asarray(solution.variables, dtype=float)
+        solution.objectives[0] = float(abs(np.sum(x)) + np.sum(np.abs(x)))
         return solution
 
     def name(self) -> str:
@@ -192,12 +192,8 @@ class SchwefelN20(FloatProblem):
         return 0
 
     def evaluate(self, solution: FloatSolution) -> FloatSolution:
-        cumulative = 0.0
-        max_val = -float("inf")
-        for xi in solution.variables:
-            cumulative += xi
-            max_val = max(max_val, abs(cumulative))
-        solution.objectives[0] = max_val
+        x = np.asarray(solution.variables, dtype=float)
+        solution.objectives[0] = float(np.max(np.abs(np.cumsum(x))))
         return solution
 
     def name(self) -> str:
@@ -237,10 +233,9 @@ class SchwefelN36(FloatProblem):
 
 
     def evaluate(self, solution: FloatSolution) -> FloatSolution:
-        solution.objectives[0] = sum(
-            (418.9829 - xi * math.sin(math.sqrt(abs(xi)))) ** 2
-            for xi in solution.variables
-        )
+        x = np.asarray(solution.variables, dtype=float)
+        dev = 418.9829 - x * np.sin(np.sqrt(np.abs(x)))
+        solution.objectives[0] = float(np.sum(dev * dev))
         return solution
 
     def name(self) -> str:

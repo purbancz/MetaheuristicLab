@@ -1,5 +1,6 @@
 import math
 
+import numpy as np
 from jmetal.core.problem import FloatProblem
 from jmetal.core.solution import FloatSolution
 
@@ -83,12 +84,9 @@ class RosenbrockModified02(FloatProblem):
         return 0
 
     def evaluate(self, solution: FloatSolution) -> FloatSolution:
-        x = solution.variables
-        total = 0.0
-        for i in range(len(x) - 1):
-            total += 100.0 * math.sqrt(abs(x[i + 1] - x[i] ** 2)) + (1.0 - x[i]) ** 2
-
-        solution.objectives[0] = total
+        x = np.asarray(solution.variables, dtype=float)
+        a, b = x[:-1], x[1:]
+        solution.objectives[0] = float(np.sum(100.0 * np.sqrt(np.abs(b - a * a)) + (1.0 - a) ** 2))
         return solution
 
     def name(self) -> str:

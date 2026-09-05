@@ -1,4 +1,4 @@
-import math
+import numpy as np
 from jmetal.core.problem import FloatProblem
 from jmetal.core.solution import FloatSolution
 
@@ -21,9 +21,9 @@ class StyblinskiTang(FloatProblem):
         return 0
 
     def evaluate(self, solution: FloatSolution) -> FloatSolution:
-        x = solution.variables
-        result = 0.5 * sum(xi**4 - 16.0 * xi**2 + 5.0 * xi for xi in x)
-        solution.objectives[0] = result
+        x = np.asarray(solution.variables, dtype=float)
+        x2 = x * x
+        solution.objectives[0] = 0.5 * float(np.sum(x2 * x2 - 16.0 * x2 + 5.0 * x))
         return solution
 
     def name(self) -> str:

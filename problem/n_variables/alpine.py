@@ -1,4 +1,6 @@
 import math
+
+import numpy as np
 from jmetal.core.problem import FloatProblem
 from jmetal.core.solution import FloatSolution
 
@@ -21,9 +23,8 @@ class AlpineN1(FloatProblem):
         return 0
 
     def evaluate(self, solution: FloatSolution) -> FloatSolution:
-        x = solution.variables
-        result = sum(abs(xi * math.sin(xi) + 0.1 * xi) for xi in x)
-        solution.objectives[0] = result
+        x = np.asarray(solution.variables, dtype=float)
+        solution.objectives[0] = float(np.sum(np.abs(x * np.sin(x) + 0.1 * x)))
         return solution
 
     def name(self) -> str:

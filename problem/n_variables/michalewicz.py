@@ -1,4 +1,6 @@
 import math
+
+import numpy as np
 from jmetal.core.problem import FloatProblem
 from jmetal.core.solution import FloatSolution
 
@@ -23,9 +25,9 @@ class Michalewicz(FloatProblem):
         return 0
 
     def evaluate(self, solution: FloatSolution) -> FloatSolution:
-        x = solution.variables
-        solution.objectives[0] = -sum(math.sin(xi) * (math.sin(i * xi ** 2 / math.pi)) ** (2 * self.m)
-                                      for i, xi in enumerate(x, 1))
+        x = np.asarray(solution.variables, dtype=float)
+        i = np.arange(1, x.size + 1)
+        solution.objectives[0] = -float(np.sum(np.sin(x) * np.sin(i * x * x / math.pi) ** (2 * self.m)))
         return solution
 
     def name(self) -> str:

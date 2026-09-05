@@ -1,4 +1,6 @@
 import math
+
+import numpy as np
 from jmetal.core.problem import FloatProblem
 from jmetal.core.solution import FloatSolution
 
@@ -21,9 +23,9 @@ class Salomon(FloatProblem):
         return 0
 
     def evaluate(self, solution: FloatSolution) -> FloatSolution:
-        norm = math.sqrt(sum(xi ** 2 for xi in solution.variables))
-        result = 1 - math.cos(2 * math.pi * norm) + 0.1 * norm
-        solution.objectives[0] = result
+        x = np.asarray(solution.variables, dtype=float)
+        norm = math.sqrt(float(np.sum(x * x)))
+        solution.objectives[0] = 1 - math.cos(2 * math.pi * norm) + 0.1 * norm
         return solution
 
     def name(self) -> str:
