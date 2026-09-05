@@ -25,9 +25,16 @@ class CoAdaptativePSO(SingleObjectivePSO):
         self.min_c1 = c1
         self.min_c2 = c2
 
+    def update_particle_best(self, swarm: List[S]) -> None:
+        for particle in swarm:
+            particle.attributes['improved_last_iteration'] = (
+                particle.objectives[0] < particle.attributes.get('best_objective', float('inf'))
+            )
+        super().update_particle_best(swarm)
+
     def update_coefficient(self):
         for particle in self.solutions:
-            if particle.objectives[0] < particle.attributes.get('best_objective', float('inf')):
+            if particle.attributes.get('improved_last_iteration', False):
                 self.c1 = min(self.max_c1, self.c1 * 1.1)
                 self.c2 = max(self.min_c2, self.c2 * 0.9)
             else:
@@ -64,9 +71,18 @@ class IndividualAdaptivePSO(SingleObjectivePSO):
             sol.attributes['c2'] = self.c2
         return solutions
 
+    def update_particle_best(self, swarm: List[S]) -> None:
+        # Record improvement BEFORE the personal best absorbs the current
+        # objective; comparing afterwards can never be true.
+        for particle in swarm:
+            particle.attributes['improved_last_iteration'] = (
+                particle.objectives[0] < particle.attributes.get('best_objective', float('inf'))
+            )
+        super().update_particle_best(swarm)
+
     def update_coefficient(self):
         for particle in self.solutions:
-            if particle.objectives[0] < particle.attributes.get('best_objective', float('inf')):
+            if particle.attributes.get('improved_last_iteration', False):
                 particle.attributes['c1'] = min(self.max_c1, particle.attributes['c1'] * 1.1)
                 particle.attributes['c2'] = max(self.min_c2, particle.attributes['c2'] * 0.9)
             else:
