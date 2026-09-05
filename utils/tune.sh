@@ -1,22 +1,28 @@
 #!/bin/bash
-#SBATCH --job-name=CMAES_tune
-#SBATCH --output=%x_%j.out
-#SBATCH --error=%x_%j.err
-#SBATCH --time=12:00:00
-#SBATCH --partition=plgrid-now
-#SBATCH --account=plglscclass24-cpu
+#SBATCH --job-name=irace_tune_universal
+#SBATCH --output=slurm_tune_logs/%x_%j.out
+#SBATCH --error=slurm_tune_logs/%x_%j.err
+#SBATCH --time=48:00:00
+#SBATCH --partition=plgrid
+#SBATCH --account=plglscclass26-cpu
 #SBATCH --nodes=1
 #SBATCH --ntasks=48
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=8G
 #SBATCH --mail-type=ALL
 
+mkdir -p slurm_tune_logs
 
 # Load modules and activate the conda environment
 module load miniconda3
 conda init
 eval "$(conda shell.bash hook)"
 conda activate jmetal12
+
+#export OMP_NUM_THREADS=1
+#export OPENBLAS_NUM_THREADS=1
+#export MKL_NUM_THREADS=1
+#export NUMEXPR_NUM_THREADS=1
 
 # Log start time
 START_TIME=$(date +%s)

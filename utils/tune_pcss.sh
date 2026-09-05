@@ -1,20 +1,26 @@
 #!/bin/bash
-#SBATCH --job-name=irace_reinitialization_algorithms
+#SBATCH --job-name=irace_tune_universal
 #SBATCH --output=slurm_tune_logs/%x_%j.out
 #SBATCH --error=slurm_tune_logs/%x_%j.err
 #SBATCH --time=2-00:00:00
 #SBATCH --partition=standard          # standard/fast/long/tesla
 #SBATCH --account=pl0590-01
 #SBATCH --nodes=1
-#SBATCH --ntasks=48
+#SBATCH --ntasks=28
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=8G
 #SBATCH --mail-type=ALL
 
+mkdir -p slurm_tune_logs
 
 # Load modules and activate the conda environment
 source ~/.bashrc
 conda activate jmetal12
+
+#export OMP_NUM_THREADS=1
+#export OPENBLAS_NUM_THREADS=1
+#export MKL_NUM_THREADS=1
+#export NUMEXPR_NUM_THREADS=1
 
 # Log start time
 START_TIME=$(date +%s)

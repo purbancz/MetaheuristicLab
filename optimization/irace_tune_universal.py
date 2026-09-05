@@ -1405,7 +1405,10 @@ if __name__ == "__main__":
             # Create the ParameterSpace using the extracted components
             parameter_space = ParameterSpace(params=params_list, forbidden=forbidden_expression)
 
-            scenario = Scenario(max_experiments=budget * len(params_list), instances=problems, seed=42, n_jobs=48)
+            # Parallel workers: match the SLURM allocation (48 on Ares nodes,
+            # 28 on Eagle); falls back to 48 for manual runs.
+            n_jobs = int(os.environ.get("SLURM_CPUS_ON_NODE", 48))
+            scenario = Scenario(max_experiments=budget * len(params_list), instances=problems, seed=42, n_jobs=n_jobs)
 
             result = irace(target_runner, parameter_space, scenario, return_df=True, remove_metadata=True)
             # Store READY-TO-TRANSCRIBE configurations: the same repair + fraction
