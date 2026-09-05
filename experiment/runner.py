@@ -1,5 +1,6 @@
 import copy
 import csv
+import inspect
 import random
 import socket
 import subprocess
@@ -14,7 +15,7 @@ import time
 from multiprocessing import Pool, cpu_count
 import traceback
 
-from experiment.globals import BASE_SEED
+from experiment.globals import BASE_SEED, BENCHMARK_BASE_SEED
 from experiment.plotting_utilities import plot_results, plot_results_with_std, plot_box_at_intervals, plot_final_box, \
     plot_final_raincloud, plot_final_petit_prince, plot_results_with_annotations
 from experiment.setup import setup_experiment, make_dir
@@ -42,6 +43,11 @@ def _write_manifest(h5file, n_vars, n_runs):
     h5file.attrs['hostname'] = socket.gethostname()
     h5file.attrs['n_vars'] = n_vars
     h5file.attrs['no_of_runs'] = n_runs
+    h5file.attrs['base_seed'] = BASE_SEED
+    h5file.attrs['benchmark_base_seed'] = BENCHMARK_BASE_SEED
+    h5file.attrs['max_evaluations'] = max_evaluations
+    h5file.attrs['solutions_size'] = solutions_size
+    h5file.attrs['evaluations_per_snapshot'] = frequency
 
 
 def _h5_path(dimensions_dir, problem_name, algo_name, n_vars, n_runs):
@@ -49,14 +55,26 @@ def _h5_path(dimensions_dir, problem_name, algo_name, n_vars, n_runs):
     return f'{dimensions_dir}/{safe}_dim{n_vars}_runs{n_runs}_{algo_name}.h5'
 
 
-def _write_h5_algo_result(path, problem_name, algo_name, result, n_vars, n_runs):
+def _write_h5_algo_result(path, problem_name, algo_name, result, n_vars, n_runs,
+                          problem=None, algorithm_factory=None):
     with h5py.File(path, 'w') as h5:
         _write_manifest(h5, n_vars, n_runs)
         h5.attrs['problem_name'] = problem_name
         h5.attrs['algo_name'] = algo_name
         problem_grp = h5.require_group(problem_name)
         problem_grp.attrs['n_vars'] = n_vars
+        if problem is not None:
+            problem_grp.attrs['problem_class'] = f"{type(problem).__module__}.{type(problem).__qualname__}"
+            if hasattr(problem, 'instance_seed'):
+                problem_grp.attrs['instance_seed'] = problem.instance_seed
+            if getattr(problem, 'instance_id', None):
+                problem_grp.attrs['instance_id'] = problem.instance_id
         grp = problem_grp.require_group(algo_name)
+        if algorithm_factory is not None:
+            try:
+                grp.attrs['factory_source'] = inspect.getsource(algorithm_factory)
+            except (OSError, TypeError):
+                grp.attrs['factory_source'] = repr(algorithm_factory)
         grp.create_dataset('fitness_curves', data=result['data'].astype(np.float64), compression='gzip')
         grp.create_dataset('final_fitness', data=result['final_fitness'].astype(np.float64))
         grp.create_dataset('seeds', data=np.array(result['seeds'], dtype=np.int64))
@@ -96,7 +114,8 @@ def run_all_experiments():
                                  result['avg_fitness'], result['std_dev'], result['avg_time']])
 
                 h5_path = _h5_path(dimensions_dir, problem.name(), name, problem.number_of_variables(), no_of_runs)
-                _write_h5_algo_result(h5_path, problem.name(), name, result, problem.number_of_variables(), no_of_runs)
+                _write_h5_algo_result(h5_path, problem.name(), name, result, problem.number_of_variables(), no_of_runs,
+                                      problem=problem, algorithm_factory=algorithm)
 
             plot_results(problem_data['results'], problem, dimensions_dir, max_evaluations, no_of_runs,
                          algorithm_colors)
@@ -330,7 +349,8 @@ def run_all_experiments_multi(num_parallel_workers=None):
                 file.flush()
 
                 h5_path = _h5_path(dimensions_dir, problem_name, algo_name, problem_n_vars, no_of_runs)
-                _write_h5_algo_result(h5_path, problem_name, algo_name, result, problem_n_vars, no_of_runs)
+                _write_h5_algo_result(h5_path, problem_name, algo_name, result, problem_n_vars, no_of_runs,
+                                      problem=problem_for_runs, algorithm_factory=algo_lambda)
 
             print(f"--- Finished all algorithms for Problem: {problem_name} ---")
 
