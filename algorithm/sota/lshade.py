@@ -20,8 +20,7 @@ R = TypeVar("R")
 
 class LSHADE(Algorithm[S, R]):
     """
-    A complete and corrected implementation of the L-SHADE algorithm,
-    fully compatible with the jmetalpy Algorithm class.
+    An implementation of the L-SHADE algorithm (Tanabe & Fukunaga 2014).
     """
 
     def __init__(
@@ -127,7 +126,10 @@ class LSHADE(Algorithm[S, R]):
             mu_cr = self.memory_cr[mem_rand_index]
             mu_f = self.memory_f[mem_rand_index]
 
-            cr = np.clip(np.random.normal(mu_cr, 0.1), 0, 1)
+            if mu_cr is None:
+                cr = 0.0
+            else:
+                cr = float(np.clip(np.random.normal(mu_cr, 0.1), 0, 1))
 
             while True:
                 f = np.random.standard_cauchy() * 0.1 + mu_f
@@ -188,16 +190,16 @@ class LSHADE(Algorithm[S, R]):
         new_population.extend(population[evaluated_count:])
 
         if successful_cr:
-            if sum(fitness_improvements) > 0:
-                weights = np.array(fitness_improvements) / sum(fitness_improvements)
-                mean_f = np.sum(weights * np.array(successful_f) ** 2) / np.sum(weights * np.array(successful_f))
-                mean_cr = np.sum(weights * np.array(successful_cr))
-            else:  # Handle case where all improvements are zero
-                mean_f = np.mean(successful_f)
-                mean_cr = np.mean(successful_cr)
+            weights = np.array(fitness_improvements) / sum(fitness_improvements)
+            sf = np.array(successful_f)
+            self.memory_f[self.memory_pos] = float(np.sum(weights * sf ** 2) / np.sum(weights * sf))
 
-            self.memory_f[self.memory_pos] = mean_f
-            self.memory_cr[self.memory_pos] = mean_cr
+            scr = np.array(successful_cr)
+            if self.memory_cr[self.memory_pos] is None or scr.max() == 0:
+                self.memory_cr[self.memory_pos] = None
+            else:
+                self.memory_cr[self.memory_pos] = float(np.sum(weights * scr ** 2) / np.sum(weights * scr))
+
             self.memory_pos = (self.memory_pos + 1) % self.memory_size
 
         if isinstance(self.termination_criterion, StoppingByEvaluations):

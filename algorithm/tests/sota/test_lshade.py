@@ -1,5 +1,6 @@
 # algorithm/tests/sota/test_lshade.py
 
+import pytest
 from jmetal.core.solution import FloatSolution
 from jmetal.problem import Sphere
 from jmetal.util.termination_criterion import StoppingByEvaluations
@@ -82,6 +83,68 @@ def test_lshade_donor_selection_respects_canonical_exclusions():
             # r2 comes from population + archive, never the target nor r1.
             assert r2 is not target
             assert r2 is not r1
+
+
+def _make_lshade(pop_size=4):
+    return LSHADE(
+        problem=Sphere(3),
+        initial_population_size=pop_size,
+        memory_size=2,
+        p_best_rate=0.5,
+        archive_size_rate=1.0,
+        termination_criterion=StoppingByEvaluations(max_evaluations=100),
+    )
+
+
+def _evaluated_solution(problem, objective):
+    s = problem.create_solution()
+    s.objectives[0] = objective
+    return s
+
+
+def test_lshade_cr_memory_uses_weighted_lehmer_mean():
+    algorithm = _make_lshade()
+    algorithm.evaluations = 0
+    problem = algorithm.problem
+
+    parents = [_evaluated_solution(problem, 10.0), _evaluated_solution(problem, 5.0)]
+    offspring = [
+        (_evaluated_solution(problem, 6.0), 0.2, 0.5),  # improvement 4
+        (_evaluated_solution(problem, 4.0), 0.4, 0.3),  # improvement 1
+    ]
+
+    algorithm.replacement(parents, offspring)
+
+    # weights = [0.8, 0.2]; Lehmer mean = sum(w*x^2) / sum(w*x)
+    expected_cr = (0.8 * 0.2 ** 2 + 0.2 * 0.4 ** 2) / (0.8 * 0.2 + 0.2 * 0.4)
+    expected_f = (0.8 * 0.5 ** 2 + 0.2 * 0.3 ** 2) / (0.8 * 0.5 + 0.2 * 0.3)
+    assert algorithm.memory_cr[0] == pytest.approx(expected_cr)
+    assert algorithm.memory_f[0] == pytest.approx(expected_f)
+
+
+def test_lshade_cr_terminal_value_locks_cr_to_zero():
+    algorithm = _make_lshade()
+    algorithm.evaluations = 0
+    problem = algorithm.problem
+
+    # All successful CRs are zero -> the memory slot becomes terminal.
+    parents = [_evaluated_solution(problem, 10.0)]
+    offspring = [(_evaluated_solution(problem, 6.0), 0.0, 0.5)]
+    algorithm.replacement(parents, offspring)
+    assert algorithm.memory_cr[0] is None
+
+    # A terminal slot stays terminal even after nonzero-CR successes.
+    algorithm.memory_pos = 0
+    parents = [_evaluated_solution(problem, 10.0)]
+    offspring = [(_evaluated_solution(problem, 6.0), 0.7, 0.5)]
+    algorithm.replacement(parents, offspring)
+    assert algorithm.memory_cr[0] is None
+
+    # Reproduction from an all-terminal memory generates CR = 0 only.
+    algorithm.memory_cr = [None] * algorithm.memory_size
+    algorithm.solutions = [_evaluated_solution(problem, float(i)) for i in range(4)]
+    reproduction = algorithm.reproduction(algorithm.solutions, offspring_count=4)
+    assert all(cr == 0.0 for _, cr, _ in reproduction)
 
 
 def test_lshade_archive_limit_tracks_shrinking_population():
