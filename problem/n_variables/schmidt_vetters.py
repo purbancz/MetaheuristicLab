@@ -1,6 +1,8 @@
 import math
 import random
 
+import numpy as np
+
 from jmetal.core.problem import FloatProblem
 from jmetal.core.solution import FloatSolution
 
@@ -40,14 +42,11 @@ class GeneralizedSchmidtVetters(FloatProblem):
     #     return sol
 
     def evaluate(self, solution: FloatSolution) -> FloatSolution:
-        total = 0.0
-        d = self.number_of_variables()
-        for i in range(d - 1):
-            x_i = solution.variables[i]
-            x_next = solution.variables[i+1]
-            numerator = math.sin(x_i**2 - x_next**2)**2 + math.cos(x_i**2 + x_next**2)**2 - 1
-            denominator = (1 + 0.001 * (x_i**2 + x_next**2))**2
-            total += numerator / denominator
+        x = np.asarray(solution.variables, dtype=float)
+        a2, b2 = x[:-1] ** 2, x[1:] ** 2
+        numerator = np.sin(a2 - b2) ** 2 + np.cos(a2 + b2) ** 2 - 1
+        denominator = (1 + 0.001 * (a2 + b2)) ** 2
+        total = float(np.sum(numerator / denominator))
         solution.objectives[0] = total + (self.number_of_variables() - 1) * 0.75
         return solution
 

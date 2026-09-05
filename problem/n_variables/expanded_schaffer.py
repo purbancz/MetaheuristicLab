@@ -1,5 +1,7 @@
 import math
 
+import numpy as np
+
 from jmetal.core.problem import FloatProblem
 from jmetal.core.solution import FloatSolution
 
@@ -32,11 +34,11 @@ class ExpandedShaffer(FloatProblem):
         return up / down
 
     def evaluate(self, solution: FloatSolution) -> FloatSolution:
-        x = solution.variables
-        s = self.number_of_variables() / 2.0
-        for i in range(self.number_of_variables()):
-            s += self.g(x[i], x[(i + 1) % self.number_of_variables()])
-        solution.objectives[0] = s
+        x = np.asarray(solution.variables, dtype=float)
+        y = np.roll(x, -1)  # cyclic pairs: (x_i, x_{(i+1) mod n})
+        r2 = x ** 2 + y ** 2
+        g = (np.sin(np.sqrt(r2)) ** 2 - 0.5) / (1 + 0.001 * r2) ** 2
+        solution.objectives[0] = self.number_of_variables() / 2.0 + float(np.sum(g))
         return solution
 
     def name(self) -> str:

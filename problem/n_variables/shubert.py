@@ -1,5 +1,7 @@
 import math
 import random
+
+import numpy as np
 from jmetal.core.problem import FloatProblem
 from jmetal.core.solution import FloatSolution
 
@@ -85,10 +87,10 @@ class ShubertN3(FloatProblem):
         return 0
 
     def evaluate(self, solution: FloatSolution) -> FloatSolution:
-        total = 0.0
-        for x in solution.variables:
-            component = sum(j * math.sin((j + 1) * x) + j for j in range(1, 6))
-            total += component
+        x = np.asarray(solution.variables, dtype=float)
+        j = np.arange(1.0, 6.0)
+        # sum_d sum_j [ j*sin((j+1)*x_d) + j ]
+        total = float(np.sum(np.sin(np.outer(x, j + 1)) @ j) + x.size * np.sum(j))
         solution.objectives[0] = total
         return solution
 
@@ -130,10 +132,10 @@ class ShubertN4(FloatProblem):
         return 0
 
     def evaluate(self, solution: FloatSolution) -> FloatSolution:
-        total = 0.0
-        for x in solution.variables:
-            component = sum(j * math.cos((j + 1) * x) + j for j in range(1, 6))
-            total += component
+        x = np.asarray(solution.variables, dtype=float)
+        j = np.arange(1.0, 6.0)
+        # sum_d sum_j [ j*cos((j+1)*x_d) + j ]
+        total = float(np.sum(np.cos(np.outer(x, j + 1)) @ j) + x.size * np.sum(j))
         solution.objectives[0] = total
         return solution
 

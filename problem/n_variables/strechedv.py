@@ -1,4 +1,6 @@
 import math
+
+import numpy as np
 from jmetal.core.problem import FloatProblem
 from jmetal.core.solution import FloatSolution
 
@@ -28,17 +30,10 @@ class StretchedV(FloatProblem):
         return 0
 
     def evaluate(self, solution: FloatSolution) -> FloatSolution:
-        total = 0.0
-        d = self.number_of_variables()
-
-        for i in range(d - 1):
-            x_i = solution.variables[i]
-            x_next = solution.variables[i + 1]
-            t = x_i**2 + x_next**2
-            term = (t**(1/4)) * (math.sin(50 * (t**0.1)) + 1)**2
-            total += term
-
-        solution.objectives[0] = total
+        x = np.asarray(solution.variables, dtype=float)
+        t = x[:-1] ** 2 + x[1:] ** 2
+        terms = (t ** 0.25) * (np.sin(50 * (t ** 0.1)) + 1) ** 2
+        solution.objectives[0] = float(np.sum(terms))
         return solution
 
     def name(self) -> str:

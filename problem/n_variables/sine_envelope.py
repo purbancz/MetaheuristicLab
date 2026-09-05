@@ -1,4 +1,4 @@
-import math
+import numpy as np
 from jmetal.core.problem import FloatProblem
 from jmetal.core.solution import FloatSolution
 
@@ -34,14 +34,10 @@ class SineEnvelope(FloatProblem):
         return 0
 
     def evaluate(self, solution: FloatSolution) -> FloatSolution:
-        total = 0.0
-        for i in range(self.number_of_variables() - 1):
-            x_i = solution.variables[i]
-            x_next = solution.variables[i + 1]
-            r2 = x_i**2 + x_next**2
-            component = (math.sin(math.sqrt(r2) - 0.5) ** 2) / ((0.001 * r2 + 1) ** 2) + 0.5
-            total += component
-        solution.objectives[0] = -total
+        x = np.asarray(solution.variables, dtype=float)
+        r2 = x[:-1] ** 2 + x[1:] ** 2
+        components = (np.sin(np.sqrt(r2) - 0.5) ** 2) / ((0.001 * r2 + 1) ** 2) + 0.5
+        solution.objectives[0] = -float(np.sum(components))
         return solution
 
     def name(self) -> str:

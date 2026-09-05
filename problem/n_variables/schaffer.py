@@ -93,14 +93,11 @@ class GeneralizedSchafferN1(FloatProblem):
     #     return new_solution
 
     def evaluate(self, solution: FloatSolution) -> FloatSolution:
-        total = 0.0
-        for i in range(len(solution.variables) - 1):
-            x_i = solution.variables[i]
-            x_next = solution.variables[i + 1]
-            numerator = math.sin(x_i ** 2 - x_next ** 2) ** 2 - 0.5
-            denominator = (1 + 0.001 * (x_i ** 2 + x_next ** 2)) ** 2
-            total += 0.5 + numerator / denominator
-        solution.objectives[0] = total
+        x = np.asarray(solution.variables, dtype=float)
+        a2, b2 = x[:-1] ** 2, x[1:] ** 2
+        numerator = np.sin(a2 - b2) ** 2 - 0.5
+        denominator = (1 + 0.001 * (a2 + b2)) ** 2
+        solution.objectives[0] = float(np.sum(0.5 + numerator / denominator))
         return solution
 
     def name(self) -> str:
@@ -133,19 +130,14 @@ class GeneralizedSchafferN2(FloatProblem):
         return 0
 
     def evaluate(self, solution: FloatSolution) -> FloatSolution:
-        total = 0.0
-        n = len(solution.variables)
-        for i in range(n - 1):
-            x_i = solution.variables[i]
-            x_next = solution.variables[i+1]
-            numerator = math.cos(math.sin(abs(x_i**2 - x_next**2))) - 0.5
-            denominator = (1 + 0.001 * (x_i**2 + x_next**2))**2
-            pair_value = 0.5 + numerator/denominator  # f_pair, with f(0,0)=1
-            total += pair_value
-        # At optimum (all zeros), total == n-1.
-        # We shift and reverse:
-        transformed = -(total - (n - 1))
-        solution.objectives[0] = transformed
+        x = np.asarray(solution.variables, dtype=float)
+        n = x.size
+        a2, b2 = x[:-1] ** 2, x[1:] ** 2
+        numerator = np.cos(np.sin(np.abs(a2 - b2))) - 0.5
+        denominator = (1 + 0.001 * (a2 + b2)) ** 2
+        total = float(np.sum(0.5 + numerator / denominator))  # f_pair(0,0)=1
+        # At optimum (all zeros), total == n-1. We shift and reverse:
+        solution.objectives[0] = -(total - (n - 1))
         return solution
 
     def name(self) -> str:
@@ -180,16 +172,11 @@ class GeneralizedSchafferN3(FloatProblem):
         return 0
 
     def evaluate(self, solution: FloatSolution) -> FloatSolution:
-        total = 0.0
-        d = self.number_of_variables()
-        for i in range(d - 1):
-            x_i = solution.variables[i]
-            x_next = solution.variables[i+1]
-            r_sq = x_i**2 + x_next**2
-            # At optimum: if x_i = x_next = 0, then r_sq=0, so term = 0.
-            term = (r_sq**0.25) * (1 + math.sin(50*(r_sq**0.1))**2)
-            total += term
-        solution.objectives[0] = total
+        x = np.asarray(solution.variables, dtype=float)
+        r_sq = x[:-1] ** 2 + x[1:] ** 2
+        # At optimum (all zeros) every r_sq is 0, so every term is 0.
+        terms = (r_sq ** 0.25) * (1 + np.sin(50 * (r_sq ** 0.1)) ** 2)
+        solution.objectives[0] = float(np.sum(terms))
         return solution
 
     def name(self) -> str:
@@ -230,18 +217,14 @@ class GeneralizedSchafferN4(FloatProblem):
     #     return sol
 
     def evaluate(self, solution: FloatSolution) -> FloatSolution:
-        total = 0.0
-        n = len(solution.variables)
-        for i in range(n - 1):
-            x_i = solution.variables[i]
-            x_next = solution.variables[i+1]
-            numerator = math.cos(math.sin(abs(x_i**2 - x_next**2))) - 0.5
-            denominator = (1 + 0.001 * (x_i**2 + x_next**2)**2)**2
-            pair_value = 0.5 + numerator/denominator  # f_pair, f(0,0)=1
-            total += pair_value
+        x = np.asarray(solution.variables, dtype=float)
+        n = x.size
+        a2, b2 = x[:-1] ** 2, x[1:] ** 2
+        numerator = np.cos(np.sin(np.abs(a2 - b2))) - 0.5
+        denominator = (1 + 0.001 * (a2 + b2) ** 2) ** 2
+        total = float(np.sum(0.5 + numerator / denominator))  # f_pair(0,0)=1
         # At optimum, total = n-1; shift and reverse to get 0.
-        transformed = -(total - (n - 1))
-        solution.objectives[0] = transformed
+        solution.objectives[0] = -(total - (n - 1))
         return solution
 
     def name(self) -> str:

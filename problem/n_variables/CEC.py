@@ -544,7 +544,7 @@ class ShiftedRotatedSchafferF7(FloatProblem):
         d = self.number_of_variables()
         z = np.dot(self.rotation_matrix, (x - self.shift))
         z = 10 * z
-        s = np.array([z[i]**2 + z[i+1]**2 for i in range(d - 1)])
+        s = z[:-1] ** 2 + z[1:] ** 2
         inner = np.sum(s + s * (np.sin(50 * (s ** (1/5)))**2)) / (d - 1)
         result = inner**2
         solution.objectives[0] = result

@@ -1,4 +1,6 @@
 import math
+
+import numpy as np
 from jmetal.core.problem import FloatProblem
 from jmetal.core.solution import FloatSolution
 
@@ -21,13 +23,11 @@ class EggHolder(FloatProblem):
         return 0
 
     def evaluate(self, solution: FloatSolution) -> FloatSolution:
-        x = solution.variables
-        total = 0.0
-        for i in range(len(x) - 1):
-            term1 = - x[i] * math.sin(math.sqrt(abs(x[i] - x[i+1] - 47)))
-            term2 = -(x[i+1] + 47) * math.sin(math.sqrt(abs(0.5 * x[i] + x[i+1] + 47)))
-            total += term1 + term2
-        solution.objectives[0] = total
+        x = np.asarray(solution.variables, dtype=float)
+        a, b = x[:-1], x[1:]
+        term1 = -a * np.sin(np.sqrt(np.abs(a - b - 47)))
+        term2 = -(b + 47) * np.sin(np.sqrt(np.abs(0.5 * a + b + 47)))
+        solution.objectives[0] = float(np.sum(term1 + term2))
         return solution
 
     def name(self) -> str:
