@@ -44,11 +44,57 @@ def test_lennard_jones_pairwise_distance_uses_correct_coordinates():
     prob = LennardJonesMinimumEnergyCluster(number_of_variables=9)
     lb, ub = prob.lower_bound, prob.upper_bound
 
-    # atom0=(1,0,0), atom1=(2,0,0), atom2=(100,5,3)
-    # Correct pair(0,1): squared_dist=1, d=1, pairwise=1/1-2/1=-1 → total≈11.71
-    # Buggy pair(0,1): reads atom2.y and atom2.z → squared_dist=35, d=42875 → pairwise≈-5e-5 → total≈12.71
-    s = prob.evaluate(_sol([1.0, 0.0, 0.0, 2.0, 0.0, 0.0, 100.0, 5.0, 3.0], lb, ub))
-    assert s.objectives[0] == pytest.approx(11.71, abs=0.1)
+    # atom0 and atom1 at distance 1 (pair energy -1); atom2 far away in a
+    # corner of the box contributes only a tiny attraction.
+    far = lb[0] + 0.05  # inside the N-scaled bounds
+    s = prob.evaluate(_sol([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, far, far, far], lb, ub))
+    assert s.objectives[0] == pytest.approx(-1.0, abs=0.02)
+
+
+def test_lennard_jones_known_optima_match_cambridge_cluster_database():
+    from problem.n_variables.lenard_johnes_minimum_energy_cluster import LennardJonesMinimumEnergyCluster
+
+    # N=2: optimal pair at distance 1, CCD energy -1.
+    prob = LennardJonesMinimumEnergyCluster(number_of_variables=6)
+    s = prob.evaluate(_sol([-0.5, 0.0, 0.0, 0.5, 0.0, 0.0], prob.lower_bound, prob.upper_bound))
+    assert s.objectives[0] == pytest.approx(-1.0, rel=1e-12)
+
+    # N=3: unit equilateral triangle, CCD energy -3.
+    prob = LennardJonesMinimumEnergyCluster(number_of_variables=9)
+    triangle = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.5, math.sqrt(3) / 2, 0.0]
+    s = prob.evaluate(_sol(triangle, prob.lower_bound, prob.upper_bound))
+    assert s.objectives[0] == pytest.approx(-3.0, rel=1e-12)
+
+    # N=4: unit regular tetrahedron, CCD energy -6.
+    prob = LennardJonesMinimumEnergyCluster(number_of_variables=12)
+    tetrahedron = [
+        0.0, 0.0, 0.0,
+        1.0, 0.0, 0.0,
+        0.5, math.sqrt(3) / 2, 0.0,
+        0.5, math.sqrt(3) / 6, math.sqrt(2.0 / 3.0),
+    ]
+    s = prob.evaluate(_sol(tetrahedron, prob.lower_bound, prob.upper_bound))
+    assert s.objectives[0] == pytest.approx(-6.0, rel=1e-12)
+
+    # Argmin-neighborhood check: perturbing the tetrahedron must worsen it.
+    perturbed = list(tetrahedron)
+    perturbed[0] += 0.1
+    s_perturbed = prob.evaluate(_sol(perturbed, prob.lower_bound, prob.upper_bound))
+    assert s_perturbed.objectives[0] > -6.0
+
+
+def test_lennard_jones_bounds_scale_with_atom_count_and_contain_optima():
+    from problem.n_variables.lenard_johnes_minimum_energy_cluster import LennardJonesMinimumEnergyCluster
+
+    for n_vars in (6, 12, 300):
+        prob = LennardJonesMinimumEnergyCluster(number_of_variables=n_vars)
+        n_atoms = n_vars // 3
+        expected_half_width = 2.0 * n_atoms ** (1.0 / 3.0)
+        assert prob.upper_bound[0] == pytest.approx(expected_half_width)
+        assert prob.lower_bound[0] == pytest.approx(-expected_half_width)
+        # The box comfortably contains a unit-density cluster of N atoms
+        # (radius ~0.62 * N^(1/3)).
+        assert expected_half_width > 0.62 * n_atoms ** (1.0 / 3.0)
 
 
 # --- GeneralizedSchafferN3 (classical Schaffer F7 pair form) ---
