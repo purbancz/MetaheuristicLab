@@ -7,7 +7,7 @@ import h5py
 import numpy as np
 import scikit_posthocs as sp
 import pandas as pd
-from scipy.stats import kruskal, f_oneway, shapiro, mannwhitneyu
+from scipy.stats import binomtest, kruskal, f_oneway, rankdata, shapiro, mannwhitneyu
 from statsmodels.stats.multicomp import pairwise_tukeyhsd
 from scikit_posthocs import posthoc_dunn
 
@@ -31,6 +31,41 @@ def collect_h5_files_from_paths(paths):
         files = glob.glob(os.path.join(path, '**', '*.h5'), recursive=True)
         h5_files.extend(files)
     return h5_files
+
+
+def final_fitness_means(results, algos):
+    """Per-algorithm mean of the finite final fitness values.
+
+    Algorithms that are missing, empty, or have no finite finals are omitted.
+    """
+    means = {}
+    for algo in algos:
+        a_data = results.get(algo)
+        if not a_data:
+            continue
+        arr = np.asarray(a_data.get('data', np.array([])))
+        if arr.size == 0:
+            continue
+        if arr.ndim == 2:
+            arr = arr[:, -1]
+        elif arr.ndim != 1:
+            continue
+        finite = arr[np.isfinite(arr)]
+        if finite.size > 0:
+            means[algo] = float(np.mean(finite))
+    return means
+
+
+def rank_within_problem(means):
+    """Average ranks of the per-problem summaries, 1 = best (minimization).
+
+    Ranks are scale-free, so cross-problem aggregation does not depend on
+    per-problem fitness magnitudes or on min-max normalization constants
+    (which change whenever the compared set changes).
+    """
+    algos = list(means)
+    ranks = rankdata([means[a] for a in algos])
+    return {algo: float(rank) for algo, rank in zip(algos, ranks)}
 
 
 def match_problem(problem_name, n_vars):
@@ -563,7 +598,8 @@ def kruskal_wallis_with_posthoc(pickle_files, perform_shapiro=True, perform_post
                         if group1 in best_algos or group2 in best_algos:
                             non_significant_vs_best_tukey.append((problem_name, dimension, group1, group2, p_adj))
             else:
-                dunn_results = sp.posthoc_dunn(data, p_adjust='fdr_bh')
+                # Holm for a consistent FWER-control philosophy across this module.
+                dunn_results = sp.posthoc_dunn(data, p_adjust='holm')
                 dunn_results.index = algo_names
                 dunn_results.columns = algo_names
                 print("Dunn's test pairwise comparison p-values:")
@@ -1094,41 +1130,22 @@ def friedman_wilcoxon_algorithm_groups(pickle_files, algo_groups):
     # Initialize storage for group means per problem
     group_scores_per_problem = {g: [] for g in group_names}
 
-    # 3. Iterate and Normalize
+    # 3. Per problem: rank the compared algorithms (scale-free), then average
+    #    member ranks per group. Requires the full compared set per problem so
+    #    the rank blocks are comparable.
+    compared_algos = list(algo_groups)
     for instance_key, problem_data in combined_data_dict.items():
         results = problem_data.get('results', {})
 
-        algo_means = {}
-        for algo, a_data in results.items():
-            if algo not in algo_groups:
-                continue  # Skip algorithms that are not assigned to a group (e.g., standard PSO)
-
-            arr = a_data.get('data', np.array([]))
-            if arr.ndim == 2: arr = arr[:, -1]
-            finite_vals = arr[np.isfinite(arr)]
-            if finite_vals.size > 0:
-                algo_means[algo] = np.mean(finite_vals)
-
-        if not algo_means:
+        algo_means = final_fitness_means(results, compared_algos)
+        if len(algo_means) != len(compared_algos):
             continue
 
-        min_fit, max_fit = min(algo_means.values()), max(algo_means.values())
-        if max_fit == min_fit:
-            continue  # Skip if all got the exact same score
+        ranks = rank_within_problem(algo_means)
 
-        norm_means = {algo: (val - min_fit) / (max_fit - min_fit) for algo, val in algo_means.items()}
-
-        # Calculate group averages for this problem
-        prob_group_avgs = {}
         for g in group_names:
-            g_algos = [a for a, grp in algo_groups.items() if grp == g and a in norm_means]
-            if g_algos:
-                prob_group_avgs[g] = np.mean([norm_means[a] for a in g_algos])
-
-        # We only keep problems where ALL groups have data (Required for paired Friedman test)
-        if len(prob_group_avgs) == len(group_names):
-            for g in group_names:
-                group_scores_per_problem[g].append(prob_group_avgs[g])
+            g_algos = [a for a, grp in algo_groups.items() if grp == g]
+            group_scores_per_problem[g].append(float(np.mean([ranks[a] for a in g_algos])))
 
     n_cases = len(group_scores_per_problem[group_names[0]])
     if n_cases < 2:
@@ -1138,9 +1155,9 @@ def friedman_wilcoxon_algorithm_groups(pickle_files, algo_groups):
     # 4. Perform Friedman Test
     stat, p_friedman = friedmanchisquare(*[group_scores_per_problem[g] for g in group_names])
 
-    print(f"\n=== Taxonomy Group Analysis (Normalized Means, N={n_cases} paired benchmarks) ===")
+    print(f"\n=== Taxonomy Group Analysis (Per-problem mean ranks, N={n_cases} paired benchmarks) ===")
     for g in group_names:
-        print(f"  {g} Global Mean: {np.mean(group_scores_per_problem[g]):.4f}")
+        print(f"  {g} Global Mean Rank: {np.mean(group_scores_per_problem[g]):.4f}")
 
     print(f"\nFriedman Test Statistic: {stat:.4f}, p-value: {p_friedman:.5e}")
 
@@ -1151,7 +1168,7 @@ def friedman_wilcoxon_algorithm_groups(pickle_files, algo_groups):
             try:
                 w_stat, p_wilc = wilcoxon(group_scores_per_problem[g1], group_scores_per_problem[g2])
                 mean_diff = np.mean(group_scores_per_problem[g1]) - np.mean(group_scores_per_problem[g2])
-                winner = g1 if mean_diff < 0 else g2  # Lower normalized score is better
+                winner = g1 if mean_diff < 0 else g2  # Lower mean rank is better
                 sig_star = "*" if p_wilc < 0.05 else ""
                 print(f"  {g1} vs {g2}: p={p_wilc:.4f}{sig_star} --> {winner} trended better")
             except Exception as e:
@@ -1163,9 +1180,10 @@ def friedman_wilcoxon_algorithm_groups(pickle_files, algo_groups):
 
 def friedman_wilcoxon_algorithm_groups_with_holm(pickle_files, algo_groups):
     """
-    Min-max normalizes fitness per problem, averages them by the provided
-    algorithm taxonomy groups, and runs a Friedman test followed by pairwise
-    Wilcoxon signed-rank tests with Holm correction.
+    Ranks the compared algorithms within each problem (1 = best, scale-free),
+    averages the ranks by the provided algorithm taxonomy groups, and runs a
+    Friedman test followed by pairwise Wilcoxon signed-rank tests with Holm
+    correction.
 
     Parameters
     ----------
@@ -1211,72 +1229,30 @@ def friedman_wilcoxon_algorithm_groups_with_holm(pickle_files, algo_groups):
     group_scores_per_problem = {g: [] for g in group_names}
 
     excluded_empty = 0
-    excluded_degenerate = 0
     excluded_incomplete = 0
 
-    # 3. Iterate and normalize per problem
+    # 3. Per problem: rank the compared algorithms (scale-free), then average
+    #    member ranks per group. Requires the full compared set per problem so
+    #    the rank blocks are comparable.
+    compared_algos = list(algo_groups)
     for instance_key, problem_data in combined_data_dict.items():
         results = problem_data.get("results", {})
 
-        algo_means = {}
-
-        for algo, a_data in results.items():
-            if algo not in algo_groups:
-                continue
-
-            arr = a_data.get("data", np.array([]))
-            arr = np.asarray(arr)
-
-            if arr.size == 0:
-                continue
-
-            if arr.ndim == 2:
-                arr = arr[:, -1]
-            elif arr.ndim != 1:
-                continue
-
-            finite_vals = arr[np.isfinite(arr)]
-
-            if finite_vals.size > 0:
-                algo_means[algo] = float(np.mean(finite_vals))
+        algo_means = final_fitness_means(results, compared_algos)
 
         if not algo_means:
             excluded_empty += 1
             continue
 
-        min_fit = min(algo_means.values())
-        max_fit = max(algo_means.values())
-
-        if max_fit == min_fit:
-            excluded_degenerate += 1
+        if len(algo_means) != len(compared_algos):
+            excluded_incomplete += 1
             continue
 
-        norm_means = {
-            algo: (val - min_fit) / (max_fit - min_fit)
-            for algo, val in algo_means.items()
-        }
-
-        # Calculate group averages for this problem
-        prob_group_avgs = {}
+        ranks = rank_within_problem(algo_means)
 
         for g in group_names:
-            g_algos = [
-                algo
-                for algo, group in algo_groups.items()
-                if group == g and algo in norm_means
-            ]
-
-            if g_algos:
-                prob_group_avgs[g] = float(
-                    np.mean([norm_means[algo] for algo in g_algos])
-                )
-
-        # Keep only complete matched cases for paired Friedman/Wilcoxon tests
-        if len(prob_group_avgs) == len(group_names):
-            for g in group_names:
-                group_scores_per_problem[g].append(prob_group_avgs[g])
-        else:
-            excluded_incomplete += 1
+            g_algos = [a for a, grp in algo_groups.items() if grp == g]
+            group_scores_per_problem[g].append(float(np.mean([ranks[a] for a in g_algos])))
 
     n_cases = len(group_scores_per_problem[group_names[0]])
 
@@ -1293,16 +1269,15 @@ def friedman_wilcoxon_algorithm_groups_with_holm(pickle_files, algo_groups):
         *[group_scores_per_problem[g] for g in group_names]
     )
 
-    print(f"\n=== Taxonomy Group Analysis (Normalized Means, N={n_cases} paired benchmarks) ===")
+    print(f"\n=== Taxonomy Group Analysis (Per-problem mean ranks, N={n_cases} paired benchmarks) ===")
     for g in group_names:
-        print(f"  {g} Global Mean: {np.mean(group_scores_per_problem[g]):.4f}")
+        print(f"  {g} Global Mean Rank: {np.mean(group_scores_per_problem[g]):.4f}")
 
     print("\n=== Instance filtering summary ===")
     print(f"Total instances available: {len(combined_data_dict)}")
     print(f"Valid complete instances used: {n_cases}")
     print(f"Excluded empty/no relevant algos: {excluded_empty}")
-    print(f"Excluded degenerate: {excluded_degenerate}")
-    print(f"Excluded incomplete across groups: {excluded_incomplete}")
+    print(f"Excluded incomplete across compared algorithms: {excluded_incomplete}")
 
     print(f"\nFriedman Test Statistic: {stat:.4f}, p-value: {p_friedman:.5e}")
 
@@ -1329,7 +1304,7 @@ def friedman_wilcoxon_algorithm_groups_with_holm(pickle_files, algo_groups):
                 mean_g2 = float(np.mean(group_scores_per_problem[g2]))
                 mean_diff = mean_g1 - mean_g2
 
-                winner = g1 if mean_diff < 0 else g2  # lower normalized score is better
+                winner = g1 if mean_diff < 0 else g2  # lower mean rank is better
 
                 raw_results.append({
                     "group_1": g1,
@@ -1391,66 +1366,50 @@ def friedman_wilcoxon_algorithm_groups_with_holm(pickle_files, algo_groups):
         "friedman_significant": bool(p_friedman < 0.05),
         "pairwise_results": pairwise_results,
         "excluded_empty": excluded_empty,
-        "excluded_degenerate": excluded_degenerate,
         "excluded_incomplete": excluded_incomplete,
         "runs_by_instance": runs_by_instance,
     }
 
-def head_to_head_champions(pickle_files):
-    # Load and combine data
+def head_to_head_champions(pickle_files, algo_A="PSO", algo_B="ContrarianDefeatistPSO"):
+    """Paired head-to-head comparison of two algorithms across the suite.
+
+    Per problem, the winner is the algorithm with the lower mean final
+    fitness; the sign test (exact binomial, ties dropped) then asks whether
+    either wins on significantly more problems. Scale-free by construction -
+    no cross-problem normalization is involved.
+    """
     data_list = [load_data(fp) for fp in pickle_files]
     valid_data_list = [d for d in data_list if d is not None]
     combined_data_dict = combine_data(valid_data_list)
 
-    algo_A = "PSO"
-    algo_B = "ContrarianDefeatistPSO"
-
-    scores_A = []
-    scores_B = []
+    wins_A = wins_B = ties = 0
 
     for instance_key, problem_data in combined_data_dict.items():
         results = problem_data.get('results', {})
+        means = final_fitness_means(results, [algo_A, algo_B])
+        if len(means) != 2:
+            continue
+        if means[algo_A] < means[algo_B]:
+            wins_A += 1
+        elif means[algo_B] < means[algo_A]:
+            wins_B += 1
+        else:
+            ties += 1
 
-        # We need both algorithms to have data for this problem to do a paired test
-        if algo_A in results and algo_B in results:
-            arr_A = results[algo_A].get('data', np.array([]))
-            arr_B = results[algo_B].get('data', np.array([]))
+    n_decisive = wins_A + wins_B
+    print(f"\n=== Head-to-Head: {algo_A} vs {algo_B} "
+          f"(N={n_decisive + ties} paired benchmarks) ===")
+    print(f"Wins {algo_A}: {wins_A} | Wins {algo_B}: {wins_B} | Ties: {ties}")
 
-            if arr_A.ndim == 2: arr_A = arr_A[:, -1]
-            if arr_B.ndim == 2: arr_B = arr_B[:, -1]
+    if n_decisive < 1:
+        print("No decisive problems - nothing to test.")
+        return
 
-            fin_A = arr_A[np.isfinite(arr_A)]
-            fin_B = arr_B[np.isfinite(arr_B)]
-
-            if fin_A.size > 0 and fin_B.size > 0:
-                # We use raw fitness means, but we rank them per problem to avoid scale issues,
-                # OR we just compare their normalized scores. Let's use min-max normalized for consistency:
-                algo_means = {}
-                for algo, a_data in results.items():
-                    arr = a_data.get('data', np.array([]))
-                    if arr.ndim == 2: arr = arr[:, -1]
-                    f_vals = arr[np.isfinite(arr)]
-                    if f_vals.size > 0:
-                        algo_means[algo] = np.mean(f_vals)
-
-                min_f, max_f = min(algo_means.values()), max(algo_means.values())
-                if max_f > min_f:
-                    norm_A = (algo_means[algo_A] - min_f) / (max_f - min_f)
-                    norm_B = (algo_means[algo_B] - min_f) / (max_f - min_f)
-                    scores_A.append(norm_A)
-                    scores_B.append(norm_B)
-
-    if len(scores_A) < 2: return
-
-    stat, p = wilcoxon(scores_A, scores_B)
-
-    print(f"\n=== Head-to-Head: {algo_A} vs {algo_B} (N={len(scores_A)} paired benchmarks) ===")
-    print(f"{algo_A} Mean Normalized Score: {np.mean(scores_A):.4f}")
-    print(f"{algo_B} Mean Normalized Score: {np.mean(scores_B):.4f}")
-    print(f"Wilcoxon p-value: {p:.4e}")
+    p = binomtest(wins_A, n_decisive, 0.5).pvalue
+    print(f"Sign test (exact binomial) p-value: {p:.4e}")
     if p < 0.05:
-        winner = algo_A if np.mean(scores_A) < np.mean(scores_B) else algo_B
-        print(f"Result: {winner} is STATISTICALLY SUPERIOR (p < 0.05).")
+        winner = algo_A if wins_A > wins_B else algo_B
+        print(f"Result: {winner} wins on significantly more problems (p < 0.05).")
     else:
         print("Result: Statistical TIE. Both are equally powerful but on different landscapes.")
 
@@ -1461,78 +1420,85 @@ import scikit_posthocs as sp
 import pandas as pd
 
 
-def all_vs_all_algorithm_stats(pickle_files):
+def all_vs_all_algorithm_stats(pickle_files, algos_to_compare=None, baseline="PSO"):
+    """All-vs-all comparison over the benchmark suite.
+
+    Blocked design: problems are blocks, algorithms are treatments, the
+    per-problem summary is the mean final fitness. The Friedman omnibus and
+    the Nemenyi-Friedman post-hoc both operate on within-problem ranks, so no
+    cross-problem normalization is involved. Mean ranks are reported as the
+    effect size.
+    """
     # 1. Load and combine data
     valid_data = [d for d in [load_data(fp) for fp in pickle_files] if d is not None]
-    if not valid_data: return
+    if not valid_data:
+        raise ValueError("all_vs_all_algorithm_stats: no valid data loaded.")
     combined_data_dict = combine_data(valid_data)
 
-    # 2. Define the exact algorithms you want to compare
-    algos_to_compare = [
-        'PSO', 'WandererPSO', 'AmnesiacPSO', 'DefeatistPSO', 'RebelPSO',
-        'EschewerPSO', 'ContrarianPSO', 'RejectorPSO', 'AnarchicPSO',
-        'EscapistPSO', 'NoisyPSO', 'DrifterPSO'
-    ]
+    # 2. Roster: explicit, or every algorithm present in ALL loaded problems.
+    if algos_to_compare is None:
+        rosters = [set(pd.get('results', {})) for pd in combined_data_dict.values()]
+        algos_to_compare = sorted(set.intersection(*rosters)) if rosters else []
+    if len(algos_to_compare) < 2:
+        raise ValueError(
+            f"all_vs_all_algorithm_stats: need at least 2 algorithms present in "
+            f"every problem, got {algos_to_compare}."
+        )
 
-    # 3. Build a matrix of normalized scores: Rows = Problems, Cols = Algorithms
-    matrix_data = {algo: [] for algo in algos_to_compare}
-
+    # 3. Blocked matrix of per-problem mean final fitness.
+    rows = []
     for instance_key, problem_data in combined_data_dict.items():
-        results = problem_data.get('results', {})
+        means = final_fitness_means(problem_data.get('results', {}), algos_to_compare)
+        if len(means) == len(algos_to_compare):
+            rows.append([means[a] for a in algos_to_compare])
 
-        # Get mean fitness for each algorithm on this problem
-        algo_means = {}
-        for algo in algos_to_compare:
-            if algo in results:
-                arr = results[algo].get('data', np.array([]))
-                if arr.ndim == 2: arr = arr[:, -1]
-                f_vals = arr[np.isfinite(arr)]
-                if f_vals.size > 0:
-                    algo_means[algo] = np.mean(f_vals)
+    n_cases = len(rows)
+    if n_cases < 3:
+        raise ValueError(
+            f"all_vs_all_algorithm_stats: only {n_cases} complete problems for "
+            f"roster {algos_to_compare}; need at least 3 blocks for Friedman."
+        )
 
-        # Only keep problems where ALL algorithms successfully ran
-        if len(algo_means) == len(algos_to_compare):
-            min_f, max_f = min(algo_means.values()), max(algo_means.values())
-            if max_f > min_f:
-                for algo in algos_to_compare:
-                    norm_score = (algo_means[algo] - min_f) / (max_f - min_f)
-                    matrix_data[algo].append(norm_score)
+    matrix = pd.DataFrame(rows, columns=algos_to_compare)
 
-    n_cases = len(matrix_data[algos_to_compare[0]])
     print(f"\n=== Algorithm-to-Algorithm Analysis (N={n_cases} paired benchmarks) ===")
 
-    # 4. Friedman Test
-    stat, p_friedman = friedmanchisquare(*[matrix_data[a] for a in algos_to_compare])
+    # 4. Mean ranks (1 = best) as the effect size.
+    ranks = matrix.rank(axis=1, method='average')
+    mean_ranks = ranks.mean(axis=0).sort_values()
+    print("Mean ranks (1 = best):")
+    for algo, mr in mean_ranks.items():
+        print(f"  {algo:40s} {mr:.3f}")
+
+    # 5. Friedman omnibus (ranks within blocks internally).
+    stat, p_friedman = friedmanchisquare(*[matrix[a] for a in algos_to_compare])
     print(f"Friedman Test Statistic: {stat:.4f}, p-value: {p_friedman:.5e}")
 
-    # 5. Dunn's Post-Hoc Test
+    nemenyi = None
     if p_friedman < 0.05:
-        print("\nFriedman test is SIGNIFICANT. Proceeding with Dunn's Post-Hoc Test (Holm adjusted)...")
+        print("\nFriedman test is SIGNIFICANT. Nemenyi-Friedman post-hoc (blocked design):")
+        nemenyi = sp.posthoc_nemenyi_friedman(matrix.values)
+        nemenyi.columns = algos_to_compare
+        nemenyi.index = algos_to_compare
 
-        # Convert dict to a list of lists for scikit-posthocs
-        data_for_dunn = [matrix_data[a] for a in algos_to_compare]
-
-        # Run Dunn's test with Holm step-down adjustment (standard for this)
-        dunn_results = sp.posthoc_dunn(data_for_dunn, p_adjust='holm')
-        dunn_results.columns = algos_to_compare
-        dunn_results.index = algos_to_compare
-
-        # Print significant pairs against the Baseline (PSO)
-        print("\n--- Significant differences vs Standard PSO (p < 0.05) ---")
-        pso_col = dunn_results['PSO']
-        for algo in algos_to_compare:
-            if algo != 'PSO' and pso_col[algo] < 0.05:
-                mean_diff = np.mean(matrix_data[algo]) - np.mean(matrix_data['PSO'])
-                direction = "BETTER than" if mean_diff < 0 else "WORSE than"
-                print(f"{algo}: p={pso_col[algo]:.4f} ({direction} PSO)")
-
-        # Print the champions comparison
-        print("\n--- Champion Head-to-Head ---")
-        p_champs = dunn_results.loc['NoisyPSO', 'DefeatistPSO']
-        print(f"NoisyPSO vs DefeatistPSO: p={p_champs:.4f}")
-
+        if baseline in algos_to_compare:
+            print(f"\n--- Significant differences vs {baseline} (p < 0.05) ---")
+            base_col = nemenyi[baseline]
+            for algo in algos_to_compare:
+                if algo != baseline and base_col[algo] < 0.05:
+                    direction = "BETTER than" if mean_ranks[algo] < mean_ranks[baseline] else "WORSE than"
+                    print(f"{algo}: p={base_col[algo]:.4f} ({direction} {baseline})")
     else:
         print("Friedman test not significant across individual algorithms.")
+
+    return {
+        "algorithms": list(algos_to_compare),
+        "n_cases": n_cases,
+        "mean_ranks": mean_ranks.to_dict(),
+        "friedman_statistic": float(stat),
+        "friedman_p_value": float(p_friedman),
+        "nemenyi_p_values": nemenyi,
+    }
 
 
 from scipy.stats import wilcoxon
@@ -1569,15 +1535,14 @@ def many_to_one_vs_baseline(pickle_files, algos_to_compare, baseline="PSO", alph
     combined_data_dict = combine_data(valid_data)
 
     # --------------------------
-    # 2. Compute normalized scores per instance
+    # 2. Compute within-instance ranks (1 = best) - scale-free paired scores
     # --------------------------
-    # instance_scores[instance_key][algo] = normalized score
+    # instance_scores[instance_key][algo] = rank among baseline + compared algos
     instance_scores = {}
+    instance_means = {}
 
     excluded_missing_baseline = 0
     excluded_insufficient_algos = 0
-    excluded_degenerate = 0
-    excluded_invalid = 0
 
     for instance_key, problem_data in combined_data_dict.items():
 
@@ -1588,59 +1553,15 @@ def many_to_one_vs_baseline(pickle_files, algos_to_compare, baseline="PSO", alph
             excluded_missing_baseline += 1
             continue
 
-        algo_means = {}
-
-        for algo in algos_to_compare + [baseline]:
-
-            if algo not in results:
-                continue
-
-            arr = results[algo].get("data", None)
-            if arr is None or len(arr) == 0:
-                continue
-
-            arr = np.asarray(arr)
-
-            # Extract final fitness per run robustly
-            try:
-                if arr.ndim == 2:
-                    # assume shape (runs, iterations)
-                    final_vals = arr[:, -1]
-                elif arr.ndim == 1:
-                    final_vals = arr
-                else:
-                    excluded_invalid += 1
-                    continue
-
-                final_vals = final_vals[np.isfinite(final_vals)]
-
-                if len(final_vals) == 0:
-                    continue
-
-                algo_means[algo] = float(np.mean(final_vals))
-
-            except Exception:
-                excluded_invalid += 1
-                continue
+        algo_means = final_fitness_means(results, algos_to_compare + [baseline])
 
         # Need baseline and at least one comparison algorithm
         if baseline not in algo_means or len(algo_means) < 2:
             excluded_insufficient_algos += 1
             continue
 
-        min_f = min(algo_means.values())
-        max_f = max(algo_means.values())
-
-        # Avoid division by zero
-        if max_f == min_f:
-            excluded_degenerate += 1
-            continue
-
-        # Normalize
-        instance_scores[instance_key] = {
-            algo: (val - min_f) / (max_f - min_f)
-            for algo, val in algo_means.items()
-        }
+        instance_scores[instance_key] = rank_within_problem(algo_means)
+        instance_means[instance_key] = algo_means
 
     total_instances = len(combined_data_dict)
     valid_instances = len(instance_scores)
@@ -1650,8 +1571,6 @@ def many_to_one_vs_baseline(pickle_files, algos_to_compare, baseline="PSO", alph
     print(f"Valid instances used:      {valid_instances}")
     print(f"Excluded missing baseline: {excluded_missing_baseline}")
     print(f"Excluded insufficient algos: {excluded_insufficient_algos}")
-    print(f"Excluded degenerate: {excluded_degenerate}")
-    print(f"Excluded invalid data: {excluded_invalid}")
 
     # --------------------------
     # 3. Perform paired tests per algorithm
@@ -1683,11 +1602,21 @@ def many_to_one_vs_baseline(pickle_files, algos_to_compare, baseline="PSO", alph
 
         direction = "BETTER" if mean_diff < 0 else "WORSE"
 
+        # Win/tie/loss counts vs the baseline (raw per-problem means).
+        wins = sum(1 for k in paired_keys
+                   if instance_means[k][algo] < instance_means[k][baseline])
+        losses = sum(1 for k in paired_keys
+                     if instance_means[k][algo] > instance_means[k][baseline])
+        ties = N - wins - losses
+
         raw_results.append({
             "algo": algo,
             "p": p,
             "N": N,
-            "mean_diff": mean_diff,
+            "mean_rank_diff": mean_diff,
+            "wins": wins,
+            "ties": ties,
+            "losses": losses,
             "direction": direction
         })
 
@@ -1718,6 +1647,7 @@ def many_to_one_vs_baseline(pickle_files, algos_to_compare, baseline="PSO", alph
         print(
             f"{result['algo']:15s} | "
             f"N={result['N']:3d} | "
+            f"W/T/L={result['wins']}/{result['ties']}/{result['losses']} | "
             f"Adjusted p={pvals_corrected[i]:.12f} {sig} | "
             f"{result['direction']}"
         )
