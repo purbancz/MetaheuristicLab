@@ -348,7 +348,7 @@ def factory_AnarchicAmnesiacPSO(p):
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
     )
 
-def factory_WandererPSO(p):
+def factory_ErraticPSO(p):
     return ErraticPSO(
         problem=p,
         swarm_size=G_SOLUTIONS_SIZE,
@@ -383,7 +383,7 @@ def factory_AAAPSO(p):
     )
 
 
-def factory_NoisyPSO(p):
+def factory_WandererPSO(p):
     return WandererPSO(
         problem=p,
         swarm_size=G_SOLUTIONS_SIZE,

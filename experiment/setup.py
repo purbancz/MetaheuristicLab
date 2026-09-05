@@ -100,12 +100,11 @@ def setup_experiment():
             'WandererPSO',
             'AnarchicAmnesiacPSO',
             'AAAPSO',
-            'NoisyPSO',
             'NAPSO',
             'ErraticPSO'
         ],
         'Noisy': [
-            'NoisyPSO',
+            'WandererPSO',
             'NAPSO',
         ],
         'Reset': [
@@ -347,9 +346,9 @@ def setup_experiment():
         # 'AmnesiacPSO': factory_AmnesiacPSO,
         # 'AnarchicAmnesiacPSO': factory_AnarchicAmnesiacPSO,
         # 'WandererPSO': factory_WandererPSO,
+        # 'ErraticPSO': factory_ErraticPSO,
         # 'AAAPSO': factory_AAAPSO,
-        # 'NoisyPSO': factory_NoisyPSO,
-        # 'NAPSO': factory_NoisyPSO,
+        # 'NAPSO': factory_NAPSO,
         # 'PartialResetPSO': factory_PartialResetPSO,
         # 'CollectiveResetPSO': factory_CollectiveResetPSO,
         # 'FRAPSO': factory_FRAPSO,

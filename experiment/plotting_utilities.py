@@ -232,28 +232,19 @@ def plot_results_with_annotations_legend(data_dict, problem, results_dir, max_ev
     alg_order = [
         'PSO', 'PerturbationPSO', 'RebelPSO', 'RejectorPSO', 'RebelRejectorPSO',
         'ContrarianPSO', 'DefeatistPSO', 'ContrarianDefeatistPSO',
-        'EschewerPSO', 'EscapistPSO', 'EschewerEscapistPSO', 'ErraticPSO', 'NoisyPSO',
+        'EschewerPSO', 'EscapistPSO', 'EschewerEscapistPSO', 'ErraticPSO', 'WandererPSO',
         'HybridFullDisjointPSO', 'HybridPartialDisjointPSO', 'HybridAdditivePSO'
     ]
     alg_number_map = {name: idx + 1 for idx, name in enumerate(alg_order)}
-
-    def canonical_label(label):
-        # Keep one consistent name everywhere in this function
-        if label == "WandererPSO":
-            return "ErraticPSO"
-        if label == "NoisyPSO":
-            return "WandererPSO"
-        return label
 
     fig, ax = plt.subplots(figsize=(14, 6))
 
     annot_info = []
     line_map = {}
 
-    for i, (raw_label, fitness_data) in enumerate(data_dict.items()):
-        label = canonical_label(raw_label)
+    for i, (label, fitness_data) in enumerate(data_dict.items()):
         avg_fit = np.mean(fitness_data['data'], axis=0)
-        color = algorithm_colors.get(label, algorithm_colors.get(raw_label, 'black'))
+        color = algorithm_colors.get(label, 'black')
         ls = LINE_STYLES[i % len(LINE_STYLES)]
 
         line, = ax.plot(avg_fit, label=label, linestyle=ls, color=color)
@@ -729,9 +720,6 @@ def plot_final_petit_prince(data_dict, problem, results_dir, algorithm_colors,
 
     # Colors: Use given colors for box and scatter; lighten for violins.
     box_colors = [algorithm_colors.get(label, 'black') for label in labels]
-    for label in labels:
-        if label == "NoisyPSO":
-            label = "ErraticPSO"
     violin_colors = [lighten_color(color, 0.5) for color in box_colors]
     scatter_colors = box_colors
 
