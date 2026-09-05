@@ -2,3 +2,24 @@
 __pycache__
 temp.py
 /test/previous_results.pkl
+
+# Experiment and tuning outputs (data is archived elsewhere, never in git)
+experiment_results/
+optimization_results/
+
+# Generated plots, animations and benchmark visualizations
+utils/animations/
+utils/benchmark/
+utils/benchmark-archive/
+utils/benchmark_maximized/
+utils/benchmark_plots/
+utils/benchmark_truly_maximized/
+
+# SLURM logs
+slurm_logs/
+slurm_tune_logs/
+*_[0-9]*.out
+*_[0-9]*.err
+
+# Tool caches
+.pytest_cache/
