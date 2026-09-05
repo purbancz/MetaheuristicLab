@@ -7,6 +7,7 @@ from jmetal.core.problem import FloatProblem
 from jmetal.core.solution import FloatSolution
 from jmetal.util.termination_criterion import TerminationCriterion
 
+from algorithm.diversity import normalized_swarm_diversity
 from algorithm.role_based.worst_aware_pso import WorstAwarePSO
 from algorithm.basic.single_objective_pso import SingleObjectivePSO, PerturbationPSO
 
@@ -68,9 +69,11 @@ class AdaptiveRoleMixin:
         self.window_size = window_size
 
     def calculate_swarm_diversity(self, swarm: List) -> float:
-        pos = np.array([p.variables for p in swarm])
-        cen = pos.mean(axis=0)
-        return np.linalg.norm(pos - cen, axis=1).mean()
+        return normalized_swarm_diversity(
+            [p.variables for p in swarm],
+            self.problem.lower_bound,
+            self.problem.upper_bound,
+        )
 
     def calculate_improvement_rate(self) -> float:
         val = self.best_global.objectives[0]
@@ -334,6 +337,10 @@ class RRAPSO(RebelRejectorPSO, AdaptiveRoleMixin):
             window_size=window_size
         )
 
+    def update_velocity(self, swarm: List[FloatSolution]) -> None:
+        self.adapt_parameters(swarm)
+        super().update_velocity(swarm)
+
     def get_name(self) -> str:
         return "RRAPSO"
 
@@ -559,6 +566,10 @@ class CDAPSO(ContrarianDefeatistPSO, AdaptiveRoleMixin):
             improvement_threshold=improvement_threshold,
             window_size=window_size
         )
+
+    def update_velocity(self, swarm: List[FloatSolution]) -> None:
+        self.adapt_parameters(swarm)
+        super().update_velocity(swarm)
 
     def get_name(self) -> str:
         return "CDAPSO"
@@ -786,6 +797,10 @@ class EEAPSO(EschewerEscapistPSO, AdaptiveRoleMixin):
             improvement_threshold=improvement_threshold,
             window_size=window_size
         )
+
+    def update_velocity(self, swarm: List[FloatSolution]) -> None:
+        self.adapt_parameters(swarm)
+        super().update_velocity(swarm)
 
     def get_name(self) -> str:
         return "EEAPSO"
@@ -1481,11 +1496,12 @@ class DrifterPSO(PerturbationPSO, RoleMixin):
                  perturbation_scale: float,
                  perturbation_method: str = "gaussian",
                  constraint_handling_mode: str = "clip"):
-        super().__init__(problem, swarm_size, c1, c2, w, termination_criterion, constraint_handling_mode)
+        super().__init__(problem, swarm_size, c1, c2, w, termination_criterion, constraint_handling_mode,
+                         perturbation_method=perturbation_method,
+                         perturbation_scale=perturbation_scale)
         self.c1 = c1
         self.c2 = c2
         self.w = w
-        self.perturbation_scale = perturbation_scale
         self.drifter_fraction = max(0.0, min(1.0, drifter_fraction))
 
     def create_initial_solutions(self) -> List[S]:
@@ -1562,6 +1578,10 @@ class DAPSO(DrifterPSO, RoleMixin, AdaptiveRoleMixin):
         for p in solutions:
             if 'is_drifter' not in p.attributes: p.attributes['is_drifter'] = False
         return solutions
+
+    def update_velocity(self, swarm: List[FloatSolution]) -> None:
+        self.adapt_parameters(swarm)
+        super().update_velocity(swarm)
 
     def get_name(self) -> str:
         return "DAPSO"
