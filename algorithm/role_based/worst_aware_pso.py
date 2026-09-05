@@ -74,9 +74,11 @@ class ReverseLearningPSO(WorstAwarePSO):
             particle.attributes['velocity'] = new_velocity.tolist()
 
     def update_particle_best(self, swarm: List[S]) -> None:
+        super().update_particle_best(swarm)
         self.update_particle_worst(swarm)
 
     def update_global_best(self, swarm: List[FloatSolution]) -> None:
+        super().update_global_best(swarm)
         self.update_global_worst(swarm)
 
     def get_name(self) -> str:
