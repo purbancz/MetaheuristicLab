@@ -32,6 +32,9 @@ def factory_LSHADE(p):
 def factory_CMAES(p):
     return CMAES(
         problem=p,
+        # irace-tuned; Hansen defaults: lambda_ = 4 + floor(3*ln(D)) (~25 at
+        # D=1000), mu = lambda_ // 2. Note mu > lambda_//2 here (heavier,
+        # all-positive recombination weights).
         mu=41,
         lambda_=52,
         termination_criterion=StoppingByEvaluations(max_evaluations=G_MAX_EVALUATIONS)
@@ -42,6 +45,8 @@ def factory_PSO(p):
     return SingleObjectivePSO(
         problem=p,
         swarm_size=G_SOLUTIONS_SIZE,
+        # irace-tuned; canonical reference values (Clerc constriction-equivalent):
+        # c1=2.05, c2=2.05, w=0.7298
         c1=4.373186623347942,
         c2=2.7550764085992134,
         w=0.063200081558323,
