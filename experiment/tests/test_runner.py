@@ -233,10 +233,10 @@ def test_worker_output_depends_only_on_its_seed_not_inherited_rng_state(
 ):
     """Fork-duplication canary.
 
-    The archived CMA-ES pseudoreplication happened because workers ran
-    UNSEEDED and inherited identical RNG state from the parent process at
-    fork. The invariant that prevents it: run_single_instance's output is a
-    function of its seed argument ONLY, never of whatever RNG state the
+    Forked pool workers inherit the parent's RNG state; without per-run
+    seeding inside the worker, runs on different workers can be identical
+    duplicates. The invariant that prevents it: run_single_instance's output
+    is a function of its seed argument ONLY, never of whatever RNG state the
     worker process happens to start with.
     """
     swarm_size = 4

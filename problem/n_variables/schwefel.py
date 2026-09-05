@@ -215,9 +215,7 @@ class SchwefelN36(FloatProblem):
     Global optimum: Approximately f(x) = 0 when x_i ≈ 420.9687 for all i.
 
     Naming note: despite the class name, this is NOT "Schwefel Problem 36"
-    of the Jamil & Yang (2013) numbering (f = -x1*x2*(72-2*x1-2*x2)); this
-    class computed that function before 2026-08-30. The label is kept for
-    continuity; results are not comparable across that change.
+    of the Jamil & Yang (2013) numbering (f = -x1*x2*(72-2*x1-2*x2)).
     """
 
     def __init__(self, number_of_variables: int = 10):
