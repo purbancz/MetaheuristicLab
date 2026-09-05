@@ -2,7 +2,11 @@ import hashlib
 import os
 import json
 import random
+import socket
+import threading
+import time
 import traceback
+from contextlib import contextmanager
 
 import numpy as np
 import inspect
@@ -18,9 +22,55 @@ from algorithm.role_based.role_hybrids import (
     HybridPartialDisjointRestarterPSO,
     HybridFullDisjointRestarterPSO,
     HybridAdditiveRestarterPSO,
+    HybridFullDisjointPSO_WithRandom,
+    HybridPartialDisjointPSO_WithRandom,
+    HybridAdditivePSO_WithRandom,
+    HybridFullDisjointPSO,
+    HybridPartialDisjointPSO,
+    HybridAdditivePSO,
+    HybridDisjointPSO_WithWanderer,
+    HybridAdditivePSO_WithWanderer,
 )
+from algorithm.role_based.worst_aware_pso import (
+    ReverseLearningPSO,
+    ReverseLearningGlobalAttractorPSO,
+    ReverseLearningPersonalAttractorPSO,
+    CombinedLearningPSO,
+)
+from algorithm.role_based.adaptive_pso import CoAdaptativePSO as CAPSO, IndividualAdaptivePSO as IAPSO
+from algorithm.pso_ga_hybrids.pgshea import PGSHEA
+from algorithm.pso_ga_hybrids.pgphea import PGPHEA
+from algorithm.basic.single_objective_pso import SingleObjectivePSO as PSO, PerturbationPSO
+from algorithm.basic.differential_evolution import DifferentialEvolution
+from algorithm.basic.custom_ga import GeneticAlgorithm
+from algorithm.role_based.roles import (
+    RebelPSO,
+    RejectorPSO,
+    ContrarianPSO,
+    DefeatistPSO,
+    EschewerPSO,
+    EscapistPSO,
+    AnarchicPSO,
+    AmnesiacPSO,
+    ErraticPSO,
+    WandererPSO,
+    RebelRejectorPSO,
+    ContrarianDefeatistPSO,
+    EschewerEscapistPSO,
+    RRAPSO,
+    CDAPSO,
+    EEAPSO,
+    AnarchicAmnesiacPSO,
+    AAAPSO,
+    NAPSO,
+    CLAPSO,
+    DrifterPSO,
+    DAPSO,
+)
+from algorithm.sota.cma_es import CMAES
+from algorithm.sota.lshade import LSHADE
 from algorithm.pso_ga_hybrids.pgchea import PGCHEA
-from jmetal.operator.crossover import SBXCrossover
+from jmetal.operator.crossover import SBXCrossover, DifferentialEvolutionCrossover
 from jmetal.operator.mutation import PolynomialMutation
 
 from algorithm.sparse_roles.sparse_hybrid import (
@@ -64,11 +114,15 @@ robjects.r('Sys.setlocale("LC_ALL", "en_US.UTF-8")')
 # budget = 60
 
 
+from experiment.globals import G_SOLUTIONS_SIZE
+
 number_of_variables = 100
-solutions_size = 100
-max_evaluations = 25000
-num_runs = 5  # Number of independent runs per problem
-budget = 1000  # Total number of configurations to try per parameter
+solutions_size = G_SOLUTIONS_SIZE
+# Truncated tuning horizon: 250k evals = 2,500 generations per run,
+# deliberately below the 10^4 * D deployment budget (see docs/DISCLOSURES.md).
+max_evaluations = 250_000
+num_runs = 3  # Number of independent runs per problem
+budget = 1000  # irace experiments (config-instance evaluations) per parameter
 
 problems = [
     Sphere(number_of_variables),
@@ -86,17 +140,16 @@ def base_pso_params():
 
 
 def single_sparse_mask_params():
+    # coordinate_mode is fixed to "fraction" (dimension-invariant transfer);
+    # injected by repair_and_normalize_config, not tuned.
     return [
-        Categorical("coordinate_mode", ["fraction"]),
         Real("coordinate_fraction", 0.0, 1.0),
     ]
 
 
 def component_sparse_mask_params():
     return [
-        Categorical("social_coordinate_mode", ["fraction"]),
         Real("social_coordinate_fraction", 0.0, 1.0),
-        Categorical("cognitive_coordinate_mode", ["fraction"]),
         Real("cognitive_coordinate_fraction", 0.0, 1.0),
     ]
 
@@ -105,25 +158,25 @@ def sparse_single_role_params(coefficient_name: str, fraction_name: str):
     return [
         *base_pso_params(),
         Real(coefficient_name, 0.01, 6.0),
-        Real(fraction_name, 0.01, 0.98),
+        Real(fraction_name, 0.01, 0.99),
         *single_sparse_mask_params(),
     ]
 
 
 parameter_spaces = {
 
-        # 'BoundaryReinitializedPSO': {
-        #     'params': [
-        #         *base_pso_params(),
-        #         Real("pbest_gbest_epsilon", 1e-4, 0.5),
-        #         Categorical("distance_metric", ["normalized_rms", "normalized_linf", "fraction_close"]),
-        #         Categorical("boundary_strategy", ["random_face", "near_boundary", "mixed_boundary"]),
-        #         Real("boundary_margin", 0.01, 0.3),
-        #         Categorical("velocity_reset_strategy", ["zero", "random", "away_from_gbest"]),
-        #         Real("velocity_scale", 0.01, 0.5),
-        #         Bool("reset_personal_best_on_reinit"),
-        #     ],
-        # },
+        'BoundaryReinitializedPSO': {
+            'params': [
+                *base_pso_params(),
+                Real("pbest_gbest_epsilon", 1e-4, 0.5, log=True),
+                Categorical("distance_metric", ["normalized_rms", "normalized_linf", "fraction_close"]),
+                Categorical("boundary_strategy", ["random_face", "near_boundary", "mixed_boundary"]),
+                Real("boundary_margin", 0.01, 0.3),
+                Categorical("velocity_reset_strategy", ["zero", "random", "away_from_gbest"]),
+                Real("velocity_scale", 0.01, 0.5),
+                Bool("reset_personal_best_on_reinit"),
+            ],
+        },
 
         'HybridPartialDisjointRestarterPSO': {
             'params': [
@@ -146,7 +199,7 @@ parameter_spaces = {
                 Real("anarchic_fraction", 0.01, 0.99),
                 Bool("assign_roles_every_iteration"),
                 Real("restarter_fraction", 0.01, 0.99),
-                Real("convergence_threshold", 1e-4, 1.0),
+                Real("convergence_threshold", 1e-3, 0.5, log=True),
             ],
         },
 
@@ -171,7 +224,7 @@ parameter_spaces = {
                 Real("anarchic_fraction", 0.01, 0.99),
                 Bool("assign_roles_every_iteration"),
                 Real("restarter_fraction", 0.01, 0.99),
-                Real("convergence_threshold", 1e-4, 1.0),
+                Real("convergence_threshold", 1e-3, 0.5, log=True),
             ],
         },
 
@@ -198,32 +251,33 @@ parameter_spaces = {
                 Real("anarchic_prob", 0.01, 0.99),
                 Bool("assign_flags_every_iteration"),
                 Real("restarter_fraction", 0.01, 0.99),
-                Real("convergence_threshold", 1e-4, 1.0),
+                Real("convergence_threshold", 1e-3, 0.5, log=True),
             ],
         },
 
-        # 'PGCHEA': {
-        #     'params': [
-        #         *base_pso_params(),
-        #         Categorical("starting_algorithm", ["PSO", "GA"]),
-        #         Bool("inherit_best"),
-        #         Real("sbx_distribution_index", 2.0, 30.0),
-        #         Real("mutation_distribution_index", 5.0, 100.0),
-        #     ],
-        # },
+        'PGCHEA': {
+            'params': [
+                *base_pso_params(),
+                Categorical("starting_algorithm", ["PSO", "GA"]),
+                Bool("inherit_best"),
+                Real("crossover_probability", 0.6, 1.0),
+                Real("sbx_distribution_index", 2.0, 30.0, log=True),
+                Real("mutation_distribution_index", 5.0, 100.0, log=True),
+            ],
+        },
 
         'FRAPSO': {
             'params': [
                 *base_pso_params(),
                 Integer("fractal_depth", 1, 6),
-                Real("convergence_threshold", 1e-4, 1.0),
+                Real("convergence_threshold", 1e-3, 0.5, log=True),
             ],
         },
 
         'PartialResetPSO': {
             'params': [
                 *base_pso_params(),
-                Real("convergence_threshold", 1e-4, 1.0),
+                Real("convergence_threshold", 1e-3, 0.5, log=True),
                 Real("restarter_fraction", 0.01, 0.99),
             ],
         },
@@ -231,427 +285,732 @@ parameter_spaces = {
         'CollectiveResetPSO': {
             'params': [
                 *base_pso_params(),
-                Real("convergence_threshold", 1e-4, 1.0),
+                Real("convergence_threshold", 1e-3, 0.5, log=True),
             ],
         },
 
-        # 'SparseWandererPSO': {
-        #     'params': [
-        #         *base_pso_params(),
-        #         Real("noise_strength", 0.01, 3.0),
-        #         Real("wanderer_fraction", 0.01, 0.98),
-        #         *single_sparse_mask_params(),
-        #     ],
-        # },
-        #
-        # 'SparseDefeatistPSO': {
-        #     'params': sparse_single_role_params("defeatist_c", "defeatist_fraction"),
-        # },
-        #
-        # 'SparseRebelPSO': {
-        #     'params': sparse_single_role_params("rebel_c", "rebel_fraction"),
-        # },
-        #
-        # 'SparseRejectorPSO': {
-        #     'params': sparse_single_role_params("rejector_c", "rejector_fraction"),
-        # },
-        #
-        # 'SparseContrarianPSO': {
-        #     'params': sparse_single_role_params("contrarian_c", "contrarian_fraction"),
-        # },
-        #
-        # 'SparseEschewerPSO': {
-        #     'params': sparse_single_role_params("eschewer_c", "eschewer_fraction"),
-        # },
-        #
-        # 'SparseEscapistPSO': {
-        #     'params': sparse_single_role_params("escapist_c", "escapist_fraction"),
-        # },
-        #
-        # 'SparseAnarchicPSO': {
-        #     'params': [
-        #         *base_pso_params(),
-        #         Real("random_strength", 0.01, 6.0),
-        #         Real("anarchic_fraction", 0.01, 0.98),
-        #         *single_sparse_mask_params(),
-        #     ],
-        # },
-        #
-        # 'SparseAmnesiacPSO': {
-        #     'params': [
-        #         *base_pso_params(),
-        #         Real("random_strength", 0.01, 6.0),
-        #         Real("amnesiac_fraction", 0.01, 0.98),
-        #         *single_sparse_mask_params(),
-        #     ],
-        # },
-        #
-        # 'SparseErraticPSO': {
-        #     'params': [
-        #         *base_pso_params(),
-        #         Real("random_strength", 0.01, 6.0),
-        #         Real("erratic_fraction", 0.01, 0.98),
-        #         *single_sparse_mask_params(),
-        #     ],
-        # },
-        #
-        # 'SparseDrifterPSO': {
-        #     'params': [
-        #         *base_pso_params(),
-        #         Real("drifter_fraction", 0.01, 0.98),
-        #         Real("perturbation_scale", 0.0001, 0.10),
-        #         Categorical("perturbation_method", ["gaussian", "cauchy"]),
-        #         *single_sparse_mask_params(),
-        #     ],
-        # },
-        #
-        # 'SparseContrarianDefeatistPSO': {
-        #     'params': [
-        #         *base_pso_params(),
-        #         Real("defeatist_c", 0.01, 6.0),
-        #         Real("contrarian_c", 0.01, 6.0),
-        #         Real("contrarian_fraction", 0.01, 0.98),
-        #         Real("defeatist_fraction", 0.01, 0.98),
-        #         *component_sparse_mask_params(),
-        #     ],
-        # },
-        #
-        # 'SparseRebelRejectorPSO': {
-        #     'params': [
-        #         *base_pso_params(),
-        #         Real("rejector_c", 0.01, 6.0),
-        #         Real("rebel_c", 0.01, 6.0),
-        #         Real("rebel_fraction", 0.01, 0.98),
-        #         Real("rejector_fraction", 0.01, 0.98),
-        #         *component_sparse_mask_params(),
-        #     ],
-        # },
-        #
-        # 'SparseEschewerEscapistPSO': {
-        #     'params': [
-        #         *base_pso_params(),
-        #         Real("escapist_c", 0.01, 6.0),
-        #         Real("eschewer_c", 0.01, 6.0),
-        #         Real("eschewer_fraction", 0.01, 0.98),
-        #         Real("escapist_fraction", 0.01, 0.98),
-        #         *component_sparse_mask_params(),
-        #     ],
-        # },
-        #
-        # 'SparseAnarchicAmnesiacPSO': {
-        #     'params': [
-        #         *base_pso_params(),
-        #         Real("random_strength_social", 0.01, 6.0),
-        #         Real("random_strength_cognitive", 0.01, 6.0),
-        #         Real("anarchic_fraction", 0.01, 0.98),
-        #         Real("amnesiac_fraction", 0.01, 0.98),
-        #         *component_sparse_mask_params(),
-        #     ],
-        # },
-        #
-        # 'SparseHybridPartialDisjointPSO': {
-        #     'params': [
-        #         *base_pso_params(),
-        #         Real("rejector_c", 0.01, 6.0),
-        #         Real("defeatist_c", 0.01, 6.0),
-        #         Real("escapist_c", 0.01, 6.0),
-        #         Real("rebel_c", 0.01, 6.0),
-        #         Real("contrarian_c", 0.01, 6.0),
-        #         Real("eschewer_c", 0.01, 6.0),
-        #         Real("rejector_fraction", 0.01, 0.78),
-        #         Real("defeatist_fraction", 0.01, 0.78),
-        #         Real("escapist_fraction", 0.01, 0.78),
-        #         Real("rebel_fraction", 0.01, 0.78),
-        #         Real("contrarian_fraction", 0.01, 0.78),
-        #         Real("eschewer_fraction", 0.01, 0.78),
-        #         Bool("assign_roles_every_iteration"),
-        #         *component_sparse_mask_params(),
-        #     ],
-        # },
-        #
-        # 'SparseHybridFullDisjointPSO': {
-        #     'params': [
-        #         *base_pso_params(),
-        #         Real("rejector_c", 0.01, 6.0),
-        #         Real("defeatist_c", 0.01, 6.0),
-        #         Real("escapist_c", 0.01, 6.0),
-        #         Real("rebel_c", 0.01, 6.0),
-        #         Real("contrarian_c", 0.01, 6.0),
-        #         Real("eschewer_c", 0.01, 6.0),
-        #         Real("rejector_fraction", 0.01, 0.75),
-        #         Real("defeatist_fraction", 0.01, 0.75),
-        #         Real("escapist_fraction", 0.01, 0.75),
-        #         Real("rebel_fraction", 0.01, 0.75),
-        #         Real("contrarian_fraction", 0.01, 0.75),
-        #         Real("eschewer_fraction", 0.01, 0.75),
-        #         Bool("assign_roles_every_iteration"),
-        #         *component_sparse_mask_params(),
-        #     ],
-        # },
-        #
-        # 'SparseHybridAdditivePSO': {
-        #     'params': [
-        #         *base_pso_params(),
-        #         Real("rejector_c", 0.01, 6.0),
-        #         Real("defeatist_c", 0.01, 6.0),
-        #         Real("escapist_c", 0.01, 6.0),
-        #         Real("rebel_c", 0.01, 6.0),
-        #         Real("contrarian_c", 0.01, 6.0),
-        #         Real("eschewer_c", 0.01, 6.0),
-        #         Real("std_cognitive_prob", 0.01, 1.0),
-        #         Real("rejector_prob", 0.01, 1.0),
-        #         Real("defeatist_prob", 0.01, 1.0),
-        #         Real("escapist_prob", 0.01, 1.0),
-        #         Real("std_social_prob", 0.01, 1.0),
-        #         Real("rebel_prob", 0.01, 1.0),
-        #         Real("contrarian_prob", 0.01, 1.0),
-        #         Real("eschewer_prob", 0.01, 1.0),
-        #         Bool("assign_flags_every_iteration"),
-        #         *component_sparse_mask_params(),
-        #     ],
-        # },
+        'SparseWandererPSO': {
+            'params': [
+                *base_pso_params(),
+                Real("noise_strength", 0.01, 3.0),
+                Real("wanderer_fraction", 0.01, 0.99),
+                *single_sparse_mask_params(),
+            ],
+        },
 
-    # 'AnarchicAmnesiacPSO': {
-    #     'params': [
-    #         Real("c1", 0.01, 6.0),
-    #         Real("c2", 0.01, 6.0),
-    #         Real("w", 0.01, 1.0),
-    #         Real("anarchic_fraction", 0.01, 0.98),
-    #         Real("amnesiac_fraction", 0.01, 0.98),
-    #         Real("random_strength_social", 0.01, 6.0),
-    #         Real("random_strength_cognitive", 0.01, 6.0),
-    #     ],
-    # }
+        'SparseDefeatistPSO': {
+            'params': sparse_single_role_params("defeatist_c", "defeatist_fraction"),
+        },
+
+        'SparseRebelPSO': {
+            'params': sparse_single_role_params("rebel_c", "rebel_fraction"),
+        },
+
+        'SparseRejectorPSO': {
+            'params': sparse_single_role_params("rejector_c", "rejector_fraction"),
+        },
+
+        'SparseContrarianPSO': {
+            'params': sparse_single_role_params("contrarian_c", "contrarian_fraction"),
+        },
+
+        'SparseEschewerPSO': {
+            'params': sparse_single_role_params("eschewer_c", "eschewer_fraction"),
+        },
+
+        'SparseEscapistPSO': {
+            'params': sparse_single_role_params("escapist_c", "escapist_fraction"),
+        },
+
+        'SparseAnarchicPSO': {
+            'params': [
+                *base_pso_params(),
+                Real("random_strength", 0.01, 6.0),
+                Real("anarchic_fraction", 0.01, 0.99),
+                *single_sparse_mask_params(),
+            ],
+        },
+
+        'SparseAmnesiacPSO': {
+            'params': [
+                *base_pso_params(),
+                Real("random_strength", 0.01, 6.0),
+                Real("amnesiac_fraction", 0.01, 0.99),
+                *single_sparse_mask_params(),
+            ],
+        },
+
+        'SparseErraticPSO': {
+            'params': [
+                *base_pso_params(),
+                Real("random_strength", 0.01, 6.0),
+                Real("erratic_fraction", 0.01, 0.99),
+                *single_sparse_mask_params(),
+            ],
+        },
+
+        'SparseDrifterPSO': {
+            'params': [
+                *base_pso_params(),
+                Real("drifter_fraction", 0.01, 0.99),
+                Real("perturbation_scale", 0.0001, 0.1, log=True),
+                Categorical("perturbation_method", ["gaussian", "cauchy"]),
+                *single_sparse_mask_params(),
+            ],
+        },
+
+        'SparseContrarianDefeatistPSO': {
+            'params': [
+                *base_pso_params(),
+                Real("defeatist_c", 0.01, 6.0),
+                Real("contrarian_c", 0.01, 6.0),
+                Real("contrarian_fraction", 0.01, 0.99),
+                Real("defeatist_fraction", 0.01, 0.99),
+                *component_sparse_mask_params(),
+            ],
+        },
+
+        'SparseRebelRejectorPSO': {
+            'params': [
+                *base_pso_params(),
+                Real("rejector_c", 0.01, 6.0),
+                Real("rebel_c", 0.01, 6.0),
+                Real("rebel_fraction", 0.01, 0.99),
+                Real("rejector_fraction", 0.01, 0.99),
+                *component_sparse_mask_params(),
+            ],
+        },
+
+        'SparseEschewerEscapistPSO': {
+            'params': [
+                *base_pso_params(),
+                Real("escapist_c", 0.01, 6.0),
+                Real("eschewer_c", 0.01, 6.0),
+                Real("eschewer_fraction", 0.01, 0.99),
+                Real("escapist_fraction", 0.01, 0.99),
+                *component_sparse_mask_params(),
+            ],
+        },
+
+        'SparseAnarchicAmnesiacPSO': {
+            'params': [
+                *base_pso_params(),
+                Real("random_strength_social", 0.01, 6.0),
+                Real("random_strength_cognitive", 0.01, 6.0),
+                Real("anarchic_fraction", 0.01, 0.99),
+                Real("amnesiac_fraction", 0.01, 0.99),
+                *component_sparse_mask_params(),
+            ],
+        },
+
+        'SparseHybridPartialDisjointPSO': {
+            'params': [
+                *base_pso_params(),
+                Real("rejector_c", 0.01, 6.0),
+                Real("defeatist_c", 0.01, 6.0),
+                Real("escapist_c", 0.01, 6.0),
+                Real("rebel_c", 0.01, 6.0),
+                Real("contrarian_c", 0.01, 6.0),
+                Real("eschewer_c", 0.01, 6.0),
+                Real("rejector_fraction", 0.01, 0.99),
+                Real("defeatist_fraction", 0.01, 0.99),
+                Real("escapist_fraction", 0.01, 0.99),
+                Real("rebel_fraction", 0.01, 0.99),
+                Real("contrarian_fraction", 0.01, 0.99),
+                Real("eschewer_fraction", 0.01, 0.99),
+                Bool("assign_roles_every_iteration"),
+                *component_sparse_mask_params(),
+            ],
+        },
+
+        'SparseHybridFullDisjointPSO': {
+            'params': [
+                *base_pso_params(),
+                Real("rejector_c", 0.01, 6.0),
+                Real("defeatist_c", 0.01, 6.0),
+                Real("escapist_c", 0.01, 6.0),
+                Real("rebel_c", 0.01, 6.0),
+                Real("contrarian_c", 0.01, 6.0),
+                Real("eschewer_c", 0.01, 6.0),
+                Real("rejector_fraction", 0.01, 0.99),
+                Real("defeatist_fraction", 0.01, 0.99),
+                Real("escapist_fraction", 0.01, 0.99),
+                Real("rebel_fraction", 0.01, 0.99),
+                Real("contrarian_fraction", 0.01, 0.99),
+                Real("eschewer_fraction", 0.01, 0.99),
+                Bool("assign_roles_every_iteration"),
+                *component_sparse_mask_params(),
+            ],
+        },
+
+        'SparseHybridAdditivePSO': {
+            'params': [
+                *base_pso_params(),
+                Real("rejector_c", 0.01, 6.0),
+                Real("defeatist_c", 0.01, 6.0),
+                Real("escapist_c", 0.01, 6.0),
+                Real("rebel_c", 0.01, 6.0),
+                Real("contrarian_c", 0.01, 6.0),
+                Real("eschewer_c", 0.01, 6.0),
+                Real("std_cognitive_prob", 0.01, 0.99),
+                Real("rejector_prob", 0.01, 0.99),
+                Real("defeatist_prob", 0.01, 0.99),
+                Real("escapist_prob", 0.01, 0.99),
+                Real("std_social_prob", 0.01, 0.99),
+                Real("rebel_prob", 0.01, 0.99),
+                Real("contrarian_prob", 0.01, 0.99),
+                Real("eschewer_prob", 0.01, 0.99),
+                Bool("assign_flags_every_iteration"),
+                *component_sparse_mask_params(),
+            ],
+        },
+
+    'AnarchicAmnesiacPSO': {
+        'params': [
+            Real("c1", 0.01, 6.0),
+            Real("c2", 0.01, 6.0),
+            Real("w", 0.01, 1.0),
+            Real("anarchic_fraction", 0.01, 0.99),
+            Real("amnesiac_fraction", 0.01, 0.99),
+            Real("random_strength_social", 0.01, 6.0),
+            Real("random_strength_cognitive", 0.01, 6.0),
+        ],
+    },
 
     'LSHADE': {
         'params': [
-            Integer("initial_population_size", 20, 500),
+            # N_init = pop_size_factor * D (canonical r_init = 18, Tanabe &
+            # Fukunaga 2014); dimension-relative, so it transfers to D=1000,
+            # unlike an absolute initial_population_size.
+            Integer("pop_size_factor", 2, 30),
             Integer("memory_size", 2, 50),
             Real("p_best_rate", 0.05, 0.25),
             Real("archive_size_rate", 1.0, 4.0),
         ]
     },
 
-    # 'CMAES': {
-    #     'params': [
-    #         Integer("mu", 2, 100),
-    #         Integer("lambda_", 10, 200)
-    #     ],
-    #     'forbidden': ["mu >= lambda_"]
-    # },
+    'CMAES': {
+        'params': [
+            Integer("mu", 2, 100),
+            Integer("lambda_", 10, 200)
+        ],
+        'forbidden': ["mu >= lambda_"]
+    },
 
-    # 'AAAPSO': [
-    #     Real("c1", 0.01, 6.0),
-    #     Real("c2", 0.01, 6.0),
-    #     Real("base_inertia", 0.01, 1.0),
-    #     Real("min_inertia", 0.01, 1.0),
-    #     Real("max_inertia", 0.01, 1.0),
-    #     Real("random_strength", 0.01, 1.0),
-    #     Real("anarchic_fraction", 0.01, 0.8),
-    #     Real("amnesiac_fraction", 0.01, 0.8),
-    #     Integer("window_size", 10, 50),
-    #     Real("max_anarchic_fraction", 0.01, 0.98),
-    #     Real("max_amnesiac_fraction", 0.01, 0.98),
-    #     Real("diversity_threshold", 0.001, 0.3),
-    #     Real("improvement_threshold", 0.0001, 0.1),
-    # ],
-    # 'NAPSO': [
-    #     Real("c1", 0.01, 6.0),
-    #     Real("c2", 0.01, 6.0),
-    #     Real("base_inertia", 0.01, 1.0),
-    #     Real("min_inertia", 0.01, 1.0),
-    #     Real("max_inertia", 0.01, 1.0),
-    #     Real("noise_strength", 0.01, 1.0),
-    #     Real("noisy_fraction", 0.01, 0.8),
-    #     Real("max_noisy_fraction", 0.01, 0.98),
-    #     Integer("window_size", 10, 50),
-    #     Real("diversity_threshold", 0.001, 0.3),
-    #     Real("improvement_threshold", 0.0001, 0.1),
-    # ],
-    # 'HybridFullDisjointPSO_WithRandom': [
-    #     Real("w", 0.01, 1.0),
-    #     Real("c1", 0.01, 6.0),
-    #     Real("c2", 0.01, 6.0),
-    #     # Real("rejector_c", 0.01, 6.0),
-    #     # Real("defeatist_c", 0.01, 6.0),
-    #     # Real("escapist_c", 0.01, 6.0),
-    #     Real("amnesiac_c", 0.01, 6.0),
-    #     # Real("rebel_c", 0.01, 6.0),
-    #     # Real("contrarian_c", 0.01, 6.0),
-    #     # Real("eschewer_c", 0.01, 6.0),
-    #     Real("anarchic_c", 0.01, 6.0),
-    #     # Real("rejector_fraction", 0.01, 0.73),
-    #     # Real("defeatist_fraction", 0.01, 0.73),
-    #     # Real("escapist_fraction", 0.01, 0.73),
-    #     Real("amnesiac_fraction", 0.01, 0.98),
-    #     # Real("rebel_fraction", 0.01, 0.73),
-    #     # Real("contrarian_fraction", 0.01, 0.73),
-    #     # Real("eschewer_fraction", 0.01, 0.73),
-    #     Real("anarchic_fraction", 0.01, 0.98),
-    #     Bool("assign_roles_every_iteration"),
-    # ],
-    # 'HybridPartialDisjointPSO_WithRandom': [
-    #     Real("w", 0.01, 1.0),
-    #     Real("c1", 0.01, 6.0),
-    #     Real("c2", 0.01, 6.0),
-    #     # Real("rejector_c", 0.01, 6.0),
-    #     # Real("defeatist_c", 0.01, 6.0),
-    #     # Real("escapist_c", 0.01, 6.0),
-    #     # Real("rebel_c", 0.01, 6.0),
-    #     # Real("contrarian_c", 0.01, 6.0),
-    #     # Real("eschewer_c", 0.01, 6.0),
-    #     Real("amnesiac_c", 0.01, 6.0),
-    #     Real("anarchic_c", 0.01, 6.0),
-    #     # Real("rejector_fraction", 0.01, 0.77),
-    #     # Real("defeatist_fraction", 0.01, 0.77),
-    #     # Real("escapist_fraction", 0.01, 0.77),
-    #     Real("amnesiac_fraction", 0.01, 0.98),
-    #     # Real("rebel_fraction", 0.01, 0.77),
-    #     # Real("contrarian_fraction", 0.01, 0.77),
-    #     # Real("eschewer_fraction", 0.01, 0.77),
-    #     Real("anarchic_fraction", 0.01, 0.98),
-    #     Bool("assign_roles_every_iteration"),
-    # ],
-    # 'HybridAdditivePSO_WithRandom': [
-    #     Real("w", 0.01, 1.0),
-    #     Real("c1", 0.01, 6.0),
-    #     Real("c2", 0.01, 6.0),
-    #     # Real("rejector_c", 0.01, 6.0),
-    #     # Real("defeatist_c", 0.01, 6.0),
-    #     # Real("escapist_c", 0.01, 6.0),
-    #     # Real("rebel_c", 0.01, 6.0),
-    #     # Real("contrarian_c", 0.01, 6.0),
-    #     # Real("eschewer_c", 0.01, 6.0),
-    #     Real("anarchic_c", 0.01, 6.0),
-    #     Real("amnesiac_c", 0.01, 6.0),
-    #     Real("std_cognitive_prob", 0.01, 1.0),
-    #     # Real("rejector_prob", 0.01, 1.0),
-    #     # Real("defeatist_prob", 0.01, 1.0),
-    #     # Real("escapist_prob", 0.01, 1.0),
-    #     Real("amnesiac_prob", 0.01, 1.0),
-    #     Real("std_social_prob", 0.01, 1.0),
-    #     # Real("rebel_prob", 0.01, 1.0),
-    #     # Real("contrarian_prob", 0.01, 1.0),
-    #     # Real("eschewer_prob", 0.01, 1.0),
-    #     Real("anarchic_prob", 0.01, 1.0),
-    #     Bool("assign_flags_every_iteration"),
-    # ],
-    #
-    # 'DrifterPSO': [
-    #     Real("c1", 0.01, 6.0),
-    #     Real("c2", 0.01, 6.0),
-    #     Real("w", 0.01, 1.0),
-    #     Real("drifter_fraction", 0.01, 0.98),
-    #     Real("perturbation_scale", 0.0001, 0.10),
-    # ],
-    #
-    # 'DAPSO': [
-    #     Real("c1", 0.01, 6.0),
-    #     Real("c2", 0.01, 6.0),
-    #     Real("base_inertia", 0.01, 1.0),
-    #     Real("min_inertia", 0.01, 1.0),
-    #     Real("max_inertia", 0.01, 1.0),
-    #     Real("perturbation_scale", 0.0001, 0.1),
-    #     Real("drifter_fraction", 0.01, 0.98),
-    #     Real("max_drifter_fraction", 0.01, 0.98),
-    #     Integer("window_size", 5, 50),
-    #     Real("diversity_threshold", 0.001, 0.30),
-    #     Real("improvement_threshold", 0.0001, 0.10),
-    # ],
-    #
-    # 'CLAPSO': [
-    #     Real("c1", 0.01, 6.0),
-    #     Real("c2", 0.01, 6.0),
-    #     Real("cl_c1", 0.01, 6.0),
-    #     Real("cl_c2", 0.01, 6.0),
-    #     Real("b1", 0.0, 1.0),
-    #     Real("b2", 0.0, 1.0),
-    #     Real("base_inertia", 0.01, 1.0),
-    #     Real("min_inertia", 0.01, 1.0),
-    #     Real("max_inertia", 0.01, 1.0),
-    #     Real("cl_fraction", 0.01, 0.98),
-    #     Real("max_cl_fraction", 0.01, 0.98),
-    #     Integer("window_size", 5, 50),
-    #     Real("diversity_threshold", 0.001, 0.3),
-    #     Real("improvement_threshold", 0.0001, 0.1),
-    # ],
-    #
-    # 'HybridFullDisjointRestarterPSO': [
-    #     Real("w", 0.01, 1.0),
-    #     Real("c1", 0.01, 6.0),
-    #     Real("rejector_c", 0.01, 6.0),
-    #     Real("defeatist_c", 0.01, 6.0),
-    #     Real("escapist_c", 0.01, 6.0),
-    #     Real("amnesiac_c", 0.01, 6.0),
-    #     Real("c2", 0.01, 6.0),
-    #     Real("rebel_c", 0.01, 6.0),
-    #     Real("contrarian_c", 0.01, 6.0),
-    #     Real("eschewer_c", 0.01, 6.0),
-    #     Real("anarchic_c", 0.01, 6.0),
-    #     Real("rejector_fraction", 0.01, 0.71),
-    #     Real("defeatist_fraction", 0.01, 0.71),
-    #     Real("escapist_fraction", 0.01, 0.71),
-    #     Real("amnesiac_fraction", 0.01, 0.71),
-    #     Real("rebel_fraction", 0.01, 0.71),
-    #     Real("contrarian_fraction", 0.01, 0.71),
-    #     Real("eschewer_fraction", 0.01, 0.71),
-    #     Real("anarchic_fraction", 0.01, 0.71),
-    #     Bool("assign_roles_every_iteration"),
-    #     Real("restarter_fraction", 0.01, 0.71),
-    #     Real("convergence_threshold", 0.0001, 0.1),
-    # ],
-    #
-    # 'HybridPartialDisjointRestarterPSO': [
-    #     Real("w", 0.01, 1.0),
-    #     Real("c1", 0.01, 6.0),
-    #     Real("c2", 0.01, 6.0),
-    #     Real("rejector_c", 0.01, 6.0),
-    #     Real("defeatist_c", 0.01, 6.0),
-    #     Real("escapist_c", 0.01, 6.0),
-    #     Real("amnesiac_c", 0.01, 6.0),
-    #     Real("rebel_c", 0.01, 6.0),
-    #     Real("contrarian_c", 0.01, 6.0),
-    #     Real("eschewer_c", 0.01, 6.0),
-    #     Real("anarchic_c", 0.01, 6.0),
-    #     Real("restarter_fraction", 0.01, 0.76),
-    #     Real("rejector_fraction", 0.01, 0.76),
-    #     Real("defeatist_fraction", 0.01, 0.76),
-    #     Real("escapist_fraction", 0.01, 0.76),
-    #     Real("amnesiac_fraction", 0.01, 0.76),
-    #     Real("rebel_fraction", 0.01, 0.76),
-    #     Real("contrarian_fraction", 0.01, 0.76),
-    #     Real("eschewer_fraction", 0.01, 0.76),
-    #     Real("anarchic_fraction", 0.01, 0.76),
-    #     Bool("assign_roles_every_iteration"),
-    #     Real("convergence_threshold", 0.0001, 0.1),
-    # ],
-    #
-    # 'HybridAdditiveRestarterPSO': [
-    #     Real("w", 0.01, 1.0),
-    #     Real("c1", 0.01, 6.0),
-    #     Real("rejector_c", 0.01, 6.0),
-    #     Real("defeatist_c", 0.01, 6.0),
-    #     Real("escapist_c", 0.01, 6.0),
-    #     Real("amnesiac_c", 0.01, 6.0),
-    #     Real("c2", 0.01, 6.0),
-    #     Real("rebel_c", 0.01, 6.0),
-    #     Real("contrarian_c", 0.01, 6.0),
-    #     Real("eschewer_c", 0.01, 6.0),
-    #     Real("anarchic_c", 0.01, 6.0),
-    #     Real("std_cognitive_prob", 0.01, 1.0),
-    #     Real("rejector_prob", 0.01, 1.0),
-    #     Real("defeatist_prob", 0.01, 1.0),
-    #     Real("escapist_prob", 0.01, 1.0),
-    #     Real("amnesiac_prob", 0.01, 1.0),
-    #     Real("std_social_prob", 0.01, 1.0),
-    #     Real("rebel_prob", 0.01, 1.0),
-    #     Real("contrarian_prob", 0.01, 1.0),
-    #     Real("eschewer_prob", 0.01, 1.0),
-    #     Real("anarchic_prob", 0.01, 1.0),
-    #     Bool("assign_flags_every_iteration"),
-    #     Real("restarter_fraction", 0.01, 0.8),
-    #     Real("convergence_threshold", 0.0001, 0.1),
-    # ],
+    'AAAPSO': {
+        'params': [
+            Real("c1", 0.01, 6.0),
+            Real("c2", 0.01, 6.0),
+            Real("base_inertia", 0.01, 1.0),
+            Real("min_inertia", 0.01, 1.0),
+            Real("max_inertia", 0.01, 1.0),
+            Real("random_strength", 0.01, 6.0),
+            Real("anarchic_fraction", 0.01, 0.8),
+            Real("amnesiac_fraction", 0.01, 0.8),
+            Integer("window_size", 5, 50),
+            Real("max_anarchic_fraction", 0.01, 0.99),
+            Real("max_amnesiac_fraction", 0.01, 0.99),
+            Real("diversity_threshold", 0.001, 0.3, log=True),
+            Real("improvement_threshold", 0.0001, 0.1, log=True),
+        ],
+    },
+
+    'NAPSO': {
+        'params': [
+            Real("c1", 0.01, 6.0),
+            Real("c2", 0.01, 6.0),
+            Real("base_inertia", 0.01, 1.0),
+            Real("min_inertia", 0.01, 1.0),
+            Real("max_inertia", 0.01, 1.0),
+            Real("noise_strength", 0.01, 3.0),
+            Real("noisy_fraction", 0.01, 0.8),
+            Real("max_noisy_fraction", 0.01, 0.99),
+            Integer("window_size", 5, 50),
+            Real("diversity_threshold", 0.001, 0.3, log=True),
+            Real("improvement_threshold", 0.0001, 0.1, log=True),
+        ],
+    },
+
+    'HybridFullDisjointPSO_WithRandom': {
+        'params': [
+            *base_pso_params(),
+            Real("rejector_c", 0.01, 6.0),
+            Real("defeatist_c", 0.01, 6.0),
+            Real("escapist_c", 0.01, 6.0),
+            Real("amnesiac_c", 0.01, 6.0),
+            Real("rebel_c", 0.01, 6.0),
+            Real("contrarian_c", 0.01, 6.0),
+            Real("eschewer_c", 0.01, 6.0),
+            Real("anarchic_c", 0.01, 6.0),
+            Real("rejector_fraction", 0.01, 0.99),
+            Real("defeatist_fraction", 0.01, 0.99),
+            Real("escapist_fraction", 0.01, 0.99),
+            Real("amnesiac_fraction", 0.01, 0.99),
+            Real("rebel_fraction", 0.01, 0.99),
+            Real("contrarian_fraction", 0.01, 0.99),
+            Real("eschewer_fraction", 0.01, 0.99),
+            Real("anarchic_fraction", 0.01, 0.99),
+            Bool("assign_roles_every_iteration"),
+        ],
+    },
+
+    'HybridPartialDisjointPSO_WithRandom': {
+        'params': [
+            *base_pso_params(),
+            Real("rejector_c", 0.01, 6.0),
+            Real("defeatist_c", 0.01, 6.0),
+            Real("escapist_c", 0.01, 6.0),
+            Real("amnesiac_c", 0.01, 6.0),
+            Real("rebel_c", 0.01, 6.0),
+            Real("contrarian_c", 0.01, 6.0),
+            Real("eschewer_c", 0.01, 6.0),
+            Real("anarchic_c", 0.01, 6.0),
+            Real("rejector_fraction", 0.01, 0.99),
+            Real("defeatist_fraction", 0.01, 0.99),
+            Real("escapist_fraction", 0.01, 0.99),
+            Real("amnesiac_fraction", 0.01, 0.99),
+            Real("rebel_fraction", 0.01, 0.99),
+            Real("contrarian_fraction", 0.01, 0.99),
+            Real("eschewer_fraction", 0.01, 0.99),
+            Real("anarchic_fraction", 0.01, 0.99),
+            Bool("assign_roles_every_iteration"),
+        ],
+    },
+
+    'HybridAdditivePSO_WithRandom': {
+        'params': [
+            *base_pso_params(),
+            Real("rejector_c", 0.01, 6.0),
+            Real("defeatist_c", 0.01, 6.0),
+            Real("escapist_c", 0.01, 6.0),
+            Real("amnesiac_c", 0.01, 6.0),
+            Real("rebel_c", 0.01, 6.0),
+            Real("contrarian_c", 0.01, 6.0),
+            Real("eschewer_c", 0.01, 6.0),
+            Real("anarchic_c", 0.01, 6.0),
+            Real("std_cognitive_prob", 0.01, 0.99),
+            Real("rejector_prob", 0.01, 0.99),
+            Real("defeatist_prob", 0.01, 0.99),
+            Real("escapist_prob", 0.01, 0.99),
+            Real("amnesiac_prob", 0.01, 0.99),
+            Real("std_social_prob", 0.01, 0.99),
+            Real("rebel_prob", 0.01, 0.99),
+            Real("contrarian_prob", 0.01, 0.99),
+            Real("eschewer_prob", 0.01, 0.99),
+            Real("anarchic_prob", 0.01, 0.99),
+            Bool("assign_flags_every_iteration"),
+        ],
+    },
+
+    'DrifterPSO': {
+        'params': [
+            *base_pso_params(),
+            Real("drifter_fraction", 0.01, 0.99),
+            Real("perturbation_scale", 0.0001, 0.1, log=True),
+            Categorical("perturbation_method", ["gaussian", "cauchy"]),
+        ],
+    },
+
+    'DAPSO': {
+        'params': [
+            Real("c1", 0.01, 6.0),
+            Real("c2", 0.01, 6.0),
+            Real("base_inertia", 0.01, 1.0),
+            Real("min_inertia", 0.01, 1.0),
+            Real("max_inertia", 0.01, 1.0),
+            Real("perturbation_scale", 0.0001, 0.1, log=True),
+            Categorical("perturbation_method", ["gaussian", "cauchy"]),
+            Real("drifter_fraction", 0.01, 0.8),
+            Real("max_drifter_fraction", 0.01, 0.99),
+            Integer("window_size", 5, 50),
+            Real("diversity_threshold", 0.001, 0.3, log=True),
+            Real("improvement_threshold", 0.0001, 0.1, log=True),
+        ],
+    },
+
+    'CLAPSO': {
+        'params': [
+            Real("c1", 0.01, 6.0),
+            Real("c2", 0.01, 6.0),
+            Real("cl_c1", 0.01, 6.0),
+            Real("cl_c2", 0.01, 6.0),
+            Real("b1", 0.01, 6.0),
+            Real("b2", 0.01, 6.0),
+            Real("base_inertia", 0.01, 1.0),
+            Real("min_inertia", 0.01, 1.0),
+            Real("max_inertia", 0.01, 1.0),
+            Real("cl_fraction", 0.01, 0.8),
+            Real("max_cl_fraction", 0.01, 0.99),
+            Integer("window_size", 5, 50),
+            Real("diversity_threshold", 0.001, 0.3, log=True),
+            Real("improvement_threshold", 0.0001, 0.1, log=True),
+        ],
+    },
+
+    # ----- baselines -----
+
+    'PSO': {
+        'params': [
+            *base_pso_params(),
+        ],
+    },
+
+    'PerturbationPSO': {
+        'params': [
+            *base_pso_params(),
+            Real("perturbation_scale", 0.0001, 0.1, log=True),
+            Categorical("perturbation_method", ["gaussian", "cauchy"]),
+        ],
+    },
+
+    'GeneticAlgorithm': {
+        'params': [
+            Real("crossover_probability", 0.6, 1.0),
+            Real("sbx_distribution_index", 2.0, 30.0, log=True),
+            Real("mutation_distribution_index", 5.0, 100.0, log=True),
+        ],
+    },
+
+    'DifferentialEvolution': {
+        'params': [
+            Real("CR", 0.0, 1.0),
+            Real("F", 0.1, 1.0),
+        ],
+    },
+
+    # ----- single-role (non-sparse) -----
+
+    'RebelPSO': {
+        'params': [
+            *base_pso_params(),
+            Real("ac2", 0.01, 6.0),
+            Real("rebel_fraction", 0.01, 0.99),
+        ],
+    },
+
+    'RejectorPSO': {
+        'params': [
+            *base_pso_params(),
+            Real("ac1", 0.01, 6.0),
+            Real("rejector_fraction", 0.01, 0.99),
+        ],
+    },
+
+    'ContrarianPSO': {
+        'params': [
+            *base_pso_params(),
+            Real("ac2", 0.01, 6.0),
+            Real("contrarian_fraction", 0.01, 0.99),
+        ],
+    },
+
+    'DefeatistPSO': {
+        'params': [
+            *base_pso_params(),
+            Real("ac1", 0.01, 6.0),
+            Real("defeatist_fraction", 0.01, 0.99),
+        ],
+    },
+
+    'EschewerPSO': {
+        'params': [
+            *base_pso_params(),
+            Real("ac2", 0.01, 6.0),
+            Real("eschewer_fraction", 0.01, 0.99),
+        ],
+    },
+
+    'EscapistPSO': {
+        'params': [
+            *base_pso_params(),
+            Real("ac1", 0.01, 6.0),
+            Real("escapist_fraction", 0.01, 0.99),
+        ],
+    },
+
+    'AnarchicPSO': {
+        'params': [
+            *base_pso_params(),
+            Real("random_strength", 0.01, 6.0),
+            Real("anarchic_fraction", 0.01, 0.99),
+        ],
+    },
+
+    'AmnesiacPSO': {
+        'params': [
+            *base_pso_params(),
+            Real("random_strength", 0.01, 6.0),
+            Real("amnesiac_fraction", 0.01, 0.99),
+        ],
+    },
+
+    'ErraticPSO': {
+        'params': [
+            *base_pso_params(),
+            Real("random_strength", 0.01, 6.0),
+            Real("erratic_fraction", 0.01, 0.99),
+        ],
+    },
+
+    'WandererPSO': {
+        'params': [
+            *base_pso_params(),
+            Real("noise_strength", 0.01, 3.0),
+            Real("wanderer_fraction", 0.01, 0.99),
+        ],
+    },
+
+    # ----- two-role (non-sparse) -----
+
+    'RebelRejectorPSO': {
+        'params': [
+            *base_pso_params(),
+            Real("ac1", 0.01, 6.0),
+            Real("ac2", 0.01, 6.0),
+            Real("rebel_fraction", 0.01, 0.99),
+            Real("rejector_fraction", 0.01, 0.99),
+        ],
+    },
+
+    'ContrarianDefeatistPSO': {
+        'params': [
+            *base_pso_params(),
+            Real("ac1", 0.01, 6.0),
+            Real("ac2", 0.01, 6.0),
+            Real("contrarian_fraction", 0.01, 0.99),
+            Real("defeatist_fraction", 0.01, 0.99),
+        ],
+    },
+
+    'EschewerEscapistPSO': {
+        'params': [
+            *base_pso_params(),
+            Real("ac1", 0.01, 6.0),
+            Real("ac2", 0.01, 6.0),
+            Real("eschewer_fraction", 0.01, 0.99),
+            Real("escapist_fraction", 0.01, 0.99),
+        ],
+    },
+
+    # ----- adaptive two-role -----
+
+    'RRAPSO': {
+        'params': [
+            Real("c1", 0.01, 6.0),
+            Real("c2", 0.01, 6.0),
+            Real("ac1", 0.01, 6.0),
+            Real("ac2", 0.01, 6.0),
+            Real("base_inertia", 0.01, 1.0),
+            Real("min_inertia", 0.01, 1.0),
+            Real("max_inertia", 0.01, 1.0),
+            Real("rebel_fraction", 0.01, 0.8),
+            Real("rejector_fraction", 0.01, 0.8),
+            Real("max_rebel_fraction", 0.01, 0.99),
+            Real("max_rejector_fraction", 0.01, 0.99),
+            Integer("window_size", 5, 50),
+            Real("diversity_threshold", 0.001, 0.3, log=True),
+            Real("improvement_threshold", 0.0001, 0.1, log=True),
+        ],
+    },
+
+    'CDAPSO': {
+        'params': [
+            Real("c1", 0.01, 6.0),
+            Real("c2", 0.01, 6.0),
+            Real("ac1", 0.01, 6.0),
+            Real("ac2", 0.01, 6.0),
+            Real("base_inertia", 0.01, 1.0),
+            Real("min_inertia", 0.01, 1.0),
+            Real("max_inertia", 0.01, 1.0),
+            Real("contrarian_fraction", 0.01, 0.8),
+            Real("defeatist_fraction", 0.01, 0.8),
+            Real("max_contrarian_fraction", 0.01, 0.99),
+            Real("max_defeatist_fraction", 0.01, 0.99),
+            Integer("window_size", 5, 50),
+            Real("diversity_threshold", 0.001, 0.3, log=True),
+            Real("improvement_threshold", 0.0001, 0.1, log=True),
+        ],
+    },
+
+    'EEAPSO': {
+        'params': [
+            Real("c1", 0.01, 6.0),
+            Real("c2", 0.01, 6.0),
+            Real("ac1", 0.01, 6.0),
+            Real("ac2", 0.01, 6.0),
+            Real("base_inertia", 0.01, 1.0),
+            Real("min_inertia", 0.01, 1.0),
+            Real("max_inertia", 0.01, 1.0),
+            Real("eschewer_fraction", 0.01, 0.8),
+            Real("escapist_fraction", 0.01, 0.8),
+            Real("max_eschewer_fraction", 0.01, 0.99),
+            Real("max_escapist_fraction", 0.01, 0.99),
+            Integer("window_size", 5, 50),
+            Real("diversity_threshold", 0.001, 0.3, log=True),
+            Real("improvement_threshold", 0.0001, 0.1, log=True),
+        ],
+    },
+
+    # ----- reverse learning -----
+
+    'ReverseLearningPSO': {
+        'params': [
+            Real("w", 0.01, 1.0),
+            Real("b1", 0.01, 6.0),
+            Real("b2", 0.01, 6.0),
+        ],
+    },
+
+    'ReverseLearningGlobalAttractorPSO': {
+        'params': [
+            Real("w", 0.01, 1.0),
+            Real("a", 0.01, 6.0),
+            Real("b1", 0.01, 6.0),
+            Real("b2", 0.01, 6.0),
+        ],
+    },
+
+    'ReverseLearningPersonalAttractorPSO': {
+        'params': [
+            Real("w", 0.01, 1.0),
+            Real("a", 0.01, 6.0),
+            Real("b1", 0.01, 6.0),
+            Real("b2", 0.01, 6.0),
+        ],
+    },
+
+    'CombinedLearningPSO': {
+        'params': [
+            *base_pso_params(),
+            Real("b1", 0.01, 6.0),
+            Real("b2", 0.01, 6.0),
+        ],
+    },
+
+    # ----- co-/individually-adaptive coefficients -----
+
+    'CAPSO': {
+        'params': [
+            *base_pso_params(),
+            Real("max_c1", 0.01, 6.0),
+            Real("max_c2", 0.01, 6.0),
+        ],
+    },
+
+    'IAPSO': {
+        'params': [
+            *base_pso_params(),
+            Real("max_c1", 0.01, 6.0),
+            Real("max_c2", 0.01, 6.0),
+        ],
+    },
+
+    # ----- base role hybrids (six deliberative roles, no random roles) -----
+
+    'HybridFullDisjointPSO': {
+        'params': [
+            *base_pso_params(),
+            Real("rejector_c", 0.01, 6.0),
+            Real("defeatist_c", 0.01, 6.0),
+            Real("escapist_c", 0.01, 6.0),
+            Real("rebel_c", 0.01, 6.0),
+            Real("contrarian_c", 0.01, 6.0),
+            Real("eschewer_c", 0.01, 6.0),
+            Real("rejector_fraction", 0.01, 0.99),
+            Real("defeatist_fraction", 0.01, 0.99),
+            Real("escapist_fraction", 0.01, 0.99),
+            Real("rebel_fraction", 0.01, 0.99),
+            Real("contrarian_fraction", 0.01, 0.99),
+            Real("eschewer_fraction", 0.01, 0.99),
+            Bool("assign_roles_every_iteration"),
+        ],
+    },
+
+    'HybridPartialDisjointPSO': {
+        'params': [
+            *base_pso_params(),
+            Real("rejector_c", 0.01, 6.0),
+            Real("defeatist_c", 0.01, 6.0),
+            Real("escapist_c", 0.01, 6.0),
+            Real("rebel_c", 0.01, 6.0),
+            Real("contrarian_c", 0.01, 6.0),
+            Real("eschewer_c", 0.01, 6.0),
+            Real("rejector_fraction", 0.01, 0.99),
+            Real("defeatist_fraction", 0.01, 0.99),
+            Real("escapist_fraction", 0.01, 0.99),
+            Real("rebel_fraction", 0.01, 0.99),
+            Real("contrarian_fraction", 0.01, 0.99),
+            Real("eschewer_fraction", 0.01, 0.99),
+            Bool("assign_roles_every_iteration"),
+        ],
+    },
+
+    'HybridAdditivePSO': {
+        'params': [
+            *base_pso_params(),
+            Real("rejector_c", 0.01, 6.0),
+            Real("defeatist_c", 0.01, 6.0),
+            Real("escapist_c", 0.01, 6.0),
+            Real("rebel_c", 0.01, 6.0),
+            Real("contrarian_c", 0.01, 6.0),
+            Real("eschewer_c", 0.01, 6.0),
+            Real("std_cognitive_prob", 0.01, 0.99),
+            Real("rejector_prob", 0.01, 0.99),
+            Real("defeatist_prob", 0.01, 0.99),
+            Real("escapist_prob", 0.01, 0.99),
+            Real("std_social_prob", 0.01, 0.99),
+            Real("rebel_prob", 0.01, 0.99),
+            Real("contrarian_prob", 0.01, 0.99),
+            Real("eschewer_prob", 0.01, 0.99),
+            Bool("assign_flags_every_iteration"),
+        ],
+    },
+
+    # ----- wanderer hybrids -----
+
+    'HybridDisjointPSO_WithWanderer': {
+        'params': [
+            *base_pso_params(),
+            Real("wanderer_c", 0.01, 6.0),
+            Real("wanderer_fraction", 0.01, 0.99),
+            Bool("assign_roles_every_iteration"),
+        ],
+    },
+
+    'HybridAdditivePSO_WithWanderer': {
+        'params': [
+            *base_pso_params(),
+            Real("wanderer_c", 0.01, 6.0),
+            Real("std_cognitive_prob", 0.01, 0.99),
+            Real("std_social_prob", 0.01, 0.99),
+            Real("wanderer_prob", 0.01, 0.99),
+            Bool("assign_flags_every_iteration"),
+        ],
+    },
+
+    # ----- PSO-GA hybrids (SBX/mutation built in the target runner) -----
+
+    'PGSHEA': {
+        'params': [
+            *base_pso_params(),
+            Integer("swap_interval", 1, 100, log=True),
+            Categorical("starting_algorithm", ["PSO", "GA"]),
+            Real("crossover_probability", 0.6, 1.0),
+            Real("sbx_distribution_index", 2.0, 30.0, log=True),
+            Real("mutation_distribution_index", 5.0, 100.0, log=True),
+        ],
+    },
+
+    'PGPHEA': {
+        'params': [
+            *base_pso_params(),
+            Integer("exchange_interval", 1, 100, log=True),
+            Integer("exchange_number", 1, 50),
+            Real("crossover_probability", 0.6, 1.0),
+            Real("sbx_distribution_index", 2.0, 30.0, log=True),
+            Real("mutation_distribution_index", 5.0, 100.0, log=True),
+        ],
+    },
 }
 
 current_algorithm = None
@@ -727,6 +1086,59 @@ def repair_max_param_constraints_random(config: dict) -> dict:
 # Main Target Runner Function
 # ==============================================================================
 
+COGNITIVE_FRACTION_KEYS = ["rejector_fraction", "defeatist_fraction", "escapist_fraction", "amnesiac_fraction"]
+SOCIAL_FRACTION_KEYS = ["rebel_fraction", "contrarian_fraction", "eschewer_fraction", "anarchic_fraction"]
+ALL_SPECIAL_FRACTION_KEYS = COGNITIVE_FRACTION_KEYS + SOCIAL_FRACTION_KEYS + ["wanderer_fraction"]
+
+PARTIAL_DISJOINT_ALGORITHMS = {
+    'HybridPartialDisjointPSO',
+    'HybridPartialDisjointPSO_WithRandom',
+    'HybridPartialDisjointRestarterPSO',
+    'SparseHybridPartialDisjointPSO',
+}
+FULL_DISJOINT_ALGORITHMS = {
+    'HybridFullDisjointPSO',
+    'HybridFullDisjointPSO_WithRandom',
+    'HybridFullDisjointRestarterPSO',
+    'HybridDisjointPSO_WithWanderer',
+    'SparseHybridFullDisjointPSO',
+}
+
+
+def repair_and_normalize_config(algo_name: str, config: dict) -> dict:
+    """Repair max/min constraints and apply the algorithm family's fraction
+    normalization. This is the exact transformation the target runner applies
+    before constructing an algorithm; applying it to the saved winners makes
+    them ready to transcribe into experiment/factories.py (raw irace output
+    can violate the constructors' fraction constraints)."""
+    repaired = repair_max_param_constraints_random(config)
+    final_params = repaired.copy()
+
+    # Sparse coordinate masks: the mode is fixed to "fraction" (a fraction of
+    # coordinates transfers unchanged across dimensions, unlike sqrt/log/count).
+    # Injected here so both the evaluated config and the saved winners carry it
+    # (the constructors default to "sqrt").
+    for mode_key, fraction_key in (
+        ("coordinate_mode", "coordinate_fraction"),
+        ("social_coordinate_mode", "social_coordinate_fraction"),
+        ("cognitive_coordinate_mode", "cognitive_coordinate_fraction"),
+    ):
+        if fraction_key in final_params:
+            final_params.setdefault(mode_key, "fraction")
+
+    if algo_name in PARTIAL_DISJOINT_ALGORITHMS:
+        for keys in (COGNITIVE_FRACTION_KEYS, SOCIAL_FRACTION_KEYS):
+            group = {k: repaired.get(k, 0.0) for k in keys if k in repaired}
+            if group:
+                final_params.update(normalize_fraction_sum(group, 1.0))
+    elif algo_name in FULL_DISJOINT_ALGORITHMS:
+        group = {k: repaired.get(k, 0.0) for k in ALL_SPECIAL_FRACTION_KEYS if k in repaired}
+        if group:
+            final_params.update(normalize_fraction_sum(group, 1.0))
+
+    return final_params
+
+
 def derive_run_seed(base_seed: int, problem_name: str, run_index: int) -> int:
     identity = f"{base_seed}:{problem_name}:{run_index}"
     digest = hashlib.sha256(identity.encode("utf-8")).digest()
@@ -742,82 +1154,40 @@ def target_runner(experiment: Experiment, scenario: Scenario) -> float:
 
     if current_algorithm is None: return float('inf')
     config = experiment.configuration
-    # print(f"\n--- Evaluating Algorithm: {current_algorithm} ---") # Verbose
-    # print(f"Received Config: {config}") # Verbose
 
-    # --- Step 1: Repair Dependent Max/Min Parameter Constraints ---
-    repaired_config = repair_max_param_constraints_random(config)
-    # if repaired_config != config: print(f"Config after repair: {repaired_config}") # Verbose
+    # Steps 1+2: repair max/min constraints and apply the algorithm family's
+    # fraction normalization (shared with the save path, so stored winners
+    # are exactly what was evaluated).
+    final_params = repair_and_normalize_config(current_algorithm, config)
 
-    # --- Step 2: Handle Fraction Normalization (Algorithm Specific) ---
-    final_params = repaired_config.copy() # Start with repaired params
-
-    # Define parameter groups
-    cognitive_fraction_keys = ["rejector_fraction", "defeatist_fraction", "escapist_fraction", "amnesiac_fraction"]
-    social_fraction_keys = ["rebel_fraction", "contrarian_fraction", "eschewer_fraction", "anarchic_fraction"]
-    all_special_fraction_keys = cognitive_fraction_keys + social_fraction_keys + ["wanderer_fraction"] # Assuming wanderer might exist
-
-    # --- PGCHEA special handling ---
-    if current_algorithm == 'PGCHEA':
+    # --- Special handling: algorithms needing operator objects built from
+    # scalar tuned parameters (the scalars are what gets saved/transcribed) ---
+    if current_algorithm in ('PGCHEA', 'PGSHEA', 'PGPHEA'):
         final_params['solutions_size'] = solutions_size
         final_params['crossover'] = SBXCrossover(
-            probability=1.0,
+            probability=final_params.pop('crossover_probability', 1.0),
             distribution_index=final_params.pop('sbx_distribution_index', 5.0),
         )
         final_params['mutation'] = PolynomialMutation(
             probability=1.0 / number_of_variables,
             distribution_index=final_params.pop('mutation_distribution_index', 20.0),
         )
-
-    # --- Normalization for Partial Disjoint Variants ---
-    if current_algorithm in [
-        'HybridPartialDisjointPSO',
-        'HybridPartialDisjointPSO_WithRandom',
-        'HybridPartialDisjointRestarterPSO',
-        'SparseHybridPartialDisjointPSO',
-    ]:
-        # Normalize cognitive group
-        cog_fractions = {k: repaired_config.get(k, 0.0) for k in cognitive_fraction_keys if k in repaired_config}
-        if cog_fractions:
-             norm_cog = normalize_fraction_sum(cog_fractions, 1.0)
-             final_params.update(norm_cog) # Update final_params dict
-
-        # Normalize social group
-        soc_fractions = {k: repaired_config.get(k, 0.0) for k in social_fraction_keys if k in repaired_config}
-        if soc_fractions:
-             norm_soc = normalize_fraction_sum(soc_fractions, 1.0)
-             final_params.update(norm_soc)
-
-        # Optional logging of final fractions passed
-        # cog_final_str = ", ".join([f"{k.split('_')[0][:3]}={final_params.get(k, 0.0):.2f}" for k in cognitive_fraction_keys if k in final_params])
-        # soc_final_str = ", ".join([f"{k.split('_')[0][:3]}={final_params.get(k, 0.0):.2f}" for k in social_fraction_keys if k in final_params])
-        # print(f"  Using PartialDisjoint Fractions: Cog=[{cog_final_str}] Soc=[{soc_final_str}]")
-
-    # --- Normalization for Full Disjoint Variants ---
-    elif current_algorithm in [
-        'HybridFullDisjointPSO',
-        'HybridFullDisjointPSO_WithRandom',
-        'HybridFullDisjointRestarterPSO',
-        'HybridDisjointPSO_WithWanderer',
-        'SparseHybridFullDisjointPSO',
-    ]:
-        # Normalize sum of ALL special fractions to be <= 1.0
-        all_special_fractions = {k: repaired_config.get(k, 0.0) for k in all_special_fraction_keys if k in repaired_config}
-        if all_special_fractions:
-            norm_special = normalize_fraction_sum(all_special_fractions, 1.0)
-            final_params.update(norm_special) # Update final_params dict
-
-        # Optional logging
-        # frac_final_str = ", ".join([f"{k.split('_')[0][:3]}={final_params.get(k, 0.0):.2f}" for k in all_special_fraction_keys if k in final_params])
-        # print(f"  Using FullDisjoint Fractions: [{frac_final_str}]")
-
-    # if current_algorithm == 'CMAES':
-    #     if 'mu' in repaired_config and 'lambda_' in repaired_config:
-    #         if repaired_config['mu'] >= repaired_config['lambda_']:
-    #             repaired_config['mu'] = max(2, int(repaired_config['lambda_'] / 2))
-
-
-    # --- No fraction normalization needed for Additive or other types ---
+    elif current_algorithm == 'GeneticAlgorithm':
+        final_params['population_size'] = solutions_size
+        final_params['offspring_population_size'] = solutions_size
+        final_params['crossover'] = SBXCrossover(
+            probability=final_params.pop('crossover_probability', 0.9),
+            distribution_index=final_params.pop('sbx_distribution_index', 20.0),
+        )
+        final_params['mutation'] = PolynomialMutation(
+            probability=1.0 / number_of_variables,
+            distribution_index=final_params.pop('mutation_distribution_index', 20.0),
+        )
+    elif current_algorithm == 'DifferentialEvolution':
+        de_f = final_params.pop('F', 0.5)
+        final_params['crossover_operator'] = DifferentialEvolutionCrossover(
+            CR=final_params.pop('CR', 0.9), F=de_f, K=de_f,
+        )
 
     # --- Step 3: Get Algorithm Class ---
     try:
@@ -826,10 +1196,14 @@ def target_runner(experiment: Experiment, scenario: Scenario) -> float:
         print(f"ERROR: Algorithm class '{current_algorithm}' not found.")
         return float('inf')
 
-    # --- Step 4: Run Experiments ---
+    # --- Step 4: Run Experiments (one irace instance = one problem) ---
+    # irace races configurations ACROSS instances with rank-based elimination,
+    # so the wildly different cost scales of the tuning problems never mix
+    # (raw-mean aggregation let Rastrigin's ~600 dominate Ackley's ~13).
     results = []
+    tuning_problems = [experiment.instance] if experiment.instance is not None else problems
     problem_obj_for_run = None # To hold the problem instance for this set of runs
-    for problem in problems:
+    for problem in tuning_problems:
         problem_name = problem.get_name() if hasattr(problem, 'get_name') else problem.__class__.__name__
         problem_obj_for_run = problem # Use the selected problem
         # print(f"  Problem: {problem_name}") # Verbose
@@ -872,12 +1246,10 @@ def target_runner(experiment: Experiment, scenario: Scenario) -> float:
                 print(f"      ERROR during run {run_index + 1} on {problem_name} for {current_algorithm}: {e}")
                 # Print config for debugging, NOT filtered params as they vary per algo
                 print(f"      Config (Original): {config}")
-                print(f"      Config (Repaired): {repaired_config}")
+                print(f"      Config (Repaired+Normalized): {final_params}")
                 print(f"      Final Params Passed (Subset): {{k:v for k,v in filtered_constructor_params.items() if k not in ['problem','termination_criterion']}}") # Show relevant params
                 traceback.print_exc()
                 results.append(float('inf'))
-        # Break after first problem if only tuning on one for speed, otherwise loops through all
-        # break # Uncomment for faster testing on one problem
 
     # --- Step 5: Process Results ---
     # print(f"--- Finished runs for config. Num results: {len(results)} ---")
@@ -893,32 +1265,166 @@ def target_runner(experiment: Experiment, scenario: Scenario) -> float:
     return cost
 
 
+def _load_configurations(path: str) -> dict:
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+@contextmanager
+def _file_lock(path: str):
+    """Short-lived exclusive lock (O_CREAT|O_EXCL lock file) serializing
+    read-merge-write cycles between concurrent jobs on a shared filesystem."""
+    lock_path = path + ".lock"
+    for _ in range(600):  # wait up to ~60 s for the lock
+        try:
+            lock_fd = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            break
+        except FileExistsError:
+            time.sleep(0.1)
+    else:
+        raise TimeoutError(
+            f"Could not acquire {lock_path}. If a previous job crashed while "
+            f"saving, delete the stale lock file and rerun.")
+    try:
+        yield
+    finally:
+        os.close(lock_fd)
+        os.remove(lock_path)
+
+
+def _save_configurations(path: str, algo_name: str, records: list) -> dict:
+    """Merge one algorithm's results into the shared JSON, safely for
+    concurrent SLURM jobs: the lock serializes the read-merge-write cycle,
+    and the write is an atomic rename, so other jobs never see a half-written
+    file and never lose each other's entries."""
+    with _file_lock(path):
+        merged = _load_configurations(path)
+        merged[algo_name] = records
+        tmp_path = path + ".tmp"
+        with open(tmp_path, "w") as f:
+            json.dump(merged, f, indent=4,
+                      default=lambda o: o.item() if hasattr(o, "item") else str(o))
+        os.replace(tmp_path, path)
+    return merged
+
+
+CLAIM_HEARTBEAT_SECONDS = 60
+CLAIM_STALE_SECONDS = 600  # 10 missed heartbeats: the claiming job is dead
+
+
+class _Claim:
+    """A live "in progress" marker for one algorithm.
+
+    A daemon heartbeat thread touches the claim file once a minute; it dies
+    with the process (crash, OOM, scancel, walltime), so the file's mtime
+    freezes and other jobs take the block over after CLAIM_STALE_SECONDS.
+    """
+
+    def __init__(self, path: str):
+        self.path = path
+        self._stop = threading.Event()
+        self._thread = threading.Thread(target=self._beat, daemon=True)
+        self._thread.start()
+
+    def _beat(self):
+        while not self._stop.wait(CLAIM_HEARTBEAT_SECONDS):
+            try:
+                os.utime(self.path)
+            except OSError:
+                pass  # claim gone or FS hiccup; staleness handling covers it
+
+    def release(self):
+        self._stop.set()
+        self._thread.join(timeout=5)
+        try:
+            os.remove(self.path)
+        except FileNotFoundError:
+            pass
+
+
+def _try_claim(output_file: str, algo_name: str):
+    """Atomically claim one algorithm block. Returns a live _Claim, or None
+    when the block is already finished or freshly claimed by another job.
+    Stale claims (no heartbeat for CLAIM_STALE_SECONDS) are taken over."""
+    claim_dir = os.path.join(os.path.dirname(output_file), "irace_claims")
+    os.makedirs(claim_dir, exist_ok=True)
+    claim_path = os.path.join(claim_dir, f"{algo_name}.claim")
+    with _file_lock(output_file):
+        if algo_name in _load_configurations(output_file):
+            return None  # finished by another job while we were deciding
+        if os.path.exists(claim_path):
+            age = time.time() - os.path.getmtime(claim_path)
+            if age < CLAIM_STALE_SECONDS:
+                return None  # another job is actively tuning this block
+            print(f"Taking over stale claim for {algo_name} "
+                  f"(no heartbeat for {age:.0f} s).")
+        with open(claim_path, "w") as f:
+            json.dump({
+                "job": os.environ.get("SLURM_JOB_ID", "local"),
+                "host": socket.gethostname(),
+                "pid": os.getpid(),
+                "claimed_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+            }, f, indent=4)
+    return _Claim(claim_path)
+
+
 if __name__ == "__main__":
-    best_configurations = {}
-    output_file = "irace_best_configurations.json"
+    output_file = os.path.join("optimization_results", "irace_best_configurations.json")
+    os.makedirs("optimization_results", exist_ok=True)
 
     for algo_name, space_config in parameter_spaces.items():
+        # Resume support: results are saved after every algorithm, so a
+        # restarted job skips finished blocks. Re-read before each block so
+        # concurrently running jobs also see each other's finished algorithms.
+        # NOTE: entries from an older tuning protocol also count as "done" -
+        # archive/delete the JSON before starting a fresh campaign.
+        best_configurations = _load_configurations(output_file)
+        if algo_name in best_configurations:
+            print(f"SKIPPING {algo_name}: {len(best_configurations[algo_name])} "
+                  f"configuration(s) already stored in {output_file}.")
+            continue
+
+        # Claim the block so concurrent jobs pick different algorithms.
+        claim = _try_claim(output_file, algo_name)
+        if claim is None:
+            print(f"SKIPPING {algo_name}: being tuned by another job "
+                  f"(or finished just now).")
+            continue
+
         current_algorithm = algo_name
         print(f"Optimizing parameters for {algo_name} ...")
 
-        # Unpack the parameters list and the forbidden expression from the config
-        params_list = space_config['params']
-        forbidden_expression = space_config.get('forbidden', None)
+        try:
+            # Unpack the parameters list and the forbidden expression from the config
+            params_list = space_config['params']
+            forbidden_expression = space_config.get('forbidden', None)
 
-        # Create the ParameterSpace using the extracted components
-        parameter_space = ParameterSpace(params=params_list, forbidden=forbidden_expression)
+            # Create the ParameterSpace using the extracted components
+            parameter_space = ParameterSpace(params=params_list, forbidden=forbidden_expression)
 
-        scenario = Scenario(max_experiments=budget * len(params_list), seed=42, n_jobs=48)
+            scenario = Scenario(max_experiments=budget * len(params_list), instances=problems, seed=42, n_jobs=48)
 
-        result = irace(target_runner, parameter_space, scenario, return_df=True, remove_metadata=True)
-        best_configurations[algo_name] = result
+            result = irace(target_runner, parameter_space, scenario, return_df=True, remove_metadata=True)
+            # Store READY-TO-TRANSCRIBE configurations: the same repair + fraction
+            # normalization the target runner applied during evaluation.
+            tuned_records = [
+                repair_and_normalize_config(algo_name, dict(row))
+                for row in result.to_dict(orient="records")
+            ]
 
-        # 2. Load that RData into R’s global env (it creates `iraceResults`)
-        # robjects.r['load']("irace.log")
+            # 2. Load that RData into R’s global env (it creates `iraceResults`)
+            # robjects.r['load']("irace.log")
 
-        # 3. Tell IRACE to dump the human‑readable log to a .txt file
-        # robjects.r['save_irace_logfile'](robjects.r['iraceResults'], "irace.txt")
+            # 3. Tell IRACE to dump the human‑readable log to a .txt file
+            # robjects.r['save_irace_logfile'](robjects.r['iraceResults'], "irace.txt")
 
-        # Save results after each algorithm
-        with open(output_file, "w") as f:
-            json.dump({k: v.to_json() for k, v in best_configurations.items()}, f, indent=4)
+            # Save results after each algorithm (lock + re-read + merge + atomic
+            # rename: concurrent jobs cannot clobber each other's entries).
+            best_configurations = _save_configurations(output_file, algo_name, tuned_records)
+        finally:
+            # Always release the claim: on success the JSON entry takes
+            # over; on failure another job may retry the block.
+            claim.release()

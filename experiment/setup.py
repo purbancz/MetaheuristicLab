@@ -249,7 +249,7 @@ def setup_experiment():
         # ExpandedKatsuura(number_of_variables), # too long
         # Katsuura(number_of_variables),  # too long
         # Ackley(number_of_variables), # irace
-        Rastrigin(number_of_variables),  # irace
+        # Rastrigin(number_of_variables),  # irace
         # Sphere(number_of_variables), # irace
 
         # ## uninterested results
