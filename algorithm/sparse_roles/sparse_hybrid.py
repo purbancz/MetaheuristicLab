@@ -196,7 +196,15 @@ class SparseHybridFullDisjointPSO(HybridFullDisjointPSO, SparseCoordinateMixin):
 
 
 class SparseHybridAdditivePSO(HybridAdditivePSO, SparseCoordinateMixin):
-    """Coordinate-wise version of HybridAdditivePSO."""
+    """Coordinate-wise version of HybridAdditivePSO.
+
+    Special role contributions apply only on their sampled coordinate masks.
+    The standard component applies to ALL coordinates when the particle's
+    is_std_* flag is on (dense additive semantics); when the flag is off, the
+    standard component still applies on every coordinate NOT covered by any
+    active special mask, so unmasked coordinates keep standard PSO behavior
+    (module contract) instead of drifting on inertia alone.
+    """
 
     def __init__(
             self,
@@ -250,53 +258,75 @@ class SparseHybridAdditivePSO(HybridAdditivePSO, SparseCoordinateMixin):
             social_component = np.zeros_like(current)
             rand_factors = {flag: random.random() for flag in self.coefficients}
 
+            cognitive_special_union = np.zeros(dim, dtype=bool)
             any_special_cognitive_active = False
 
             if attrs.get("is_rejector", False):
                 vec = self.coefficients["is_rejector"] * rand_factors["is_rejector"] * (current - p_best)
-                cognitive_component += self._masked_cognitive(dim, vec)
+                mask = self._cognitive_mask(dim)
+                cognitive_component += np.where(mask, vec, 0.0)
+                cognitive_special_union |= mask
                 any_special_cognitive_active = True
 
             if attrs.get("is_defeatist", False):
                 vec = self.coefficients["is_defeatist"] * rand_factors["is_defeatist"] * (p_worst - current)
-                cognitive_component += self._masked_cognitive(dim, vec)
+                mask = self._cognitive_mask(dim)
+                cognitive_component += np.where(mask, vec, 0.0)
+                cognitive_special_union |= mask
                 any_special_cognitive_active = True
 
             if attrs.get("is_escapist", False):
                 vec = self.coefficients["is_escapist"] * rand_factors["is_escapist"] * (current - p_worst)
-                cognitive_component += self._masked_cognitive(dim, vec)
+                mask = self._cognitive_mask(dim)
+                cognitive_component += np.where(mask, vec, 0.0)
+                cognitive_special_union |= mask
                 any_special_cognitive_active = True
 
+            standard_cognitive = (
+                self.coefficients["is_std_cognitive"]
+                * rand_factors["is_std_cognitive"]
+                * (p_best - current)
+            )
             if attrs.get("is_std_cognitive", False) or not any_special_cognitive_active:
-                cognitive_component += (
-                    self.coefficients["is_std_cognitive"]
-                    * rand_factors["is_std_cognitive"]
-                    * (p_best - current)
-                )
+                cognitive_component += standard_cognitive
+            else:
+                # Unmasked coordinates keep standard PSO behavior.
+                cognitive_component += np.where(cognitive_special_union, 0.0, standard_cognitive)
 
+            social_special_union = np.zeros(dim, dtype=bool)
             any_special_social_active = False
 
             if attrs.get("is_rebel", False):
                 vec = self.coefficients["is_rebel"] * rand_factors["is_rebel"] * (current - g_best)
-                social_component += self._masked_social(dim, vec)
+                mask = self._social_mask(dim)
+                social_component += np.where(mask, vec, 0.0)
+                social_special_union |= mask
                 any_special_social_active = True
 
             if attrs.get("is_contrarian", False):
                 vec = self.coefficients["is_contrarian"] * rand_factors["is_contrarian"] * (g_worst - current)
-                social_component += self._masked_social(dim, vec)
+                mask = self._social_mask(dim)
+                social_component += np.where(mask, vec, 0.0)
+                social_special_union |= mask
                 any_special_social_active = True
 
             if attrs.get("is_eschewer", False):
                 vec = self.coefficients["is_eschewer"] * rand_factors["is_eschewer"] * (current - g_worst)
-                social_component += self._masked_social(dim, vec)
+                mask = self._social_mask(dim)
+                social_component += np.where(mask, vec, 0.0)
+                social_special_union |= mask
                 any_special_social_active = True
 
+            standard_social = (
+                self.coefficients["is_std_social"]
+                * rand_factors["is_std_social"]
+                * (g_best - current)
+            )
             if attrs.get("is_std_social", False) or not any_special_social_active:
-                social_component += (
-                    self.coefficients["is_std_social"]
-                    * rand_factors["is_std_social"]
-                    * (g_best - current)
-                )
+                social_component += standard_social
+            else:
+                # Unmasked coordinates keep standard PSO behavior.
+                social_component += np.where(social_special_union, 0.0, standard_social)
 
             new_velocity = self.w * velocity + cognitive_component + social_component
             particle.attributes["velocity"] = new_velocity.tolist()
