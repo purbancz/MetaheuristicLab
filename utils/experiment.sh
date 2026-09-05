@@ -6,8 +6,8 @@
 #SBATCH --partition=plgrid-now
 #SBATCH --account=plglscclass24-cpu
 #SBATCH --nodes=1
-#SBATCH --ntasks=48
-#SBATCH --cpus-per-task=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=48
 #SBATCH --mem=16G
 #SBATCH --mail-type=ALL
 
@@ -27,9 +27,12 @@ conda init
 eval "$(conda shell.bash hook)"
 conda activate jmetal12
 
-# Set threading vars to 1 if using multiprocessing pool extensively
+# Limit internal threading (good with multiprocessing)
 export OMP_NUM_THREADS=1
 export MKL_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
+export VECLIB_MAXIMUM_THREADS=1
+export NUMEXPR_NUM_THREADS=1
 
 # Log start time
 START_TIME=$(date +%s)
@@ -38,7 +41,7 @@ echo "Job started at: $(date -d @$START_TIME)"
 # Run the Python script
 echo "PYTHON SCRIPT IS BEING EXECUTED"
 export PYTHONPATH="$HOME/GA-PSO_Hybrid:$PYTHONPATH"
-srun python -u $HOME/GA-PSO_Hybrid/main.py
+python -u $HOME/GA-PSO_Hybrid/main_experiment.py
 #python -u $HOME/GA-PSO_Hybrid/utils/plot_benchmarks.py
 echo "Swarming completed successfully."
 

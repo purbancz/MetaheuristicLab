@@ -6,8 +6,8 @@
 #SBATCH --partition=standard          # standard/fast/long/tesla
 #SBATCH --account=pl0590-01
 #SBATCH --nodes=1
-#SBATCH --ntasks=48
-#SBATCH --cpus-per-task=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=48
 #SBATCH --mem=16G
 #SBATCH --mail-type=ALL
 
@@ -32,6 +32,9 @@ conda activate jmetal12
 # Limit internal threading (good with multiprocessing)
 export OMP_NUM_THREADS=1
 export MKL_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
+export VECLIB_MAXIMUM_THREADS=1
+export NUMEXPR_NUM_THREADS=1
 
 # Log start time
 START_TIME=$(date +%s)
@@ -42,8 +45,7 @@ echo "PYTHON SCRIPT IS BEING EXECUTED"
 export PYTHONPATH="$HOME/GA-PSO_Hybrid:$PYTHONPATH"
 
 # Use srun to launch
-srun python -u "$HOME/GA-PSO_Hybrid/main.py"
-# python -u "$HOME/GA-PSO_Hybrid/main.py"
+python -u "$HOME/GA-PSO_Hybrid/main_experiment.py"
 
 echo "Swarming completed successfully."
 

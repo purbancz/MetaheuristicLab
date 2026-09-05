@@ -8,9 +8,9 @@
 
 # --- Request 1 task with multiple CPUs ---
 #SBATCH --nodes=1
-#SBATCH --ntasks=1                 # Request only ONE main task (your python script)
-#SBATCH --cpus-per-task=25         # Give that task ALL 48 cores requested
-#SBATCH --mem=8G                  # Total memory for the single task (adjust if needed)
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=25 # Worker count for the multiprocessing Pool (for max see the HPC documentation)
+#SBATCH --mem=8G
 #SBATCH --mail-type=ALL
 
 # --- Create Log Directory ---
