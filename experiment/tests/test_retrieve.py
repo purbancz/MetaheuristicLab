@@ -57,6 +57,33 @@ def make_result(
     }
 
 
+def test_final_fitness_and_seeds_come_from_the_right_algorithm():
+    # Regression for the stale-variable bug: the aggregation loop read
+    # final_fitness/run_times/seeds from a leftover binding of the collection
+    # loop, so every entry silently received the LAST algorithm's arrays.
+    first = make_result("Rastrigin", 100, [1.0, 2.0], algorithm="AlgA")
+    first["results"]["AlgA"]["final_fitness"] = np.array([1.0, 2.0])
+    first["results"]["AlgA"]["seeds"] = [11, 12]
+
+    second = make_result("Sphere", 100, [3.0, 4.0], algorithm="AlgB")
+    second["results"]["AlgB"]["final_fitness"] = np.array([3.0, 4.0])
+    second["results"]["AlgB"]["seeds"] = [21, 22]
+
+    combined = combine_data([first, second])
+
+    np.testing.assert_array_equal(
+        combined[("Rastrigin", 100)]["results"]["AlgA"]["final_fitness"],
+        np.array([1.0, 2.0]),
+    )
+    assert combined[("Rastrigin", 100)]["results"]["AlgA"]["seeds"] == [11, 12]
+
+    np.testing.assert_array_equal(
+        combined[("Sphere", 100)]["results"]["AlgB"]["final_fitness"],
+        np.array([3.0, 4.0]),
+    )
+    assert combined[("Sphere", 100)]["results"]["AlgB"]["seeds"] == [21, 22]
+
+
 def test_same_problem_and_dimension_are_combined():
     first = make_result(
         "Rastrigin",

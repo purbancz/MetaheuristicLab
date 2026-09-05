@@ -323,16 +323,16 @@ def combine_data(data_list):
                 "std_dev": final_std_dev,
                 "avg_time": final_avg_time,
                 "final_fitness": (
-                    np.concatenate(collected["final_fitness_list"])
-                    if collected["final_fitness_list"]
+                    np.concatenate(collected_data["final_fitness_list"])
+                    if collected_data["final_fitness_list"]
                     else (concatenated_data[:, -1] if concatenated_data.ndim == 2 else concatenated_data)
                 ),
                 "run_times": (
-                    np.concatenate(collected["run_times_list"])
-                    if collected["run_times_list"]
+                    np.concatenate(collected_data["run_times_list"])
+                    if collected_data["run_times_list"]
                     else np.zeros(runs_count)
                 ),
-                "seeds": collected["seeds_list"],
+                "seeds": collected_data["seeds_list"],
             }
 
     print(

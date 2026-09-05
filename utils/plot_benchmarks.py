@@ -2,7 +2,6 @@ import math
 
 import numpy as np
 import matplotlib.pyplot as plt
-from bs4.diagnose import benchmark_parsers
 # from mpl_toolkits.mplot3d import Axes3D
 from jmetal.core.solution import FloatSolution
 from jmetal.problem import Sphere
@@ -22,7 +21,7 @@ from problem.n_variables.ackley import Ackley
 from problem.n_variables.alpine import AlpineN1, AlpineN2
 from problem.n_variables.bent_cigar import BentCigar
 from problem.n_variables.bird import Bird
-from problem.n_variables.cross import GeneralizedCrossInTray, CrownedCross, Cross, CrossLeggedTable
+from problem.n_variables.cross import GeneralizedCrossInTray, Cross, CrossLeggedTable
 from problem.n_variables.discus import Discus
 from problem.n_variables.dixon import DixonPrice, GeneralizedDixonPriceRosenbrock
 from problem.n_variables.eggholder import EggHolder
